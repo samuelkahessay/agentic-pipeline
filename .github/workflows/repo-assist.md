@@ -106,8 +106,8 @@ Each run, work on 2-4 tasks from the list below. Use round-robin scheduling base
 2. Sort by dependency order — skip issues whose dependencies (referenced in issue body) are not yet closed.
 3. For each implementable issue (check memory — skip if already attempted):
    a. Read the issue carefully, including acceptance criteria and technical notes.
-   b. Create a fresh branch off `main`: `repo-assist/issue-<N>-<short-desc>`.
-   c. Set up the development environment as described in AGENTS.md.
+   b. **CRITICAL**: Always `git checkout main && git pull origin main` before creating each new branch. Create a fresh branch off the latest `main`: `repo-assist/issue-<N>-<short-desc>`. NEVER branch off another feature branch — each PR must be independently mergeable.
+   c. Set up the development environment as described in AGENTS.md (run `npm install` if package.json exists).
    d. Implement the feature/task described in the issue. Follow acceptance criteria exactly.
    e. **Build and test (required)**: Run the build and test commands from AGENTS.md. Do not create a PR if tests fail due to your changes.
    f. Add tests if the issue type is `feature` or `infra` and tests aren't explicitly excluded.
