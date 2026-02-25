@@ -1,0 +1,200 @@
+[
+  {
+    "number": 5,
+    "title": "[Pipeline] Scaffold Express + TypeScript Project",
+    "state": "merged",
+    "createdAt": "2026-02-25T05:59:00Z",
+    "mergedAt": "2026-02-25T06:07:24Z",
+    "additions": 312,
+    "deletions": 0,
+    "changedFiles": 8,
+    "reviews": [
+      {
+        "author": "github-actions[bot]",
+        "state": "APPROVED",
+        "body": "LGTM — scaffold looks correct with TypeScript strict mode, Express, and health check.",
+        "submittedAt": "2026-02-25T06:05:00Z"
+      }
+    ]
+  },
+  {
+    "number": 16,
+    "title": "[Pipeline] Implement Snippet Data Model & In-Memory Store",
+    "state": "merged",
+    "createdAt": "2026-02-25T06:08:00Z",
+    "mergedAt": "2026-02-25T06:20:00Z",
+    "additions": 187,
+    "deletions": 4,
+    "changedFiles": 4,
+    "reviews": [
+      {
+        "author": "github-actions[bot]",
+        "state": "APPROVED",
+        "body": "Data model and CRUD store look solid. Tests pass.",
+        "submittedAt": "2026-02-25T06:18:00Z"
+      }
+    ]
+  },
+  {
+    "number": 17,
+    "title": "[Pipeline] Implement Snippet Data Model & In-Memory Store",
+    "state": "merged",
+    "createdAt": "2026-02-25T06:09:00Z",
+    "mergedAt": "2026-02-25T06:22:00Z",
+    "additions": 203,
+    "deletions": 2,
+    "changedFiles": 5,
+    "reviews": [
+      {
+        "author": "github-actions[bot]",
+        "state": "APPROVED",
+        "body": "All CRUD endpoints covered with tests.",
+        "submittedAt": "2026-02-25T06:20:00Z"
+      }
+    ]
+  },
+  {
+    "number": 18,
+    "title": "[Pipeline] Create CRUD API Endpoints for Snippets",
+    "state": "merged",
+    "createdAt": "2026-02-25T06:10:00Z",
+    "mergedAt": "2026-02-25T06:25:00Z",
+    "additions": 258,
+    "deletions": 6,
+    "changedFiles": 6,
+    "reviews": [
+      {
+        "author": "github-actions[bot]",
+        "state": "APPROVED",
+        "body": "CRUD endpoints implemented correctly with proper validation.",
+        "submittedAt": "2026-02-25T06:23:00Z"
+      }
+    ]
+  },
+  {
+    "number": 20,
+    "title": "[Pipeline] Add Tag Management API and Full-Text Search API (combined)",
+    "state": "merged",
+    "createdAt": "2026-02-25T06:30:00Z",
+    "mergedAt": "2026-02-25T06:42:00Z",
+    "additions": 341,
+    "deletions": 12,
+    "changedFiles": 7,
+    "reviews": [
+      {
+        "author": "github-actions[bot]",
+        "state": "APPROVED",
+        "body": "Tag management and full-text search both implemented and tested.",
+        "submittedAt": "2026-02-25T06:40:00Z"
+      }
+    ]
+  },
+  {
+    "number": 21,
+    "title": "[Pipeline] Build Web UI: Snippet List & Dashboard",
+    "state": "merged",
+    "createdAt": "2026-02-25T06:37:00Z",
+    "mergedAt": "2026-02-25T06:48:00Z",
+    "additions": 429,
+    "deletions": 3,
+    "changedFiles": 5,
+    "reviews": [
+      {
+        "author": "github-actions[bot]",
+        "state": "APPROVED",
+        "body": "Snippet list and dashboard render correctly. Good tag filtering UX.",
+        "submittedAt": "2026-02-25T06:46:00Z"
+      }
+    ]
+  },
+  {
+    "number": 23,
+    "title": "Root cause analysis: Pipeline Repo Assist patch failure",
+    "state": "merged",
+    "createdAt": "2026-02-25T06:47:00Z",
+    "mergedAt": "2026-02-25T06:52:00Z",
+    "additions": 48,
+    "deletions": 22,
+    "changedFiles": 2,
+    "reviews": [
+      {
+        "author": "samuelkahessay",
+        "state": "APPROVED",
+        "body": "Good analysis and fix.",
+        "submittedAt": "2026-02-25T06:51:00Z"
+      }
+    ]
+  },
+  {
+    "number": 25,
+    "title": "Rewrite copilot-instructions.md to focus on the agentic pipeline",
+    "state": "merged",
+    "createdAt": "2026-02-25T06:55:00Z",
+    "mergedAt": "2026-02-25T07:00:00Z",
+    "additions": 89,
+    "deletions": 134,
+    "changedFiles": 1,
+    "reviews": [
+      {
+        "author": "samuelkahessay",
+        "state": "APPROVED",
+        "body": "Much cleaner focus on the pipeline.",
+        "submittedAt": "2026-02-25T06:58:00Z"
+      }
+    ]
+  },
+  {
+    "number": 26,
+    "title": "[Pipeline] Build Web UI: Snippet Detail, Create & Edit Pages",
+    "state": "merged",
+    "createdAt": "2026-02-25T06:50:00Z",
+    "mergedAt": "2026-02-25T06:53:08Z",
+    "additions": 512,
+    "deletions": 8,
+    "changedFiles": 6,
+    "reviews": [
+      {
+        "author": "github-actions[bot]",
+        "state": "APPROVED",
+        "body": "All three pages (detail, create, edit) implemented with correct routing.",
+        "submittedAt": "2026-02-25T06:52:00Z"
+      }
+    ]
+  },
+  {
+    "number": 27,
+    "title": "[Pipeline] Seed Example Snippets & Landing Experience",
+    "state": "merged",
+    "createdAt": "2026-02-25T06:54:00Z",
+    "mergedAt": "2026-02-25T06:59:23Z",
+    "additions": 267,
+    "deletions": 15,
+    "changedFiles": 4,
+    "reviews": [
+      {
+        "author": "github-actions[bot]",
+        "state": "APPROVED",
+        "body": "Seed data and landing page look great.",
+        "submittedAt": "2026-02-25T06:57:00Z"
+      }
+    ]
+  },
+  {
+    "number": 28,
+    "title": "[Pipeline] Verify AI review",
+    "state": "merged",
+    "createdAt": "2026-02-25T07:20:00Z",
+    "mergedAt": "2026-02-25T07:24:05Z",
+    "additions": 35,
+    "deletions": 0,
+    "changedFiles": 2,
+    "reviews": [
+      {
+        "author": "github-actions[bot]",
+        "state": "APPROVED",
+        "body": "AI review verification passes.",
+        "submittedAt": "2026-02-25T07:22:00Z"
+      }
+    ]
+  }
+]
