@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent, within } from "@testing-library/react";
 import { Timeline } from "@/components/replay/timeline";
 import type { PipelineData } from "@/data/types";
 
@@ -13,6 +13,7 @@ const mockData: PipelineData = {
       createdAt: "2026-02-25T05:45:00Z",
       closedAt: "2026-02-25T06:00:00Z",
       labels: [{ name: "pipeline", color: "blue" }],
+      body: "This is the body of test issue 1 with some description content.",
     },
     {
       number: 2,
@@ -33,6 +34,7 @@ const mockData: PipelineData = {
       additions: 50,
       deletions: 10,
       changedFiles: 3,
+      body: "Closes #1\n\nImplements the feature from issue 1.",
       reviews: [
         {
           author: "github-actions[bot]",
@@ -69,7 +71,9 @@ describe("Timeline", () => {
     render(<Timeline data={mockData} />);
 
     // 2 issues + 2 PR opens + 2 PR merges + 2 reviews = 8 events
-    const dots = screen.getAllByRole("button");
+    // Scope to the timeline region to exclude control buttons
+    const region = screen.getByRole("region", { name: /pipeline event timeline/i });
+    const dots = within(region).getAllByRole("button");
     expect(dots.length).toBe(8);
   });
 
@@ -85,5 +89,41 @@ describe("Timeline", () => {
     expect(
       screen.getByRole("region", { name: /pipeline event timeline/i })
     ).toBeInTheDocument();
+  });
+
+  it("toggling the Issues filter hides issue event dots from the timeline", () => {
+    render(<Timeline data={mockData} />);
+
+    const region = screen.getByRole("region", { name: /pipeline event timeline/i });
+
+    // Initially all 8 event buttons are visible inside the timeline region
+    expect(within(region).getAllByRole("button").length).toBe(8);
+
+    // Click the "Issues" filter toggle button
+    const issuesFilter = screen.getByRole("button", { name: /toggle issues/i });
+    fireEvent.click(issuesFilter);
+
+    // After toggling Issues off, 2 issue dots removed → 6 event dots remain
+    expect(within(region).getAllByRole("button").length).toBe(6);
+  });
+
+  it("shows issue body excerpt when clicking an issue event dot", () => {
+    render(<Timeline data={mockData} />);
+    const region = screen.getByRole("region", { name: /pipeline event timeline/i });
+    const issueDots = within(region).getAllByRole("button").filter((b) =>
+      b.getAttribute("aria-label")?.includes("Issue #1 Created")
+    );
+    fireEvent.click(issueDots[0]);
+    expect(screen.getByText(/body of test issue 1/i)).toBeInTheDocument();
+  });
+
+  it("shows linked issue number when clicking a PR event dot", () => {
+    render(<Timeline data={mockData} />);
+    const region = screen.getByRole("region", { name: /pipeline event timeline/i });
+    const prDots = within(region).getAllByRole("button").filter((b) =>
+      b.getAttribute("aria-label")?.includes("PR #10 Opened")
+    );
+    fireEvent.click(prDots[0]);
+    expect(screen.getByText(/Closes #1/i)).toBeInTheDocument();
   });
 });

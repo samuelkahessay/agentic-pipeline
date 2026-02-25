@@ -12,10 +12,11 @@
       {
         "author": "github-actions[bot]",
         "state": "APPROVED",
-        "body": "LGTM — scaffold looks correct with TypeScript strict mode, Express, and health check.",
+        "body": "LGTM \u2014 scaffold looks correct with TypeScript strict mode, Express, and health check.",
         "submittedAt": "2026-02-25T06:05:00Z"
       }
-    ]
+    ],
+    "body": "Closes #7\n\nScaffolds Express + TypeScript project with strict mode, health check, and npm scripts."
   },
   {
     "number": 16,
@@ -33,7 +34,8 @@
         "body": "Data model and CRUD store look solid. Tests pass.",
         "submittedAt": "2026-02-25T06:18:00Z"
       }
-    ]
+    ],
+    "body": "Closes #10\n\nImplements the Snippet data model and in-memory store with TypeScript interfaces."
   },
   {
     "number": 17,
@@ -69,7 +71,8 @@
         "body": "CRUD endpoints implemented correctly with proper validation.",
         "submittedAt": "2026-02-25T06:23:00Z"
       }
-    ]
+    ],
+    "body": "Closes #13\n\nCreates CRUD API endpoints for snippets."
   },
   {
     "number": 20,
@@ -87,7 +90,8 @@
         "body": "Tag management and full-text search both implemented and tested.",
         "submittedAt": "2026-02-25T06:40:00Z"
       }
-    ]
+    ],
+    "body": "Closes #11\n\nAdds tag management API endpoints and full-text search API."
   },
   {
     "number": 21,
@@ -105,7 +109,8 @@
         "body": "Snippet list and dashboard render correctly. Good tag filtering UX.",
         "submittedAt": "2026-02-25T06:46:00Z"
       }
-    ]
+    ],
+    "body": "Closes #8\n\nBuilds the snippet list and dashboard web UI."
   },
   {
     "number": 23,
@@ -159,7 +164,8 @@
         "body": "All three pages (detail, create, edit) implemented with correct routing.",
         "submittedAt": "2026-02-25T06:52:00Z"
       }
-    ]
+    ],
+    "body": "Closes #9\n\nBuilds web UI pages for snippet detail, create, and edit."
   },
   {
     "number": 27,
@@ -177,7 +183,8 @@
         "body": "Seed data and landing page look great.",
         "submittedAt": "2026-02-25T06:57:00Z"
       }
-    ]
+    ],
+    "body": "Closes #12\n\nSeeds example snippets and landing experience."
   },
   {
     "number": 28,
