@@ -336,10 +336,10 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           DECISION="${{ steps.review.outputs.decision }}"
+          PR_NUMBER="${{ steps.pr.outputs.number }}"
+          ISSUE_NUMBER="${{ steps.pr.outputs.issue_number }}"
+          SUMMARY="${{ steps.review.outputs.summary }}"
 
-          # Always dispatch repo-assist after review:
-          # - APPROVE: repo-assist picks up next unblocked issues
-          # - REQUEST_CHANGES: repo-assist addresses review feedback (Task 4)
           OPEN_ISSUES=$(gh issue list --repo "${{ github.repository }}" \
             --label pipeline --label feature --state open --json number --jq 'length')
           OPEN_INFRA=$(gh issue list --repo "${{ github.repository }}" \
@@ -348,12 +348,25 @@ jobs:
             --state open --json number,title --jq '[.[] | select(.title // "" | startswith("[Pipeline]"))] | length')
           TOTAL=$((OPEN_ISSUES + OPEN_INFRA + OPEN_PRS))
 
-          if [ "$TOTAL" -gt 0 ]; then
-            echo "Review decision: $DECISION. Found $TOTAL open pipeline items (issues: $((OPEN_ISSUES + OPEN_INFRA)), PRs needing fixes: $OPEN_PRS). Dispatching repo-assist."
+          if [ "$TOTAL" -eq 0 ]; then
+            echo "No open pipeline issues or PRs remaining. Pipeline complete!"
+            exit 0
+          fi
+
+          echo "Review decision: $DECISION. Found $TOTAL open pipeline items."
+
+          if [ "$DECISION" = "APPROVE" ]; then
+            # APPROVE path: use workflow_dispatch for general scheduled mode
             gh workflow run repo-assist.lock.yml --repo "${{ github.repository }}" || \
               echo "::warning::Could not dispatch repo-assist"
           else
-            echo "No open pipeline issues or PRs remaining. Pipeline complete!"
+            # REQUEST_CHANGES path: use /repo-assist slash command on the linked issue
+            # so the agent enters Command Mode with specific fix instructions.
+            # This prevents the agent from just posting a status update and exiting.
+            TARGET_ISSUE="${ISSUE_NUMBER:-41}"
+            gh issue comment "$TARGET_ISSUE" --repo "${{ github.repository }}" \
+              --body "/repo-assist Fix review feedback on PR #${PR_NUMBER}. The reviewer said: ${SUMMARY}. Read the full review on PR #${PR_NUMBER}, implement all requested changes, push fixes to the PR branch, and comment what you changed." || \
+              echo "::warning::Could not post /repo-assist comment"
           fi
 
       - name: Submit review — REQUEST_CHANGES
