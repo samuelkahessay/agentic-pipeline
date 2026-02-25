@@ -30,23 +30,21 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           PR_NUMBER="${{ github.event.pull_request.number }}"
+          REPO="${{ github.repository }}"
 
-          # Fetch PR body via gh CLI to avoid script injection from
-          # interpolating the PR body expression into shell
-          PR_BODY=$(gh pr view "$PR_NUMBER" --repo "${{ github.repository }}" --json body --jq '.body')
-
-          # Extract all "Closes #N" references (case-insensitive)
-          ISSUES=$(echo "$PR_BODY" | grep -oiP '(closes|close|fix|fixes|resolve|resolves)\s+#\K[0-9]+' || true)
+          # Extract issue numbers entirely within jq — zero shell exposure to PR body
+          ISSUES=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json body \
+            --jq '[.body | scan("(?i)(?:closes|close|fix|fixes|resolve|resolves)\\s+#(\\d+)")] | .[][] ')
 
           if [ -z "$ISSUES" ]; then
-            echo "No issue-closing references found in PR #${PR_NUMBER} body. Nothing to close."
+            echo "No issue-closing references found in PR #${PR_NUMBER} body."
             exit 0
           fi
 
           for ISSUE_NUM in $ISSUES; do
-            STATE=$(gh issue view "$ISSUE_NUM" --repo "${{ github.repository }}" --json state --jq '.state' 2>/dev/null || echo "UNKNOWN")
+            STATE=$(gh issue view "$ISSUE_NUM" --repo "$REPO" --json state --jq '.state' 2>/dev/null || echo "UNKNOWN")
             if [ "$STATE" = "OPEN" ]; then
-              gh issue close "$ISSUE_NUM" --repo "${{ github.repository }}" \
+              gh issue close "$ISSUE_NUM" --repo "$REPO" \
                 -c "Closed by merge of PR #${PR_NUMBER}." || \
                 echo "::warning::Could not close issue #${ISSUE_NUM}"
               echo "Closed issue #${ISSUE_NUM}"
