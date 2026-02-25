@@ -1,6 +1,6 @@
 {
-  "last_run": "2026-02-25T19:34:39Z",
-  "backlog_cursor": 35,
+  "last_run": "2026-02-25T20:43:44Z",
+  "backlog_cursor": 39,
   "attempted_issues": {
     "7": {"status": "merged", "timestamp": "2026-02-25T06:07:24Z"},
     "10": {"status": "merged", "timestamp": "2026-02-25T06:07:24Z"},
@@ -36,6 +36,8 @@
     "38_depends_on_32": "resolved",
     "39_depends_on_38": "resolved"
   },
-  "open_prs": {},
-  "notes": "Run 2026-02-25T19:34: Pipeline complete. All 23 issues closed. No open issues or PRs. Status issue #41 updated."
+  "open_prs": {
+    "56": {"title": "[WIP] Diagnose failures in pipeline workflows", "status": "draft", "notes": "All checklist items complete. Awaiting owner review to un-draft and merge."}
+  },
+  "notes": "Run 2026-02-25T20:43: Pipeline complete. All 20 Pipeline Observatory issues closed (23 total pipeline issues closed). No new implementable issues. Open draft PR #56 (workflow fixes) awaits human review."
 }
