@@ -75,7 +75,7 @@ jobs:
 
           echo "$PIPELINE_PRS" | jq -r '.[] | "PR #\(.number): \(.title) (updated: \(.updatedAt))"'
 
-          for PR_ROW in $(echo "$PIPELINE_PRS" | jq -c '.[]'); do
+          while IFS= read -r PR_ROW; do
             PR_NUM=$(echo "$PR_ROW" | jq -r '.number')
             PR_UPDATED=$(echo "$PR_ROW" | jq -r '.updatedAt')
 
@@ -113,7 +113,7 @@ jobs:
             else
               echo "::warning::PR #${PR_NUM} has no linked issue — cannot dispatch fix"
             fi
-          done
+          done < <(echo "$PIPELINE_PRS" | jq -c '.[]')
 
           # ── Detect orphaned issues ──
           echo ""

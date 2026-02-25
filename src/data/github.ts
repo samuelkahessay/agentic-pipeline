@@ -46,20 +46,28 @@ export async function fetchFromGitHub(): Promise<PipelineData> {
 
   const pullRequests: PipelinePR[] = await Promise.all(
     pullsRes.data.map(async (pr) => {
-      const reviewsRes = await octokit.pulls.listReviews({
-        owner: OWNER,
-        repo: REPO,
-        pull_number: pr.number,
-      });
+      const [detailRes, reviewsRes] = await Promise.all([
+        octokit.pulls.get({
+          owner: OWNER,
+          repo: REPO,
+          pull_number: pr.number,
+        }),
+        octokit.pulls.listReviews({
+          owner: OWNER,
+          repo: REPO,
+          pull_number: pr.number,
+        }),
+      ]);
+      const detail = detailRes.data;
       return {
         number: pr.number,
         title: pr.title,
         state: pr.merged_at ? "merged" : pr.state === "open" ? "open" : "closed",
         createdAt: pr.created_at,
         mergedAt: pr.merged_at ?? null,
-        additions: pr.additions ?? 0,
-        deletions: pr.deletions ?? 0,
-        changedFiles: pr.changed_files ?? 0,
+        additions: detail.additions,
+        deletions: detail.deletions,
+        changedFiles: detail.changed_files,
         reviews: reviewsRes.data.map((r) => ({
           author: r.user?.login ?? "unknown",
           state: r.state as PipelinePR["reviews"][number]["state"],

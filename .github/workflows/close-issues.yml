@@ -32,7 +32,7 @@ jobs:
           PR_NUMBER="${{ github.event.pull_request.number }}"
 
           # Fetch PR body via gh CLI to avoid script injection from
-          # interpolating ${{ github.event.pull_request.body }} into shell
+          # interpolating the PR body expression into shell
           PR_BODY=$(gh pr view "$PR_NUMBER" --repo "${{ github.repository }}" --json body --jq '.body')
 
           # Extract all "Closes #N" references (case-insensitive)
