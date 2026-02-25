@@ -11,3 +11,8 @@ dist/
 .next/
 .github/aw/
 .vscode/
+.vercel/
+aw-prompts/
+aw_info.json
+mcp-logs/
+*.patch
