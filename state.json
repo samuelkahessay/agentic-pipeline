@@ -1,12 +1,15 @@
 {
-  "last_run": "2026-02-25T21:04:56Z",
+  "last_run": "2026-02-25T21:11:28Z",
   "attempts": [
     {
       "issue": 57,
       "title": "Simulator pipeline graph and nodes are too small — scale to fill the screen",
       "branch": "repo-assist/issue-57-scale-graph",
-      "status": "pr_created",
-      "timestamp": "2026-02-25T21:08:00Z"
+      "status": "pr_merged",
+      "pr": 58,
+      "timestamp": "2026-02-25T21:10:03Z"
     }
-  ]
+  ],
+  "completed_issues": [30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 57],
+  "notes": "All Pipeline Observatory features completed. Issue #57 not auto-closed despite PR #58 merge."
 }
