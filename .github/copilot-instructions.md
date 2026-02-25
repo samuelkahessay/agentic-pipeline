@@ -1,73 +1,100 @@
 # Copilot Agent Instructions
 
 ## Project Overview
-This is a **Code Snippet Manager** — a TypeScript/Express web application that
-provides a REST API and web UI for creating, reading, updating, deleting, and
-searching code snippets. The project uses an agentic pipeline where issues are
-auto-generated from PRDs and implemented by AI agents. Follow `AGENTS.md` for
-full coding standards.
+This repository is an **autonomous GitHub development pipeline** powered by
+[gh-aw](https://github.com/github/gh-aw) (GitHub Agentic Workflows). It turns
+Product Requirements Documents (PRDs) into implemented code via AI agents:
 
-## Tech Stack
-- **Runtime**: Node.js with TypeScript (strict mode, ES2022 target)
-- **Framework**: Express 4
-- **Testing**: Vitest with supertest for HTTP assertions
-- **Build**: `tsc` (TypeScript compiler)
-- **Module system**: CommonJS
+1. **You write a PRD** and push it to `docs/prd/`, or paste it in an issue
+2. **`prd-decomposer`** — AI reads the PRD, creates GitHub Issues with
+   acceptance criteria
+3. **`repo-assist`** — AI picks up issues, writes code, opens draft PRs
+4. **`pr-reviewer`** — Automated review approves or requests changes
+5. **`pipeline-status`** — Daily dashboard tracks progress
 
-## Project Structure
+Human role: write PRDs, review PRs, merge.
+
+## Repository Structure
 ```
-src/
-  app.ts              # Express app setup and route definitions
-  server.ts           # HTTP server entry point (listens on PORT)
-  models/
-    snippet.ts        # Snippet interface
-  store/
-    snippet-store.ts  # In-memory data store with CRUD + search
-  tests/
-    *.test.ts         # Vitest test files using supertest
-public/               # Static frontend assets (HTML/CSS/JS)
-docs/                 # PRDs and plans
+.github/
+  copilot-instructions.md        # Instructions for Copilot (this file)
+  copilot-setup-steps.yml        # Agent dev environment setup
+  agents/
+    agentic-workflows.agent.md   # Agent configuration for gh-aw workflows
+  workflows/
+    prd-decomposer.md            # PRD → Issues workflow
+    prd-decomposer.lock.yml      # Compiled Actions YAML
+    repo-assist.md               # Issues → PRs workflow
+    repo-assist.lock.yml         # Compiled Actions YAML
+    pipeline-status.md           # Progress dashboard workflow
+    pipeline-status.lock.yml     # Compiled Actions YAML
+    pr-reviewer.yml              # Automated PR review workflow
+    copilot-setup-steps.yml      # Agent environment bootstrap
+docs/
+  prd/                           # Drop PRDs here
+  plans/                         # Design documents
+scripts/
+  bootstrap.sh                   # One-time setup (labels, compile workflows)
+AGENTS.md                        # Coding standards for all agents
 ```
 
-## Build, Test & Lint
-- **Build**: `npm run build` — compiles TypeScript to `dist/`
-- **Test**: `npm test` — runs Vitest in run mode
-- **Lint**: `npm run lint` — runs `tsc --noEmit` for type checking
-- **Dev**: `npm run dev` — starts dev server with tsx watch
+## Agentic Workflows
 
-## Coding Conventions
-- Use TypeScript strict mode; do not use `any` unless unavoidable
-- Keep functions small and single-purpose
-- Follow existing naming conventions (camelCase for variables/functions,
-  PascalCase for types/interfaces/classes)
-- Add comments only for non-obvious logic
-- Use `interface` for data shapes (see `src/models/snippet.ts`)
-- Prefer `const` over `let`; never use `var`
+| Workflow | Trigger | Purpose |
+|----------|---------|---------|
+| `prd-decomposer` | `/decompose` command | Parses PRD → creates issues |
+| `repo-assist` | Daily + `/repo-assist` | Implements issues → opens PRs |
+| `pipeline-status` | Daily | Updates progress dashboard issue |
+| `pr-reviewer` | PR opened/updated | AI-powered code review |
 
-## Testing Patterns
-- Tests live in `src/tests/` and use the `*.test.ts` naming convention
-- Use `supertest` for API endpoint tests, importing `app` from `../app`
-- Use `vitest` globals (`describe`, `it`, `expect`) — globals are enabled
-- Each test file should reset shared state (e.g., the snippet store) between
-  tests using `beforeEach`
-- Write tests for all new functionality
+## Pipeline Issue Lifecycle
+1. `prd-decomposer` creates issues with `[Pipeline]` prefix and `pipeline` label
+2. Issues include acceptance criteria, dependencies (`Depends on #N`), and
+   type labels (`feature`, `test`, `infra`, `docs`, `bug`)
+3. `repo-assist` picks up issues in dependency order, creates branches
+   (`repo-assist/issue-<N>-<desc>`), implements code, and opens draft PRs
+4. `pr-reviewer` auto-reviews pipeline PRs, approves or requests changes
+5. On approval, auto-merge is enabled; on merge, the linked issue auto-closes
+   via `Closes #N`
+6. `repo-assist` re-dispatches to pick up the next issue
 
-## API Design Patterns
-- RESTful routes under `/api/` (e.g., `/api/snippets`, `/api/tags`)
-- Return JSON responses with appropriate HTTP status codes
-- Validate required fields and return `400` with `{ error: "..." }` on failure
-- Return `404` with `{ error: "..." }` when a resource is not found
-- Return `201` for successful creation, `204` for successful deletion
+## PR Conventions
+- Title prefix: `[Pipeline]` for all agent-created PRs
+- Body must contain `Closes #N` referencing the source issue
+- PRs include AI disclosure: "This PR was created by Pipeline Assistant."
+- All tests must pass before the PR is approved
+- Labels: `automation`, `pipeline`
 
-## Definition of Done
-1. Code compiles without errors (`npm run lint`)
-2. All tests pass (`npm test`)
-3. New tests for new functionality
-4. PR body includes `Closes #N` referencing the source issue
-5. PR description explains changes
+## Labels
+| Label | Description |
+|-------|-------------|
+| `pipeline` | Pipeline-managed issue |
+| `feature` | New feature implementation |
+| `test` | Test coverage |
+| `infra` | Infrastructure / scaffolding |
+| `docs` | Documentation |
+| `bug` | Bug fix |
+| `automation` | Created by automation |
+| `in-progress` | Work in progress |
+| `blocked` | Blocked by dependency |
+| `ready` | Ready for implementation |
+| `completed` | Completed and merged |
+| `report` | Status report |
+
+## Working with This Repo
+- **Read `AGENTS.md` first** for project-specific coding standards and build
+  commands — the application code evolves as the pipeline implements PRDs
+- **Run `scripts/bootstrap.sh`** to set up labels and compile workflows
+- **Compile workflows** after editing any `.md` workflow file:
+  `gh aw compile`
+- **Do not modify** `.github/workflows/*.lock.yml` files directly — they are
+  generated by `gh aw compile`
+- **Do not modify** `.github/workflows/*.yml` files (standard Actions
+  workflows) unless explicitly instructed
 
 ## Restrictions
-- Do not modify `.github/workflows/` files
+- Do not modify workflow files (`.github/workflows/`) unless explicitly asked
 - Do not add dependencies without noting in PR
-- Do not refactor outside issue scope
+- Do not refactor code outside the scope of the assigned issue
 - Do not change dependency versions without explicit instruction
+- Do not merge your own PRs
