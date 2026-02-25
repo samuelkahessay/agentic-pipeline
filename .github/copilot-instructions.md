@@ -16,7 +16,7 @@ Human role: write PRDs, review PRs, merge.
 
 ## Repository Structure
 ```
-.github/
+.github/                         # Pipeline infrastructure (PERMANENT)
   copilot-instructions.md        # Instructions for Copilot (this file)
   copilot-setup-steps.yml        # Agent dev environment setup
   agents/
@@ -29,14 +29,34 @@ Human role: write PRDs, review PRs, merge.
     pipeline-status.md           # Progress dashboard workflow
     pipeline-status.lock.yml     # Compiled Actions YAML
     pr-reviewer.yml              # Automated PR review workflow
+    close-issues.yml             # Auto-close issues on PR merge
+    pipeline-watchdog.yml        # Stall detector (cron)
     copilot-setup-steps.yml      # Agent environment bootstrap
-docs/
-  prd/                           # Drop PRDs here
-  plans/                         # Design documents
-scripts/
+docs/                            # Pipeline infrastructure (PERMANENT)
+  prd/                           # Drop PRDs here (kept forever)
+  plans/                         # Design documents (EPHEMERAL — removed on archive)
+scripts/                         # Pipeline infrastructure (PERMANENT)
   bootstrap.sh                   # One-time setup (labels, compile workflows)
+  archive-run.sh                 # Tag, showcase, and reset after a PRD run
+  start-run.sh                   # Prepare for a new PRD run
+  monitor-pipeline.sh            # Live monitoring loop
+showcase/                        # Completed run portfolios (PERMANENT)
+  01-code-snippet-manager/       # Run 1 summary → tag v1.0.0
+  02-pipeline-observatory/       # Run 2 summary → tag v2.0.0
 AGENTS.md                        # Coding standards for all agents
+src/                             # PRD implementation code (EPHEMERAL)
+package.json, tsconfig.json ...  # PRD-specific configs (EPHEMERAL)
 ```
+
+## PRD Lifecycle
+The pipeline follows a **drop → run → tag → showcase → reset** cycle.
+
+- **Permanent files** (`.github/`, `scripts/`, `docs/prd/`, `showcase/`,
+  `AGENTS.md`, `README.md`) survive across runs
+- **Ephemeral files** (`src/`, `package.json`, config files, `docs/plans/`)
+  are removed when archiving a completed run
+- After archive, the repo is a clean slate ready for the next PRD
+- All implementation code is recoverable via `git checkout <tag> -- src/`
 
 ## Agentic Workflows
 

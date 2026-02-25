@@ -60,6 +60,33 @@ The pipeline autonomously built a **Code Snippet Manager** (Express + TypeScript
 
 All 8 issues were closed after merge. Application code was removed after the run to reset for the next PRD (tagged [v1.0.0](https://github.com/samuelkahessay/agentic-pipeline/tree/v1.0.0)).
 
+## Showcase
+
+Each completed PRD run is archived with a git tag and a showcase entry.
+Full code is recoverable via `git checkout <tag> -- src/`.
+
+| Run | PRD | Tech Stack | Tag |
+|-----|-----|-----------|-----|
+| 01 | [Code Snippet Manager](showcase/01-code-snippet-manager/) | Express + TypeScript | [`v1.0.0`](https://github.com/samuelkahessay/agentic-pipeline/tree/v1.0.0) |
+| 02 | [Pipeline Observatory](showcase/02-pipeline-observatory/) | Next.js 14 + TypeScript | [`v2.0.0`](https://github.com/samuelkahessay/agentic-pipeline/tree/v2.0.0) |
+
+See [`showcase/`](showcase/) for detailed run reports.
+
+## PRD Lifecycle
+
+The pipeline follows a repeatable **drop → run → tag → showcase → reset** cycle:
+
+```
+1. Drop PRD          bash scripts/start-run.sh ~/my-prd.md
+2. Decompose         Comment /decompose on the PRD issue
+3. Pipeline runs     Agent implements all issues → PRs → merge (no-touch)
+4. Tag & archive     bash scripts/archive-run.sh 03 my-project v3.0.0
+5. Clean slate       Ready for the next PRD
+```
+
+**Permanent** (pipeline infrastructure): `.github/`, `scripts/`, `docs/prd/`, `showcase/`, `AGENTS.md`, `README.md`
+**Ephemeral** (removed on archive): `src/`, `package.json`, `tsconfig.json`, config files, `docs/plans/`
+
 ## How It Works
 
 1. **You write a PRD** — paste it in a GitHub Issue (or reference `docs/prd/sample-prd.md` for the format)
