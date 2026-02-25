@@ -1,15 +1,18 @@
 {
-  "last_run": "2026-02-25T23:09:00Z",
+  "last_run": "2026-02-25T23:36:37Z",
   "attempts": [
     {
       "issue": 63,
       "title": "Project Scaffold — Next.js 14 + TypeScript + Tailwind + Vitest",
       "branch": "repo-assist/issue-63-project-scaffold",
-      "status": "pr_created",
+      "pr": 74,
+      "status": "pr_open_awaiting_review",
+      "ci": "passing",
       "timestamp": "2026-02-25T23:09:00Z"
     }
   ],
   "completed_issues": [],
   "in_progress_issues": [63],
-  "notes": "New PRD run: DevCard — Developer Identity Card Generator. Issue #63 (project scaffold) PR created. Issues #64-#73 all depend on #63 being merged. Pipeline status issue recreated."
+  "blocked_issues": [64, 65, 66, 67, 68, 69, 70, 71, 72, 73],
+  "notes": "PR #74 open for issue #63 (project scaffold). CI passing (Vercel deployment success). No reviews yet. All other issues blocked until #63 merges. Run 2 checked status - no changes needed."
 }
