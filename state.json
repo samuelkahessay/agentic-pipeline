@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-02-25T21:11:28Z",
+  "last_run": "2026-02-25T21:41:36Z",
   "attempts": [
     {
       "issue": 57,
@@ -8,8 +8,16 @@
       "status": "pr_merged",
       "pr": 58,
       "timestamp": "2026-02-25T21:10:03Z"
+    },
+    {
+      "issue": 59,
+      "title": "Fix close-issues workflow — eliminate shell exposure to PR body content",
+      "branch": "repo-assist/issue-59-fix-close-issues-shell-exposure",
+      "status": "pr_created",
+      "timestamp": "2026-02-25T21:45:00Z"
     }
   ],
   "completed_issues": [30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 57],
-  "notes": "All Pipeline Observatory features completed. Issue #57 not auto-closed despite PR #58 merge."
+  "in_progress_issues": [59],
+  "notes": "Issue #59 PR created this run. Issue #60 is a tracking issue for previous failed push attempt — can be closed once #59 PR merges."
 }
