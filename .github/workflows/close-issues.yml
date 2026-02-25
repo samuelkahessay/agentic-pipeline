@@ -1,0 +1,56 @@
+#
+# Close Linked Issues — Closes issues referenced by "Closes #N" in merged PRs.
+#
+# Isolated from pr-reviewer to avoid concurrency group conflicts that
+# previously caused this job to be cancelled on every run.
+#
+
+name: "Close Linked Issues"
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  issues: write
+  pull-requests: read
+
+# Unique per-PR, never cancel — closing is idempotent and must complete
+concurrency:
+  group: "close-issues-${{ github.event.pull_request.number }}"
+  cancel-in-progress: false
+
+jobs:
+  close-issues:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true
+    steps:
+      - name: Close linked issues
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+
+          # Fetch PR body via gh CLI to avoid script injection from
+          # interpolating ${{ github.event.pull_request.body }} into shell
+          PR_BODY=$(gh pr view "$PR_NUMBER" --repo "${{ github.repository }}" --json body --jq '.body')
+
+          # Extract all "Closes #N" references (case-insensitive)
+          ISSUES=$(echo "$PR_BODY" | grep -oiP '(closes|close|fix|fixes|resolve|resolves)\s+#\K[0-9]+' || true)
+
+          if [ -z "$ISSUES" ]; then
+            echo "No issue-closing references found in PR #${PR_NUMBER} body. Nothing to close."
+            exit 0
+          fi
+
+          for ISSUE_NUM in $ISSUES; do
+            STATE=$(gh issue view "$ISSUE_NUM" --repo "${{ github.repository }}" --json state --jq '.state' 2>/dev/null || echo "UNKNOWN")
+            if [ "$STATE" = "OPEN" ]; then
+              gh issue close "$ISSUE_NUM" --repo "${{ github.repository }}" \
+                -c "Closed by merge of PR #${PR_NUMBER}." || \
+                echo "::warning::Could not close issue #${ISSUE_NUM}"
+              echo "Closed issue #${ISSUE_NUM}"
+            else
+              echo "Issue #${ISSUE_NUM} is already ${STATE}"
+            fi
+          done

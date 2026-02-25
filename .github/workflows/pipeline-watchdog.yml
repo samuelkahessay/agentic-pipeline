@@ -1,0 +1,189 @@
+#
+# Pipeline Watchdog — Cron-based stall detector that replaces the human supervisor.
+#
+# Detects two failure modes:
+#   1. Stalled PRs: Open [Pipeline] PRs with CHANGES_REQUESTED review and no
+#      activity for 30+ minutes → posts /repo-assist on linked issue
+#   2. Orphaned issues: Open pipeline issues with no linked open PR, stale for
+#      30+ minutes → dispatches repo-assist (Scheduled Mode)
+#
+# Safety:
+#   - Skips dispatch if repo-assist is already running
+#   - Concurrency group prevents overlapping watchdog runs
+#   - Posts completion notice when all pipeline items are resolved
+#
+
+name: "Pipeline Watchdog"
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"  # Every 30 minutes
+  workflow_dispatch: {}       # Manual trigger for testing
+
+permissions:
+  contents: read
+  pull-requests: read
+  issues: write
+  actions: write
+
+# Never cancel a running watchdog — overlapping runs just exit early
+concurrency:
+  group: "pipeline-watchdog"
+  cancel-in-progress: false
+
+jobs:
+  watchdog:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check for stalled pipeline items
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          REPO="${{ github.repository }}"
+          NOW=$(date -u +%s)
+          STALE_THRESHOLD=1800  # 30 minutes in seconds
+          ACTIONS_TAKEN=0
+
+          echo "=== Pipeline Watchdog — $(date -u) ==="
+
+          # ── Guard: skip if repo-assist is already running ──
+          RUNNING=$(gh run list --repo "$REPO" \
+            --workflow repo-assist.lock.yml \
+            --status in_progress \
+            --json databaseId --jq 'length' 2>/dev/null || echo "0")
+
+          QUEUED=$(gh run list --repo "$REPO" \
+            --workflow repo-assist.lock.yml \
+            --status queued \
+            --json databaseId --jq 'length' 2>/dev/null || echo "0")
+
+          ACTIVE=$((RUNNING + QUEUED))
+          if [ "$ACTIVE" -gt 0 ]; then
+            echo "repo-assist is already running ($ACTIVE active runs). Skipping dispatch to prevent flooding."
+            echo "Watchdog will check again on next cycle."
+            exit 0
+          fi
+
+          # ── Detect stalled PRs ──
+          # Find open [Pipeline] PRs with CHANGES_REQUESTED reviews
+          echo ""
+          echo "=== Checking for stalled PRs ==="
+
+          PIPELINE_PRS=$(gh pr list --repo "$REPO" --state open \
+            --json number,title,updatedAt \
+            --jq '[.[] | select(.title | startswith("[Pipeline]"))]')
+
+          echo "$PIPELINE_PRS" | jq -r '.[] | "PR #\(.number): \(.title) (updated: \(.updatedAt))"'
+
+          for PR_ROW in $(echo "$PIPELINE_PRS" | jq -c '.[]'); do
+            PR_NUM=$(echo "$PR_ROW" | jq -r '.number')
+            PR_UPDATED=$(echo "$PR_ROW" | jq -r '.updatedAt')
+
+            # Check staleness
+            PR_EPOCH=$(date -u -d "$PR_UPDATED" +%s 2>/dev/null || date -u -j -f "%Y-%m-%dT%H:%M:%SZ" "$PR_UPDATED" +%s 2>/dev/null || echo "0")
+            AGE=$((NOW - PR_EPOCH))
+            if [ "$AGE" -lt "$STALE_THRESHOLD" ]; then
+              echo "PR #${PR_NUM}: active (${AGE}s ago). Skipping."
+              continue
+            fi
+
+            # Check if latest review is CHANGES_REQUESTED
+            LATEST_REVIEW=$(gh api "/repos/${REPO}/pulls/${PR_NUM}/reviews" \
+              --jq '[.[] | select(.state == "CHANGES_REQUESTED")] | last | .state' 2>/dev/null || echo "")
+
+            if [ "$LATEST_REVIEW" != "CHANGES_REQUESTED" ]; then
+              echo "PR #${PR_NUM}: no CHANGES_REQUESTED review. Skipping."
+              continue
+            fi
+
+            echo "PR #${PR_NUM}: STALLED (CHANGES_REQUESTED, ${AGE}s since last update)"
+
+            # Extract linked issue number from PR body
+            PR_BODY=$(gh pr view "$PR_NUM" --repo "$REPO" --json body --jq '.body')
+            ISSUE_NUM=$(echo "$PR_BODY" | grep -oiP '(closes|close|fix|fixes|resolve|resolves)\s+#\K[0-9]+' | head -1 || true)
+
+            if [ -n "$ISSUE_NUM" ]; then
+              echo "Posting /repo-assist on issue #${ISSUE_NUM} for stalled PR #${PR_NUM}"
+              gh issue comment "$ISSUE_NUM" --repo "$REPO" \
+                --body "/repo-assist Fix review feedback on PR #${PR_NUM}. The PR has CHANGES_REQUESTED and has been stalled for $((AGE / 60)) minutes. Read the review comments on PR #${PR_NUM}, implement all requested changes, push fixes to the PR branch, and comment what you changed." || \
+                echo "::warning::Could not post /repo-assist on issue #${ISSUE_NUM}"
+              ACTIONS_TAKEN=$((ACTIONS_TAKEN + 1))
+              # Only handle one stalled PR per watchdog cycle to avoid flooding
+              break
+            else
+              echo "::warning::PR #${PR_NUM} has no linked issue — cannot dispatch fix"
+            fi
+          done
+
+          # ── Detect orphaned issues ──
+          echo ""
+          echo "=== Checking for orphaned issues ==="
+
+          # Get all open pipeline issues
+          PIPELINE_ISSUES=$(gh issue list --repo "$REPO" \
+            --label pipeline --state open \
+            --json number,title,updatedAt)
+
+          # Get all open pipeline PR numbers and their linked issues
+          LINKED_ISSUES=$(echo "$PIPELINE_PRS" | jq -r '.[].number' | while read -r PR_N; do
+            gh pr view "$PR_N" --repo "$REPO" --json body --jq '.body' 2>/dev/null | \
+              grep -oiP '(closes|close|fix|fixes|resolve|resolves)\s+#\K[0-9]+' || true
+          done | sort -u)
+
+          for ISSUE_ROW in $(echo "$PIPELINE_ISSUES" | jq -c '.[]'); do
+            ISSUE_NUM=$(echo "$ISSUE_ROW" | jq -r '.number')
+            ISSUE_UPDATED=$(echo "$ISSUE_ROW" | jq -r '.updatedAt')
+
+            # Skip if recently active
+            ISSUE_EPOCH=$(date -u -d "$ISSUE_UPDATED" +%s 2>/dev/null || date -u -j -f "%Y-%m-%dT%H:%M:%SZ" "$ISSUE_UPDATED" +%s 2>/dev/null || echo "0")
+            AGE=$((NOW - ISSUE_EPOCH))
+            if [ "$AGE" -lt "$STALE_THRESHOLD" ]; then
+              echo "Issue #${ISSUE_NUM}: active (${AGE}s ago). Skipping."
+              continue
+            fi
+
+            # Skip if there's already an open PR linked to this issue
+            if echo "$LINKED_ISSUES" | grep -q "^${ISSUE_NUM}$"; then
+              echo "Issue #${ISSUE_NUM}: has linked open PR. Skipping."
+              continue
+            fi
+
+            echo "Issue #${ISSUE_NUM}: ORPHANED (no linked PR, ${AGE}s since last update)"
+
+            # Already took action on a stalled PR this cycle — don't also dispatch for orphans
+            if [ "$ACTIONS_TAKEN" -gt 0 ]; then
+              echo "Already dispatched this cycle. Will handle on next run."
+              break
+            fi
+
+            echo "Dispatching repo-assist for orphaned issue #${ISSUE_NUM}"
+            gh workflow run repo-assist.lock.yml --repo "$REPO" || \
+              echo "::warning::Could not dispatch repo-assist"
+            ACTIONS_TAKEN=$((ACTIONS_TAKEN + 1))
+            # One dispatch per cycle
+            break
+          done
+
+          # ── Completion check ──
+          echo ""
+          echo "=== Completion check ==="
+
+          TOTAL_OPEN_ISSUES=$(echo "$PIPELINE_ISSUES" | jq 'length')
+          TOTAL_OPEN_PRS=$(echo "$PIPELINE_PRS" | jq 'length')
+          TOTAL=$((TOTAL_OPEN_ISSUES + TOTAL_OPEN_PRS))
+
+          if [ "$TOTAL" -eq 0 ]; then
+            echo "All pipeline items resolved! Posting completion notice."
+            # Find the status issue to post on
+            STATUS_ISSUE=$(gh issue list --repo "$REPO" \
+              --label pipeline --state open \
+              --json number,title \
+              --jq '[.[] | select(.title | contains("Status"))] | first | .number' 2>/dev/null || echo "")
+            if [ -n "$STATUS_ISSUE" ] && [ "$STATUS_ISSUE" != "null" ]; then
+              gh issue comment "$STATUS_ISSUE" --repo "$REPO" \
+                --body "Pipeline complete! All issues closed, all PRs merged. Watchdog signing off." || true
+            fi
+          else
+            echo "Pipeline active: ${TOTAL_OPEN_ISSUES} open issues, ${TOTAL_OPEN_PRS} open PRs."
+            echo "Actions taken this cycle: ${ACTIONS_TAKEN}"
+          fi

@@ -11,7 +11,7 @@ name: "PR Reviewer"
 
 on:
   pull_request:
-    types: [opened, synchronize, ready_for_review, closed]
+    types: [opened, synchronize, ready_for_review]
   workflow_dispatch:
     inputs:
       pr_number:
@@ -30,47 +30,12 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Close linked issues when a PR is merged (GITHUB_TOKEN can't trigger Closes #N auto-close)
-  close-issues:
-    runs-on: ubuntu-latest
-    if: |
-      github.event.action == 'closed' &&
-      github.event.pull_request.merged == true
-    steps:
-      - name: Close linked issues
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          PR_NUMBER="${{ github.event.pull_request.number }}"
-          PR_BODY="${{ github.event.pull_request.body }}"
-
-          # Extract all "Closes #N" references
-          ISSUES=$(echo "$PR_BODY" | grep -oP 'Closes #\K[0-9]+' || true)
-
-          if [ -z "$ISSUES" ]; then
-            echo "No 'Closes #N' found in PR body. Nothing to close."
-            exit 0
-          fi
-
-          for ISSUE_NUM in $ISSUES; do
-            STATE=$(gh issue view "$ISSUE_NUM" --repo "${{ github.repository }}" --json state --jq '.state' 2>/dev/null || echo "UNKNOWN")
-            if [ "$STATE" = "OPEN" ]; then
-              gh issue close "$ISSUE_NUM" --repo "${{ github.repository }}" \
-                -c "Closed by merge of PR #${PR_NUMBER}." || \
-                echo "::warning::Could not close issue #${ISSUE_NUM}"
-              echo "Closed issue #${ISSUE_NUM}"
-            else
-              echo "Issue #${ISSUE_NUM} is already ${STATE}"
-            fi
-          done
-
   review:
     runs-on: ubuntu-latest
-    # Review all PRs from this repo (skip forks for security, skip closed PRs)
+    # Review all PRs from this repo (skip forks for security)
     if: |
-      github.event.action != 'closed' &&
-      ((github.event_name == 'workflow_dispatch') ||
-      (github.event.pull_request.head.repo.full_name == github.repository))
+      (github.event_name == 'workflow_dispatch') ||
+      (github.event.pull_request.head.repo.full_name == github.repository)
 
     steps:
       - name: Checkout repository
@@ -297,14 +262,22 @@ jobs:
           # Final fallback if all models fail
           if [ -z "$REVIEW_OUTPUT" ]; then
             echo "::warning::All AI models failed, falling back to basic review"
+            PR_TITLE="${{ steps.pr.outputs.title }}"
             if [ "${{ steps.ci.outputs.status }}" = "failing" ]; then
               REVIEW_OUTPUT="DECISION: REQUEST_CHANGES
           SUMMARY: CI checks are failing. Please fix CI failures before this PR can be approved.
           ISSUES:
           - CI is currently failing (${{ steps.ci.outputs.summary }})"
+            elif [[ "$PR_TITLE" == "[Pipeline]"* ]]; then
+              # Pipeline PRs must never be rubber-stamped — no human is watching
+              REVIEW_OUTPUT="DECISION: REQUEST_CHANGES
+          SUMMARY: AI review unavailable for pipeline PR. Retry needed — all models failed.
+          ISSUES:
+          - AI code review was unavailable (all models returned errors). Pipeline PRs require AI review before merge."
             else
+              # Non-pipeline (human) PRs: approve so status check passes, human will do real review
               REVIEW_OUTPUT="DECISION: APPROVE
-          SUMMARY: Automated review — CI checks are passing. AI review was unavailable.
+          SUMMARY: Automated review — CI checks are passing. AI review was unavailable; human review recommended.
           ISSUES:
           None"
             fi
@@ -317,6 +290,13 @@ jobs:
           # Parse decision
           DECISION=$(grep -oP '^DECISION:\s*\K\S+' review_output.txt | head -1 || echo "REQUEST_CHANGES")
           SUMMARY=$(grep -oP '^SUMMARY:\s*\K.*' review_output.txt | head -1 || echo "Review completed.")
+
+          # Validate decision — only APPROVE and REQUEST_CHANGES are valid
+          if [ "$DECISION" != "APPROVE" ] && [ "$DECISION" != "REQUEST_CHANGES" ]; then
+            echo "::warning::Unrecognized decision '$DECISION', defaulting to REQUEST_CHANGES"
+            DECISION="REQUEST_CHANGES"
+          fi
+
           echo "decision=${DECISION}" >> "$GITHUB_OUTPUT"
           echo "summary=${SUMMARY}" >> "$GITHUB_OUTPUT"
 
@@ -397,7 +377,7 @@ jobs:
           fi
 
       - name: Submit review — REQUEST_CHANGES
-        if: steps.review.outputs.decision != 'APPROVE'
+        if: steps.review.outputs.decision == 'REQUEST_CHANGES'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
