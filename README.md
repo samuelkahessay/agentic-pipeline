@@ -2,14 +2,81 @@
 
 Autonomous GitHub development pipeline powered by [gh-aw](https://github.com/github/gh-aw).
 
-Write a PRD → AI decomposes it into issues → AI implements each issue → Draft PRs open for review.
+Write a PRD. AI decomposes it into issues, implements each one, reviews its own PRs, and merges — looping until the entire PRD is shipped.
+
+## Architecture
+
+```
+  You write a PRD
+        |
+        |  /decompose
+        v
+  prd-decomposer ──> GitHub Issues (atomic, dependency-ordered)
+                           |
+                           v
+                      repo-assist ──> Pull Requests (branched, tested)
+                           |               |
+                           |               v
+                           |         pr-reviewer (AI code review)
+                           |               |
+                           |          APPROVE + auto-merge (squash)
+                           |               |
+                           |               v
+                           +──── re-dispatch if issues remain
+```
+
+Each cycle: repo-assist implements an issue as a PR, pr-reviewer approves and squash-merges it (auto-closing the linked issue via `Closes #N`), then re-dispatches repo-assist for the next issue. The loop runs until every issue from the PRD is done.
+
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full design.
+
+## Demo: First Pipeline Run
+
+The pipeline autonomously built a **Code Snippet Manager** (Express + TypeScript web app) from a single PRD — 8 features, zero human intervention.
+
+**PRD decomposition** — one `/decompose` command created 8 atomic issues:
+
+| Issue | Feature |
+|-------|---------|
+| [#7](https://github.com/samuelkahessay/agentic-pipeline/issues/7) | Scaffold Express + TypeScript Project |
+| [#8](https://github.com/samuelkahessay/agentic-pipeline/issues/8) | Build Web UI: Snippet List & Dashboard |
+| [#9](https://github.com/samuelkahessay/agentic-pipeline/issues/9) | Build Web UI: Snippet Detail, Create & Edit Pages |
+| [#10](https://github.com/samuelkahessay/agentic-pipeline/issues/10) | Implement Snippet Data Model & In-Memory Store |
+| [#11](https://github.com/samuelkahessay/agentic-pipeline/issues/11) | Add Tag Management API Endpoints |
+| [#12](https://github.com/samuelkahessay/agentic-pipeline/issues/12) | Seed Example Snippets & Landing Experience |
+| [#13](https://github.com/samuelkahessay/agentic-pipeline/issues/13) | Create CRUD API Endpoints for Snippets |
+| [#14](https://github.com/samuelkahessay/agentic-pipeline/issues/14) | Implement Full-Text Search API for Snippets |
+
+**Implementation** — repo-assist created PRs for each, pr-reviewer approved with real AI reviews (GPT-5 via GitHub Models API), and auto-merge shipped them:
+
+| PR | What it shipped |
+|----|----------------|
+| [#16](https://github.com/samuelkahessay/agentic-pipeline/pull/16) | Express + TypeScript scaffold |
+| [#17](https://github.com/samuelkahessay/agentic-pipeline/pull/17) | Snippet data model & store |
+| [#18](https://github.com/samuelkahessay/agentic-pipeline/pull/18) | CRUD API endpoints |
+| [#20](https://github.com/samuelkahessay/agentic-pipeline/pull/20) | Tag management + full-text search |
+| [#21](https://github.com/samuelkahessay/agentic-pipeline/pull/21) | Snippet list & dashboard UI |
+| [#26](https://github.com/samuelkahessay/agentic-pipeline/pull/26) | Detail, create & edit pages |
+| [#27](https://github.com/samuelkahessay/agentic-pipeline/pull/27) | Seed data & landing experience |
+
+All 8 issues were auto-closed via squash merge. Application code was removed after the run to reset for the next PRD (tagged [v1.0.0](https://github.com/samuelkahessay/agentic-pipeline/tree/v1.0.0)).
 
 ## How It Works
 
-1. **You write a PRD** and push it to `docs/prd/`, or paste it in an issue
-2. **`/decompose`** — AI reads the PRD, creates GitHub Issues with acceptance criteria
-3. **`repo-assist`** — AI picks up issues daily, writes code, opens draft PRs
-4. **You review** and merge. Pipeline tracks progress via a status dashboard.
+1. **You write a PRD** — paste it in a GitHub Issue (or reference `docs/prd/sample-prd.md` for the format)
+2. **`/decompose`** — AI reads the PRD, creates issues with acceptance criteria and dependency ordering
+3. **`repo-assist`** — AI implements issues as PRs (branches from main, writes code, runs tests)
+4. **`pr-reviewer`** — AI reviews each PR against the issue's acceptance criteria, approves or requests changes
+5. **Auto-merge** — approved `[Pipeline]` PRs are squash-merged, closing the linked issue
+6. **Re-dispatch** — pr-reviewer triggers repo-assist again for the next issue, looping until done
+
+## Workflows
+
+| Workflow | Type | Trigger | What it does |
+|----------|------|---------|--------------|
+| `prd-decomposer` | Agentic | `/decompose` command | Parses PRD into atomic issues |
+| `repo-assist` | Agentic | Dispatch + daily schedule | Implements issues as PRs |
+| `pr-reviewer` | Standard GHA | PR opened/updated | AI code review + auto-merge |
+| `pipeline-status` | Agentic | Daily schedule | Updates rolling status issue |
 
 ## Quick Start
 
@@ -21,35 +88,25 @@ cd agentic-pipeline
 # 2. Install gh-aw
 gh extension install github/gh-aw
 
-# 3. Bootstrap (creates labels, compiles workflows)
+# 3. Bootstrap (creates labels, compiles workflows, seeds memory)
 bash scripts/bootstrap.sh
 
-# 4. Configure AI engine
+# 4. Configure secrets
 gh aw secrets bootstrap
+# Also set: MODELS_TOKEN (PAT with models:read scope) for AI code review
 
 # 5. Push
 git push
 
-# 6. Test: create an issue with the sample PRD content, then comment:
-#    /decompose
-#
-# Or trigger directly:
-#    gh aw run prd-decomposer
+# 6. Create an issue with your PRD, then comment: /decompose
 ```
-
-## Workflows
-
-| Workflow | Trigger | What it does |
-|----------|---------|--------------|
-| `prd-decomposer` | `/decompose` command | Parses PRD → creates issues |
-| `repo-assist` | Daily + `/repo-assist` | Implements issues → opens PRs |
-| `pipeline-status` | Daily | Updates progress dashboard |
 
 ## Requirements
 
 - GitHub account with Copilot subscription
 - GitHub CLI (`gh`) v2.0+
 - `gh-aw` extension installed
+- `MODELS_TOKEN` secret (GitHub PAT with `models:read` scope)
 
 ## License
 
