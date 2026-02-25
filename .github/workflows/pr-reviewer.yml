@@ -319,7 +319,7 @@ jobs:
           OPEN_INFRA=$(gh issue list --repo "${{ github.repository }}" \
             --label pipeline --label infra --state open --json number --jq 'length')
           OPEN_PRS=$(gh pr list --repo "${{ github.repository }}" \
-            --state open --json number --jq '[.[] | select(.title | startswith("[Pipeline]"))] | length')
+            --state open --json number,title --jq '[.[] | select(.title // "" | startswith("[Pipeline]"))] | length')
           TOTAL=$((OPEN_ISSUES + OPEN_INFRA + OPEN_PRS))
 
           if [ "$TOTAL" -gt 0 ]; then
