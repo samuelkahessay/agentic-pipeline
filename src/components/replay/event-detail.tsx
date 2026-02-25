@@ -30,7 +30,7 @@ export function EventDetail({ event, data }: EventDetailProps) {
       return (
         <>
           <h3 className="text-white font-semibold mb-2">{issue.title}</h3>
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-1.5 mb-2">
             {issue.labels.map((label) => (
               <span
                 key={label.name}
@@ -45,6 +45,11 @@ export function EventDetail({ event, data }: EventDetailProps) {
               </span>
             ))}
           </div>
+          {issue.body && (
+            <p className="text-gray-400 text-sm leading-relaxed line-clamp-4">
+              {issue.body.slice(0, 500)}
+            </p>
+          )}
         </>
       );
     }
@@ -53,6 +58,8 @@ export function EventDetail({ event, data }: EventDetailProps) {
       const num = parseInt(event.id.replace("pr-opened-", ""), 10);
       const pr = data.pullRequests.find((p) => p.number === num);
       if (!pr) return <p className="text-gray-400 text-sm">{event.title}</p>;
+      const closingMatch = pr.body?.match(/Closes\s+#(\d+)/i);
+      const linkedIssue = closingMatch ? parseInt(closingMatch[1], 10) : null;
       return (
         <>
           <h3 className="text-white font-semibold mb-2">{pr.title}</h3>
@@ -60,6 +67,9 @@ export function EventDetail({ event, data }: EventDetailProps) {
             <span className="text-green-400 font-mono">+{pr.additions}</span>
             <span className="text-red-400 font-mono">-{pr.deletions}</span>
             <span className="text-gray-400">{pr.changedFiles} file{pr.changedFiles !== 1 ? "s" : ""} changed</span>
+            {linkedIssue && (
+              <span className="text-blue-400 font-mono">Closes #{linkedIssue}</span>
+            )}
           </div>
         </>
       );

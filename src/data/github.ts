@@ -41,6 +41,7 @@ export async function fetchFromGitHub(): Promise<PipelineData> {
         name: l.name ?? "",
         color: l.color ?? "",
       })),
+      body: i.body ?? undefined,
     }));
 
   const pullRequests: PipelinePR[] = await Promise.all(
@@ -65,6 +66,7 @@ export async function fetchFromGitHub(): Promise<PipelineData> {
           body: r.body ?? "",
           submittedAt: r.submitted_at ?? "",
         })),
+        body: pr.body ?? undefined,
       };
     })
   );

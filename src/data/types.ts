@@ -10,6 +10,7 @@ export interface PipelineIssue {
   createdAt: string;
   closedAt: string | null;
   labels: IssueLabel[];
+  body?: string;
 }
 
 export interface PipelineReview {
@@ -29,6 +30,7 @@ export interface PipelinePR {
   deletions: number;
   changedFiles: number;
   reviews: PipelineReview[];
+  body?: string;
 }
 
 export interface WorkflowRun {
