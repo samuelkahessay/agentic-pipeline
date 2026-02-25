@@ -1,6 +1,7 @@
 import { getPipelineData } from "@/data/index";
 import { CycleCard, groupIntoCycles } from "@/components/forensics/cycle-card";
 import { ReviewInspector } from "@/components/forensics/review-inspector";
+import { FailureTimeline } from "@/components/forensics/failure-timeline";
 
 export default async function ForensicsPage() {
   const data = await getPipelineData();
@@ -28,6 +29,9 @@ export default async function ForensicsPage() {
           <h2 className="text-xl font-semibold text-white mb-4">AI Review Inspector</h2>
           <ReviewInspector pullRequests={data.pullRequests} />
         </section>
+
+        {/* Failure Timeline */}
+        <FailureTimeline />
       </div>
     </main>
   );
