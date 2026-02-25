@@ -58,7 +58,7 @@ The pipeline autonomously built a **Code Snippet Manager** (Express + TypeScript
 | [#26](https://github.com/samuelkahessay/agentic-pipeline/pull/26) | Detail, create & edit pages |
 | [#27](https://github.com/samuelkahessay/agentic-pipeline/pull/27) | Seed data & landing experience |
 
-All 8 issues were auto-closed via squash merge. Application code was removed after the run to reset for the next PRD (tagged [v1.0.0](https://github.com/samuelkahessay/agentic-pipeline/tree/v1.0.0)).
+All 8 issues were closed after merge. Application code was removed after the run to reset for the next PRD (tagged [v1.0.0](https://github.com/samuelkahessay/agentic-pipeline/tree/v1.0.0)).
 
 ## How It Works
 
