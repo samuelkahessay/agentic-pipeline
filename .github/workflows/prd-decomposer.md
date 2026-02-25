@@ -23,13 +23,16 @@ network: defaults
 safe-outputs:
   create-issue:
     title-prefix: "[Pipeline] "
-    labels: [feature, test, infra, docs, bug, pipeline]
+    labels: [pipeline]
     max: 20
   add-comment:
     max: 5
   add-labels:
     allowed: [feature, test, infra, docs, bug, pipeline, blocked, ready]
     max: 40
+  dispatch-workflow:
+    workflows: [repo-assist]
+    max: 1
 
 tools:
   bash: true
@@ -63,18 +66,21 @@ If the instructions above contain a URL or file path, fetch/read that content as
    - A clear, descriptive title
    - A `## Description` section explaining what to build and why
    - A `## Acceptance Criteria` section as a markdown checklist
-   - A `## Dependencies` section listing issue numbers that must be completed first (use "Depends on [Pipeline] <title>" for issues being created in this batch — the agent will resolve numbers)
+   - A `## Dependencies` section (use "Depends on #aw_ID" for issues in this batch)
    - A `## Technical Notes` section with relevant file paths, API signatures, or architectural guidance
 
-5. **Label each issue** with exactly one type: `feature`, `test`, `infra`, or `docs`.
+5. **Label each issue** by passing a `labels` array with exactly one type: `feature`, `test`, `infra`, `docs`, or `bug`. The `pipeline` label is added automatically — do NOT include it.
 
 6. **Create issues in dependency order:** infrastructure first, then core features, then dependent features, then tests/docs last.
 
-7. **Add the `pipeline` label** to all issues so they can be tracked.
+7. **Use valid `temporary_id` values** for cross-referencing issues. Format: `aw_` + 3-8 alphanumeric chars (A-Za-z0-9 only). Use short codes like `aw_task1`, `aw_task2`, `aw_feat01`. Do NOT use `aw_create_task` or `aw_scaffold_project`. Reference dependencies with `#aw_task1` syntax.
 
 ## Output Format
 
-After creating all issues, post a summary comment on the original issue/discussion with:
+After creating all issues:
+
+1. **Dispatch the `repo-assist` workflow** to begin implementation automatically.
+2. Post a summary comment on the original issue/discussion with:
 
 ```
 ## Pipeline Tasks Created
@@ -82,10 +88,10 @@ After creating all issues, post a summary comment on the original issue/discussi
 | # | Title | Type | Depends On |
 |---|-------|------|------------|
 | #1 | ... | infra | — |
-| #2 | ... | feature | #1 |
+| #2 | ... | feature | #aw_task1 |
 ...
 
-Total: N issues created. Run `/repo-assist` to start implementation.
+Total: N issues created. Implementation starting automatically.
 ```
 
 ## Quality Checklist
@@ -96,3 +102,4 @@ Before creating each issue, verify:
 - [ ] Dependencies are accurate
 - [ ] Technical notes reference actual project patterns
 - [ ] Issue is small enough for a single PR
+- [ ] temporary_id is `aw_` + 3-8 alphanumeric chars only (e.g., `aw_task1`)

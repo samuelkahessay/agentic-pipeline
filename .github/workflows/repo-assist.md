@@ -28,7 +28,7 @@ network:
 
 safe-outputs:
   create-pull-request:
-    draft: true
+    draft: false
     title-prefix: "[Pipeline] "
     labels: [automation, pipeline]
     max: 4
@@ -52,6 +52,9 @@ safe-outputs:
     allowed: [ready, in-progress, blocked]
     max: 10
     target: "*"
+  dispatch-workflow:
+    workflows: [pr-reviewer]
+    max: 4
 
 tools:
   web-fetch:
@@ -108,11 +111,12 @@ Each run, work on 2-4 tasks from the list below. Use round-robin scheduling base
    d. Implement the feature/task described in the issue. Follow acceptance criteria exactly.
    e. **Build and test (required)**: Run the build and test commands from AGENTS.md. Do not create a PR if tests fail due to your changes.
    f. Add tests if the issue type is `feature` or `infra` and tests aren't explicitly excluded.
-   g. Create a draft PR with:
+   g. Create a PR with:
       - Title matching the issue title
       - Body containing: `Closes #N`, description of changes, and test results
       - AI disclosure: "This PR was created by Pipeline Assistant."
    h. Label the source issue `in-progress`.
+   i. After creating the PR, dispatch the `pr-reviewer` workflow so it is reviewed automatically.
 4. Update memory with attempts and outcomes.
 
 ### Task 2: Maintain Pipeline Pull Requests
