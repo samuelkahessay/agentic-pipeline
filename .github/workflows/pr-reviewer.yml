@@ -200,10 +200,22 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Use GitHub Models via gh models run
-          REVIEW_OUTPUT=$(gh models run gpt-4.1 < review_prompt.txt 2>&1) || {
-            echo "::warning::AI review failed, falling back to basic review"
-            # Fallback: approve if CI passes, request changes if CI fails
+          # Use GitHub Models — cascade through model tiers
+          REVIEW_OUTPUT=""
+          for MODEL in openai/gpt-5 openai/gpt-5-mini openai/gpt-5-nano; do
+            echo "Trying model: $MODEL"
+            if REVIEW_OUTPUT=$(gh models run "$MODEL" < review_prompt.txt 2>&1); then
+              echo "Success with $MODEL"
+              break
+            else
+              echo "::warning::$MODEL failed, trying next model..."
+              REVIEW_OUTPUT=""
+            fi
+          done
+
+          # Final fallback if all models fail
+          if [ -z "$REVIEW_OUTPUT" ]; then
+            echo "::warning::All AI models failed, falling back to basic review"
             if [ "${{ steps.ci.outputs.status }}" = "failing" ]; then
               REVIEW_OUTPUT="DECISION: REQUEST_CHANGES
           SUMMARY: CI checks are failing. Please fix CI failures before this PR can be approved.
@@ -215,7 +227,7 @@ jobs:
           ISSUES:
           None"
             fi
-          }
+          fi
 
           # Write to file for parsing
           echo "$REVIEW_OUTPUT" > review_output.txt
