@@ -5,29 +5,18 @@ This repository is managed by an agentic pipeline. Issues are created from PRDs
 by the prd-decomposer workflow, and implemented by the repo-assist workflow.
 
 ## Coding Standards
-- Write tests for all new functionality (Vitest + @testing-library/react)
+- Write tests for all new functionality
 - Follow existing naming conventions
 - Keep functions small and single-purpose
 - Add comments only for non-obvious logic
-- Use TypeScript strict mode (no `any` types)
-- Components organized by view: src/components/simulator/, replay/, forensics/
-- Use Next.js App Router conventions (layout.tsx, page.tsx, loading.tsx)
-- Use Framer Motion for animations; respect prefers-reduced-motion
-- Use Tailwind CSS for styling; no inline styles or separate CSS files beyond globals.css
+- Use TypeScript strict mode when the PRD specifies TypeScript
 
 ## Build & Test
-- Dev: `npm run dev`
-- Build: `npm run build`
-- Test: `npm test`
-- Start: `npm start`
+Check the active PRD and package.json for build/test commands.
+When no PRD is active, there is no application code to build.
 
-## Tech Stack (Active PRD: Pipeline Observatory)
-- Framework: Next.js 14 (App Router)
-- Language: TypeScript (strict mode)
-- Styling: Tailwind CSS (dark theme)
-- Animation: Framer Motion
-- Data: @octokit/rest (build-time) with static JSON fixture fallback
-- Testing: Vitest + @testing-library/react
+## Tech Stack
+Determined by the active PRD. The pipeline is tech-stack agnostic.
 
 ## PR Requirements
 - PR body must include `Closes #N` referencing the source issue
