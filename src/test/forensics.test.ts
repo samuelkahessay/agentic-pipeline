@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { groupIntoCycles } from "@/components/forensics/cycle-card";
+import { failures } from "@/data/failures";
 import type { PipelinePR, PipelineIssue } from "@/data/types";
 
 function makeIssue(overrides: Partial<PipelineIssue> = {}): PipelineIssue {
@@ -90,5 +91,27 @@ describe("groupIntoCycles", () => {
     const cycles = groupIntoCycles(prs, []);
     expect(cycles[0].cycleNumber).toBe(1);
     expect(cycles[1].cycleNumber).toBe(2);
+  });
+});
+
+describe("failures data", () => {
+  it("contains exactly 11 failure entries", () => {
+    expect(failures).toHaveLength(11);
+  });
+
+  it("all entries have required fields", () => {
+    for (const f of failures) {
+      expect(f.id).toBeTypeOf("number");
+      expect(f.timestamp).toBeTypeOf("string");
+      expect(f.title).toBeTypeOf("string");
+      expect(f.rootCause).toBeTypeOf("string");
+      expect(f.resolution).toBeTypeOf("string");
+      expect(["workflow", "config", "api", "race-condition"]).toContain(f.category);
+    }
+  });
+
+  it("ids are 1 through 11", () => {
+    const ids = failures.map((f) => f.id).sort((a, b) => a - b);
+    expect(ids).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
   });
 });
