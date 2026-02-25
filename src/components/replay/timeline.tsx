@@ -1,7 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { AnimatePresence } from "framer-motion";
 import type { PipelineData } from "@/data/types";
+import { EventDetail } from "./event-detail";
+import { TimelineControls } from "./timeline-controls";
 
 export interface TimelineEvent {
   id: string;
@@ -96,13 +99,74 @@ interface TimelineProps {
 
 export function Timeline({ data }: TimelineProps) {
   const [selected, setSelected] = useState<string | null>(null);
-  const events = buildEvents(data);
+  const [playing, setPlaying] = useState(false);
+  const [speed, setSpeed] = useState<1 | 2 | 4>(1);
+  const [filters, setFilters] = useState<Record<TimelineEvent["type"], boolean>>({
+    issue: true,
+    pr: true,
+    review: true,
+    merge: true,
+  });
+
+  const allEvents = buildEvents(data);
+  const events = allEvents.filter((e) => filters[e.type]);
   const ticks = buildTicks();
 
-  const issueCount = events.filter((e) => e.type === "issue").length;
-  const prCount = events.filter((e) => e.type === "pr").length;
-  const reviewCount = events.filter((e) => e.type === "review").length;
-  const mergeCount = events.filter((e) => e.type === "merge").length;
+  const issueCount = allEvents.filter((e) => e.type === "issue").length;
+  const prCount = allEvents.filter((e) => e.type === "pr").length;
+  const reviewCount = allEvents.filter((e) => e.type === "review").length;
+  const mergeCount = allEvents.filter((e) => e.type === "merge").length;
+
+  const goPrev = useCallback(() => {
+    if (events.length === 0) return;
+    const idx = events.findIndex((e) => e.id === selected);
+    const next = idx <= 0 ? events.length - 1 : idx - 1;
+    setSelected(events[next].id);
+  }, [events, selected]);
+
+  const goNext = useCallback(() => {
+    if (events.length === 0) return;
+    const idx = events.findIndex((e) => e.id === selected);
+    const next = idx < events.length - 1 ? idx + 1 : 0;
+    setSelected(events[next].id);
+  }, [events, selected]);
+
+  // Auto-play
+  useEffect(() => {
+    if (!playing) return;
+    const delay = Math.round(2000 / speed);
+    const id = setInterval(() => {
+      setSelected((prev) => {
+        if (events.length === 0) return prev;
+        const idx = events.findIndex((e) => e.id === prev);
+        const next = idx < events.length - 1 ? idx + 1 : 0;
+        return events[next].id;
+      });
+    }, delay);
+    return () => clearInterval(id);
+  }, [playing, speed, events]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.code === "Space" && !(e.target instanceof HTMLButtonElement)) {
+        e.preventDefault();
+        setPlaying((p) => !p);
+      } else if (e.code === "ArrowLeft") {
+        e.preventDefault();
+        goPrev();
+      } else if (e.code === "ArrowRight") {
+        e.preventDefault();
+        goNext();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [goPrev, goNext]);
+
+  const toggleFilter = (type: TimelineEvent["type"]) => {
+    setFilters((prev) => ({ ...prev, [type]: !prev[type] }));
+  };
 
   // Duration in minutes
   const durationMins = Math.round(DURATION / 60000);
@@ -117,6 +181,18 @@ export function Timeline({ data }: TimelineProps) {
         {durationHrs}h {durationRemMins}m total
       </div>
 
+      {/* Playback controls + filter toggles */}
+      <TimelineControls
+        playing={playing}
+        speed={speed}
+        filters={filters}
+        onPlayPause={() => setPlaying((p) => !p)}
+        onSpeedChange={setSpeed}
+        onPrev={goPrev}
+        onNext={goNext}
+        onFilterToggle={toggleFilter}
+      />
+
       {/* Scrollable timeline */}
       <div
         className="overflow-x-auto rounded-lg border border-gray-800 bg-gray-900 p-4"
@@ -125,7 +201,7 @@ export function Timeline({ data }: TimelineProps) {
       >
         <div className="relative min-w-[2400px] h-32">
           {/* Time axis ticks */}
-          {ticks.map((tick, i) => {
+          {ticks.map((tick) => {
             const d = new Date(`2026-02-25T${tick}:00Z`);
             const x = ((d.getTime() - START_TIME) / DURATION) * 100;
             return (
@@ -139,7 +215,7 @@ export function Timeline({ data }: TimelineProps) {
           {/* Axis baseline */}
           <div className="absolute top-3 left-0 right-0 h-px bg-gray-700" />
 
-          {/* Event dots */}
+          {/* Event dots — only visible (filtered) events */}
           {events.map((event) => {
             const x = pct(event.timestamp);
             const isSelected = selected === event.id;
@@ -181,20 +257,13 @@ export function Timeline({ data }: TimelineProps) {
         </div>
       </div>
 
-      {/* Selected event details */}
-      {selected && (
-        <div className="bg-gray-800 rounded-lg px-6 py-3 text-sm text-gray-200">
-          {(() => {
-            const ev = events.find((e) => e.id === selected)!;
-            return (
-              <>
-                <span className="font-medium text-white">{fmtTime(ev.timestamp)}</span> —{" "}
-                {ev.title}
-              </>
-            );
-          })()}
-        </div>
-      )}
+      {/* Event detail panel with AnimatePresence for enter/exit animations */}
+      <AnimatePresence mode="wait">
+        {selected && (() => {
+          const ev = allEvents.find((e) => e.id === selected);
+          return ev ? <EventDetail key={ev.id} event={ev} data={data} /> : null;
+        })()}
+      </AnimatePresence>
     </div>
   );
 }

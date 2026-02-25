@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent, within } from "@testing-library/react";
 import { Timeline } from "@/components/replay/timeline";
 import type { PipelineData } from "@/data/types";
 
@@ -69,7 +69,9 @@ describe("Timeline", () => {
     render(<Timeline data={mockData} />);
 
     // 2 issues + 2 PR opens + 2 PR merges + 2 reviews = 8 events
-    const dots = screen.getAllByRole("button");
+    // Scope to the timeline region to exclude control buttons
+    const region = screen.getByRole("region", { name: /pipeline event timeline/i });
+    const dots = within(region).getAllByRole("button");
     expect(dots.length).toBe(8);
   });
 
@@ -85,5 +87,21 @@ describe("Timeline", () => {
     expect(
       screen.getByRole("region", { name: /pipeline event timeline/i })
     ).toBeInTheDocument();
+  });
+
+  it("toggling the Issues filter hides issue event dots from the timeline", () => {
+    render(<Timeline data={mockData} />);
+
+    const region = screen.getByRole("region", { name: /pipeline event timeline/i });
+
+    // Initially all 8 event buttons are visible inside the timeline region
+    expect(within(region).getAllByRole("button").length).toBe(8);
+
+    // Click the "Issues" filter toggle button
+    const issuesFilter = screen.getByRole("button", { name: /toggle issues/i });
+    fireEvent.click(issuesFilter);
+
+    // After toggling Issues off, 2 issue dots removed → 6 event dots remain
+    expect(within(region).getAllByRole("button").length).toBe(6);
   });
 });
