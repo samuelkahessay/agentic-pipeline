@@ -25,7 +25,7 @@
 # Each issue gets clear acceptance criteria, dependency references, and type labels.
 # Triggered by the /decompose command on any issue or discussion containing a PRD.
 #
-# gh-aw-metadata: {"schema_version":"v1","frontmatter_hash":"ebfcdcedc0bb4557f99b16c009642a5f44450e5379f14e6171d4d4f7f881466c","compiler_version":"v0.50.1"}
+# gh-aw-metadata: {"schema_version":"v1","frontmatter_hash":"a6f2aa99fc4360db6520ffc5750ec2d5b580bd25b6c29ee5f858390d4d0fb562","compiler_version":"v0.50.1"}
 
 name: "PRD Decomposer"
 "on":
@@ -341,7 +341,7 @@ jobs:
             const awInfo = {
               engine_id: "copilot",
               engine_name: "GitHub Copilot CLI",
-              model: "gpt-4.1",
+              model: "gpt-5",
               version: "",
               agent_version: "0.0.415",
               cli_version: "v0.50.1",
@@ -818,7 +818,7 @@ jobs:
         env:
           COPILOT_AGENT_RUNNER_TYPE: STANDALONE
           COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
-          COPILOT_MODEL: gpt-4.1
+          COPILOT_MODEL: gpt-5
           GH_AW_MCP_CONFIG: /home/runner/.copilot/mcp-config.json
           GH_AW_PROMPT: /tmp/gh-aw/aw-prompts/prompt.txt
           GH_AW_SAFE_OUTPUTS: ${{ env.GH_AW_SAFE_OUTPUTS }}
@@ -1037,7 +1037,7 @@ jobs:
         env:
           COPILOT_AGENT_RUNNER_TYPE: STANDALONE
           COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
-          COPILOT_MODEL: gpt-4.1
+          COPILOT_MODEL: gpt-5
           GH_AW_PROMPT: /tmp/gh-aw/aw-prompts/prompt.txt
           GITHUB_HEAD_REF: ${{ github.head_ref }}
           GITHUB_REF_NAME: ${{ github.ref_name }}
@@ -1258,7 +1258,7 @@ jobs:
     timeout-minutes: 15
     env:
       GH_AW_ENGINE_ID: "copilot"
-      GH_AW_ENGINE_MODEL: "gpt-4.1"
+      GH_AW_ENGINE_MODEL: "gpt-5"
       GH_AW_WORKFLOW_ID: "prd-decomposer"
       GH_AW_WORKFLOW_NAME: "PRD Decomposer"
     outputs:

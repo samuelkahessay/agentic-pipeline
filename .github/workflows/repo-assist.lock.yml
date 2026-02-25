@@ -26,7 +26,7 @@
 # Also maintains its own PRs by fixing CI failures and resolving merge conflicts.
 # Can be triggered on-demand via /repo-assist <instructions>.
 #
-# gh-aw-metadata: {"schema_version":"v1","frontmatter_hash":"30f193ee62f4ceeed1463b655f5cc3e9f8a8250bfd947395d58040acd6ca1531","compiler_version":"v0.50.1"}
+# gh-aw-metadata: {"schema_version":"v1","frontmatter_hash":"ca4d8958b360f1a6dbf523c3a2fae59face9bd8eb0f868ef5630bfcc292f8cd1","compiler_version":"v0.50.1"}
 
 name: "Pipeline Repo Assist"
 "on":
@@ -369,7 +369,7 @@ jobs:
             const awInfo = {
               engine_id: "copilot",
               engine_name: "GitHub Copilot CLI",
-              model: "gpt-4.1",
+              model: "gpt-5",
               version: "",
               agent_version: "0.0.415",
               cli_version: "v0.50.1",
@@ -1018,7 +1018,7 @@ jobs:
         env:
           COPILOT_AGENT_RUNNER_TYPE: STANDALONE
           COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
-          COPILOT_MODEL: gpt-4.1
+          COPILOT_MODEL: gpt-5
           GH_AW_MCP_CONFIG: /home/runner/.copilot/mcp-config.json
           GH_AW_PROMPT: /tmp/gh-aw/aw-prompts/prompt.txt
           GH_AW_SAFE_OUTPUTS: ${{ env.GH_AW_SAFE_OUTPUTS }}
@@ -1247,7 +1247,7 @@ jobs:
         env:
           COPILOT_AGENT_RUNNER_TYPE: STANDALONE
           COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
-          COPILOT_MODEL: gpt-4.1
+          COPILOT_MODEL: gpt-5
           GH_AW_PROMPT: /tmp/gh-aw/aw-prompts/prompt.txt
           GITHUB_HEAD_REF: ${{ github.head_ref }}
           GITHUB_REF_NAME: ${{ github.ref_name }}
@@ -1549,7 +1549,7 @@ jobs:
     timeout-minutes: 15
     env:
       GH_AW_ENGINE_ID: "copilot"
-      GH_AW_ENGINE_MODEL: "gpt-4.1"
+      GH_AW_ENGINE_MODEL: "gpt-5"
       GH_AW_WORKFLOW_ID: "repo-assist"
       GH_AW_WORKFLOW_NAME: "Pipeline Repo Assist"
     outputs:

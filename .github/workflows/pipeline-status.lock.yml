@@ -24,7 +24,7 @@
 # Daily pipeline progress report. Creates and updates a rolling status issue
 # tracking all pipeline issues and PRs.
 #
-# gh-aw-metadata: {"schema_version":"v1","frontmatter_hash":"deb634aefb1c6ec90eb91fc1f5fd012f37eb15e3b324bca4080e38b1dc0bdb8e","compiler_version":"v0.50.1"}
+# gh-aw-metadata: {"schema_version":"v1","frontmatter_hash":"c93f9d09b15d2396509bae946eda2b25979048aa7c302a380bb88027875afaf9","compiler_version":"v0.50.1"}
 
 name: "Pipeline Status Report"
 "on":
@@ -273,7 +273,7 @@ jobs:
             const awInfo = {
               engine_id: "copilot",
               engine_name: "GitHub Copilot CLI",
-              model: "gpt-4.1",
+              model: "gpt-5",
               version: "",
               agent_version: "0.0.415",
               cli_version: "v0.50.1",
@@ -779,7 +779,7 @@ jobs:
         env:
           COPILOT_AGENT_RUNNER_TYPE: STANDALONE
           COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
-          COPILOT_MODEL: gpt-4.1
+          COPILOT_MODEL: gpt-5
           GH_AW_MCP_CONFIG: /home/runner/.copilot/mcp-config.json
           GH_AW_PROMPT: /tmp/gh-aw/aw-prompts/prompt.txt
           GH_AW_SAFE_OUTPUTS: ${{ env.GH_AW_SAFE_OUTPUTS }}
@@ -997,7 +997,7 @@ jobs:
         env:
           COPILOT_AGENT_RUNNER_TYPE: STANDALONE
           COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
-          COPILOT_MODEL: gpt-4.1
+          COPILOT_MODEL: gpt-5
           GH_AW_PROMPT: /tmp/gh-aw/aw-prompts/prompt.txt
           GITHUB_HEAD_REF: ${{ github.head_ref }}
           GITHUB_REF_NAME: ${{ github.ref_name }}
@@ -1146,7 +1146,7 @@ jobs:
     timeout-minutes: 15
     env:
       GH_AW_ENGINE_ID: "copilot"
-      GH_AW_ENGINE_MODEL: "gpt-4.1"
+      GH_AW_ENGINE_MODEL: "gpt-5"
       GH_AW_WORKFLOW_ID: "pipeline-status"
       GH_AW_WORKFLOW_NAME: "Pipeline Status Report"
     outputs:
