@@ -300,21 +300,12 @@ jobs:
         run: |
           PR_NUMBER="${{ steps.pr.outputs.number }}"
 
-          # Build review body
-          REVIEW_BODY=$(cat << 'EOF'
-          ## Pipeline Review — Approved
-
-          **Decision**: APPROVE
-
-          EOF
-          )
-          REVIEW_BODY+=$(cat review_output.txt | sed -n '/^SUMMARY:/,$ p')
-          REVIEW_BODY+=$(cat << 'EOF'
-
-          ---
-          *This review was performed by Pipeline Reviewer (github-actions[bot]).*
-          EOF
-          )
+          # Build review body (use printf to preserve newlines; command substitution strips them)
+          REVIEW_BODY="## Pipeline Review — Approved"
+          REVIEW_BODY+=$'\n\n'"**Decision**: APPROVE"
+          REVIEW_BODY+=$'\n\n'"$(cat review_output.txt | sed -n '/^SUMMARY:/,$ p')"
+          REVIEW_BODY+=$'\n\n'"---"
+          REVIEW_BODY+=$'\n'"*This review was performed by Pipeline Reviewer (github-actions[bot]).*"
 
           # Submit approval via GitHub API
           gh api \
@@ -372,21 +363,13 @@ jobs:
         run: |
           PR_NUMBER="${{ steps.pr.outputs.number }}"
 
-          REVIEW_BODY=$(cat << 'EOF'
-          ## Pipeline Review — Changes Requested
-
-          **Decision**: REQUEST_CHANGES
-
-          EOF
-          )
-          REVIEW_BODY+=$(cat review_output.txt | sed -n '/^SUMMARY:/,$ p')
-          REVIEW_BODY+=$(cat << 'EOF'
-
-          ---
-          *This review was performed by Pipeline Reviewer (github-actions[bot]).
-          repo-assist will automatically address this feedback on its next run.*
-          EOF
-          )
+          # Build review body (use explicit newlines; command substitution strips trailing ones)
+          REVIEW_BODY="## Pipeline Review — Changes Requested"
+          REVIEW_BODY+=$'\n\n'"**Decision**: REQUEST_CHANGES"
+          REVIEW_BODY+=$'\n\n'"$(cat review_output.txt | sed -n '/^SUMMARY:/,$ p')"
+          REVIEW_BODY+=$'\n\n'"---"
+          REVIEW_BODY+=$'\n'"*This review was performed by Pipeline Reviewer (github-actions[bot])."
+          REVIEW_BODY+=$'\n'"repo-assist will automatically address this feedback on its next run.*"
 
           # Submit change request via GitHub API
           gh api \
