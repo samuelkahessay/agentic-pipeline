@@ -66,10 +66,20 @@ jobs:
           # Fetch the diff
           gh pr diff "$PR_NUMBER" > pr_diff.txt
 
-          # Truncate diff if too large (keep first 12000 lines)
-          if [ "$(wc -l < pr_diff.txt)" -gt 12000 ]; then
-            head -n 12000 pr_diff.txt > pr_diff_truncated.txt
-            echo -e "\n\n[... diff truncated — $(wc -l < pr_diff.txt) total lines ...]" >> pr_diff_truncated.txt
+          # Truncate diff to fit GitHub Models API token limit (4000 tokens ≈ 200 lines of diff).
+          # Keep file summary (--stat) for full picture, then truncate actual diff.
+          TOTAL_LINES=$(wc -l < pr_diff.txt)
+          if [ "$TOTAL_LINES" -gt 200 ]; then
+            gh pr diff "$PR_NUMBER" --stat > pr_diff_summary.txt 2>/dev/null || true
+            {
+              echo "### Changed files summary"
+              cat pr_diff_summary.txt
+              echo ""
+              echo "### Diff (first 200 of $TOTAL_LINES lines)"
+              head -n 200 pr_diff.txt
+              echo ""
+              echo "[... diff truncated — $TOTAL_LINES total lines. Review based on acceptance criteria + summary above. ...]"
+            } > pr_diff_truncated.txt
             mv pr_diff_truncated.txt pr_diff.txt
           fi
 
@@ -180,15 +190,8 @@ jobs:
             echo "" >> review_prompt.txt
           fi
 
-          if [ -f issue_body.txt ]; then
-            echo "## Full Issue Description" >> review_prompt.txt
-            cat issue_body.txt >> review_prompt.txt
-            echo "" >> review_prompt.txt
-          fi
-
-          echo "## Project Guidelines (AGENTS.md excerpt)" >> review_prompt.txt
-          cat agents_context.txt >> review_prompt.txt
-          echo "" >> review_prompt.txt
+          # Skip full issue body and AGENTS.md to stay within token limits.
+          # Acceptance criteria + diff summary is sufficient for review.
 
           echo "## Diff" >> review_prompt.txt
           echo '```diff' >> review_prompt.txt
