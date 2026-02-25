@@ -168,6 +168,9 @@ jobs:
 
       - name: Build review prompt
         id: prompt
+        env:
+          PR_TITLE: ${{ steps.pr.outputs.title }}
+          CI_SUMMARY: ${{ steps.ci.outputs.summary }}
         run: |
           cat > review_prompt.txt << 'PROMPT_HEADER'
           You are a senior code reviewer for an automated pipeline. Review this pull request and decide: APPROVE or REQUEST_CHANGES.
@@ -205,10 +208,10 @@ jobs:
           PROMPT_HEADER
 
           echo "" >> review_prompt.txt
-          echo "## PR: ${{ steps.pr.outputs.title }}" >> review_prompt.txt
+          echo "## PR: $PR_TITLE" >> review_prompt.txt
           echo "" >> review_prompt.txt
 
-          echo "## CI Status: ${{ steps.ci.outputs.summary }}" >> review_prompt.txt
+          echo "## CI Status: $CI_SUMMARY" >> review_prompt.txt
           echo "" >> review_prompt.txt
 
           if [ -f acceptance_criteria.txt ]; then
@@ -229,6 +232,9 @@ jobs:
         id: review
         env:
           MODELS_TOKEN: ${{ secrets.MODELS_TOKEN || secrets.GITHUB_TOKEN }}
+          PR_TITLE: ${{ steps.pr.outputs.title }}
+          CI_STATUS: ${{ steps.ci.outputs.status }}
+          CI_SUMMARY: ${{ steps.ci.outputs.summary }}
         run: |
           # Use GitHub Models REST API with a PAT that has models:read scope
           # Falls back to GITHUB_TOKEN if MODELS_TOKEN secret isn't set (will fail gracefully)
@@ -262,12 +268,11 @@ jobs:
           # Final fallback if all models fail
           if [ -z "$REVIEW_OUTPUT" ]; then
             echo "::warning::All AI models failed, falling back to basic review"
-            PR_TITLE="${{ steps.pr.outputs.title }}"
-            if [ "${{ steps.ci.outputs.status }}" = "failing" ]; then
+            if [ "$CI_STATUS" = "failing" ]; then
               REVIEW_OUTPUT="DECISION: REQUEST_CHANGES
           SUMMARY: CI checks are failing. Please fix CI failures before this PR can be approved.
           ISSUES:
-          - CI is currently failing (${{ steps.ci.outputs.summary }})"
+          - CI is currently failing ($CI_SUMMARY)"
             elif [[ "$PR_TITLE" == "[Pipeline]"* ]]; then
               # Pipeline PRs must never be rubber-stamped — no human is watching
               REVIEW_OUTPUT="DECISION: REQUEST_CHANGES
@@ -304,6 +309,7 @@ jobs:
         if: steps.review.outputs.decision == 'APPROVE'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_TITLE: ${{ steps.pr.outputs.title }}
         run: |
           PR_NUMBER="${{ steps.pr.outputs.number }}"
 
@@ -329,7 +335,6 @@ jobs:
           fi
 
           # Enable auto-merge only for [Pipeline] PRs (human PRs should be merged manually)
-          PR_TITLE="${{ steps.pr.outputs.title }}"
           if [[ "$PR_TITLE" == "[Pipeline]"* ]]; then
             gh pr merge "$PR_NUMBER" --auto --squash || echo "::warning::Could not enable auto-merge"
             echo "PR #${PR_NUMBER} approved and auto-merge enabled."
@@ -342,10 +347,11 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REVIEW_SUMMARY: ${{ steps.review.outputs.summary }}
+          REVIEW_DECISION: ${{ steps.review.outputs.decision }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+          ISSUE_NUMBER: ${{ steps.pr.outputs.issue_number }}
         run: |
-          DECISION="${{ steps.review.outputs.decision }}"
-          PR_NUMBER="${{ steps.pr.outputs.number }}"
-          ISSUE_NUMBER="${{ steps.pr.outputs.issue_number }}"
+          DECISION="$REVIEW_DECISION"
           SUMMARY="$REVIEW_SUMMARY"
 
           OPEN_ISSUES=$(gh issue list --repo "${{ github.repository }}" \
