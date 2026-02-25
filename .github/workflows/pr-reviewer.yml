@@ -201,17 +201,29 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Use GitHub Models — cascade through model tiers
+          PROMPT_CONTENT=$(cat review_prompt.txt)
+
+          # Use GitHub Models REST API directly (gh models CLI not available in Actions)
           REVIEW_OUTPUT=""
           for MODEL in openai/gpt-5 openai/gpt-5-mini openai/gpt-5-nano; do
             echo "Trying model: $MODEL"
-            if REVIEW_OUTPUT=$(gh models run "$MODEL" < review_prompt.txt 2>&1); then
-              echo "Success with $MODEL"
-              break
-            else
-              echo "::warning::$MODEL failed, trying next model..."
-              REVIEW_OUTPUT=""
-            fi
+            RESPONSE=$(curl -sf -X POST \
+              "https://models.github.ai/inference/chat/completions" \
+              -H "Authorization: Bearer $GH_TOKEN" \
+              -H "Content-Type: application/json" \
+              -d "$(jq -n --arg model "$MODEL" --arg prompt "$PROMPT_CONTENT" '{
+                model: $model,
+                messages: [{role: "user", content: $prompt}],
+                temperature: 0.2
+              }')" 2>&1) && {
+              REVIEW_OUTPUT=$(echo "$RESPONSE" | jq -r '.choices[0].message.content // empty')
+              if [ -n "$REVIEW_OUTPUT" ]; then
+                echo "Success with $MODEL"
+                break
+              fi
+            }
+            echo "::warning::$MODEL failed: $(echo "$RESPONSE" | head -c 200)"
+            REVIEW_OUTPUT=""
           done
 
           # Final fallback if all models fail
