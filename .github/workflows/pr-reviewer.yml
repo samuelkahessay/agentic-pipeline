@@ -213,8 +213,7 @@ jobs:
               -H "Content-Type: application/json" \
               -d "$(jq -n --arg model "$MODEL" --arg prompt "$PROMPT_CONTENT" '{
                 model: $model,
-                messages: [{role: "user", content: $prompt}],
-                temperature: 0.2
+                messages: [{role: "user", content: $prompt}]
               }')")
 
             if [ "$HTTP_CODE" = "200" ]; then
