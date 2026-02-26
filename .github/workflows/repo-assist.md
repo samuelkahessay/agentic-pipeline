@@ -52,10 +52,11 @@ safe-outputs:
     allowed: [ready, in-progress, blocked]
     max: 10
     target: "*"
-  # NOTE: Do NOT dispatch pr-review-agent here — it triggers automatically on pull_request:opened.
-  # Dispatching it causes a race condition that cancels the natural trigger and leaves
-  # the PR with a failed status check. The re-dispatch loop (repo-assist cycling) is
-  # handled by pr-review-submit after it approves and merges.
+  # NOTE: pr-review-agent does NOT auto-trigger on pull_request:opened because
+  # GitHub suppresses events from GitHub App tokens (anti-cascade protection).
+  # repo-assist must explicitly dispatch pr-review-agent.lock.yml after creating a PR.
+  # The re-dispatch loop (repo-assist cycling) is handled by pr-review-submit after
+  # it approves and merges.
 
 tools:
   web-fetch:
@@ -116,8 +117,8 @@ Each run, work on 2-4 tasks from the list below. Use round-robin scheduling base
       - Title matching the issue title
       - Body containing: `Closes #N`, description of changes, and test results
       - AI disclosure: "This PR was created by Pipeline Assistant."
-   h. Label the source issue `in-progress`.
-   Note: PR review agent triggers automatically when the PR is created — do NOT dispatch it manually.
+   h. **Trigger the reviewer**: After creating the PR, run `gh workflow run pr-review-agent.lock.yml` to dispatch the review agent. GitHub's anti-cascade protection suppresses automatic `pull_request:opened` triggers from App tokens, so this explicit dispatch is required.
+   i. Label the source issue `in-progress`.
 4. Update memory with attempts and outcomes.
 
 ### Task 2: Maintain Pipeline Pull Requests
