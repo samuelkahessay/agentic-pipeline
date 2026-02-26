@@ -68,24 +68,34 @@ jobs:
       cancel-in-progress: false
 
     steps:
-      - name: Check idempotency (skip if already reviewed at current HEAD)
+      - name: Check idempotency (skip if same verdict already reviewed at current HEAD)
         id: idempotency
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.issue.number }}
           REPO: ${{ github.repository }}
+          COMMENT_ID: ${{ github.event.comment.id }}
         run: |
           HEAD_SHA=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json headRefOid --jq '.headRefOid')
           echo "head_sha=${HEAD_SHA}" >> "$GITHUB_OUTPUT"
 
+          COMMENT_BODY=$(gh api "/repos/${REPO}/issues/comments/${COMMENT_ID}" --jq '.body')
+          TARGET_VERDICT=$(echo "$COMMENT_BODY" | grep -oP '\*\*VERDICT:\s*\K(APPROVE|REQUEST_CHANGES)' | head -1 || true)
+          if [ "$TARGET_VERDICT" = "APPROVE" ]; then
+            TARGET_STATE="APPROVED"
+          else
+            TARGET_STATE="CHANGES_REQUESTED"
+          fi
+          echo "target_state=${TARGET_STATE}" >> "$GITHUB_OUTPUT"
+
           EXISTING=$(gh api "/repos/${REPO}/pulls/${PR_NUMBER}/reviews" \
-            --jq "[.[] | select(.user.login == \"github-actions[bot]\" and .commit_id == \"${HEAD_SHA}\")] | length")
+            --jq "[.[] | select(.user.login == \"github-actions[bot]\" and .commit_id == \"${HEAD_SHA}\" and .state == \"${TARGET_STATE}\")] | length")
 
           if [ "$EXISTING" -gt 0 ]; then
-            echo "Already reviewed at head SHA ${HEAD_SHA}. Skipping."
+            echo "Already reviewed with ${TARGET_STATE} at head SHA ${HEAD_SHA}. Skipping."
             echo "skip=true" >> "$GITHUB_OUTPUT"
           else
-            echo "No existing review at ${HEAD_SHA}. Proceeding."
+            echo "No existing ${TARGET_STATE} review at ${HEAD_SHA}. Proceeding."
             echo "skip=false" >> "$GITHUB_OUTPUT"
           fi
 
@@ -289,24 +299,32 @@ jobs:
       cancel-in-progress: false
 
     steps:
-      - name: Check idempotency (skip if already reviewed at current HEAD)
+      - name: Check idempotency (skip if same verdict already reviewed at current HEAD)
         id: idempotency
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.inputs.pr_number }}
           REPO: ${{ github.repository }}
+          TARGET_VERDICT: ${{ github.event.inputs.verdict }}
         run: |
           HEAD_SHA=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json headRefOid --jq '.headRefOid')
           echo "head_sha=${HEAD_SHA}" >> "$GITHUB_OUTPUT"
 
+          if [ "$TARGET_VERDICT" = "APPROVE" ]; then
+            TARGET_STATE="APPROVED"
+          else
+            TARGET_STATE="CHANGES_REQUESTED"
+          fi
+          echo "target_state=${TARGET_STATE}" >> "$GITHUB_OUTPUT"
+
           EXISTING=$(gh api "/repos/${REPO}/pulls/${PR_NUMBER}/reviews" \
-            --jq "[.[] | select(.user.login == \"github-actions[bot]\" and .commit_id == \"${HEAD_SHA}\")] | length")
+            --jq "[.[] | select(.user.login == \"github-actions[bot]\" and .commit_id == \"${HEAD_SHA}\" and .state == \"${TARGET_STATE}\")] | length")
 
           if [ "$EXISTING" -gt 0 ]; then
-            echo "Already reviewed at head SHA ${HEAD_SHA}. Skipping."
+            echo "Already reviewed with ${TARGET_STATE} at head SHA ${HEAD_SHA}. Skipping."
             echo "skip=true" >> "$GITHUB_OUTPUT"
           else
-            echo "No existing review at ${HEAD_SHA}. Proceeding."
+            echo "No existing ${TARGET_STATE} review at ${HEAD_SHA}. Proceeding."
             echo "skip=false" >> "$GITHUB_OUTPUT"
           fi
 
