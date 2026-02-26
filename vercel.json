@@ -1,8 +1,3 @@
 {
-  "framework": "nextjs",
-  "git": {
-    "deploymentEnabled": {
-      "memory/repo-assist": false
-    }
-  }
+  "framework": "nextjs"
 }
