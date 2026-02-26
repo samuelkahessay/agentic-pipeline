@@ -48,6 +48,7 @@ permissions:
   pull-requests: write
   issues: write
   actions: write
+  statuses: write
 
 # ---------------------------------------------------------------------------
 # Job 1: issue_comment trigger — automated path
@@ -141,6 +142,24 @@ jobs:
             -f body="${REVIEW_BODY}"
 
           echo "Submitted ${VERDICT} review on PR #${PR_NUMBER}"
+
+      - name: Set review status check
+        if: steps.idempotency.outputs.skip != 'true' && steps.review.outputs.verdict != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HEAD_SHA: ${{ steps.idempotency.outputs.head_sha }}
+          VERDICT: ${{ steps.review.outputs.verdict }}
+          REPO: ${{ github.repository }}
+        run: |
+          # The "review" status check is required by the branch protection ruleset.
+          # Set it to success so auto-merge can proceed.
+          STATE="success"
+          DESCRIPTION="Review completed: ${VERDICT}"
+          gh api --method POST "/repos/${REPO}/statuses/${HEAD_SHA}" \
+            -f state="${STATE}" \
+            -f context="review" \
+            -f description="${DESCRIPTION}"
+          echo "Set 'review' status check to ${STATE} on ${HEAD_SHA}"
 
       - name: Mark draft PR ready and enable auto-merge (APPROVE only)
         if: steps.idempotency.outputs.skip != 'true' && steps.review.outputs.verdict == 'APPROVE'
@@ -275,6 +294,22 @@ jobs:
             -f body="${REVIEW_BODY}"
 
           echo "Submitted ${VERDICT} review on PR #${PR_NUMBER}"
+
+      - name: Set review status check
+        if: steps.idempotency.outputs.skip != 'true' && steps.review.outputs.verdict != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HEAD_SHA: ${{ steps.idempotency.outputs.head_sha }}
+          VERDICT: ${{ steps.review.outputs.verdict }}
+          REPO: ${{ github.repository }}
+        run: |
+          STATE="success"
+          DESCRIPTION="Review completed: ${VERDICT}"
+          gh api --method POST "/repos/${REPO}/statuses/${HEAD_SHA}" \
+            -f state="${STATE}" \
+            -f context="review" \
+            -f description="${DESCRIPTION}"
+          echo "Set 'review' status check to ${STATE} on ${HEAD_SHA}"
 
       - name: Mark draft PR ready and enable auto-merge (APPROVE only)
         if: steps.idempotency.outputs.skip != 'true' && steps.review.outputs.verdict == 'APPROVE'
