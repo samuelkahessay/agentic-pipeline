@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-02-26T03:15:00Z",
+  "last_run": "2026-02-26T03:28:00Z",
   "attempts": [
     {
       "issue": 63,
@@ -15,13 +15,40 @@
       "title": "GitHub Data Layer — Types, Fixtures, and API Fetching",
       "branch": "repo-assist/issue-64-github-data-layer",
       "pr": 79,
-      "status": "pr_open_draft_review_stuck",
+      "status": "merged",
       "ci": "passing",
-      "timestamp": "2026-02-26T02:03:00Z"
+      "timestamp": "2026-02-26T03:22:51Z"
+    },
+    {
+      "issue": 66,
+      "title": "Card Component — Profile Section (Avatar, Bio, Stats)",
+      "branch": "repo-assist/issue-66-card-profile-section",
+      "pr": null,
+      "status": "pr_open_draft",
+      "ci": "pending",
+      "timestamp": "2026-02-26T03:28:00Z"
+    },
+    {
+      "issue": 67,
+      "title": "Card Component — Language Breakdown Bar and Color Map",
+      "branch": "repo-assist/issue-67-language-bar",
+      "pr": null,
+      "status": "pr_open_draft",
+      "ci": "pending",
+      "timestamp": "2026-02-26T03:28:00Z"
+    },
+    {
+      "issue": 68,
+      "title": "Card Component — Top Repositories List",
+      "branch": "repo-assist/issue-68-top-repos",
+      "pr": null,
+      "status": "pr_open_draft",
+      "ci": "pending",
+      "timestamp": "2026-02-26T03:28:00Z"
     }
   ],
-  "completed_issues": [63],
-  "in_progress_issues": [64],
-  "blocked_issues": [65, 66, 67, 68, 69, 70, 71, 72, 73],
-  "notes": "PR #79 open for issue #64 (data layer), CI passing. 3x APPROVE from review agent. pr-review-submit workflow fails due to missing --repo on gh pr view (no git checkout). PR stuck as draft. All issues 65-73 blocked until #64 merges. Commented on PR #79 requesting human action. Break-glass: trigger pr-review-submit.yml workflow_dispatch with pr_number=79, verdict=APPROVE."
+  "completed_issues": [63, 64],
+  "in_progress_issues": [66, 67, 68],
+  "blocked_issues": [65, 69, 70, 71, 72, 73],
+  "notes": "PRs for #66, #67, #68 opened. All depend on #64 which is merged. Note: #68 and #67 both create src/data/language-colors.ts with identical content — merge order matters, second merge will have no-op on that file. Next: implement #65 (nav+landing, depends on #63+#64), #72 (OG image, depends on #64), and #69 (themes, depends on #66+#67+#68 — wait for those to merge)."
 }
