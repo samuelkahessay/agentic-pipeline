@@ -52,11 +52,10 @@ safe-outputs:
     allowed: [ready, in-progress, blocked]
     max: 10
     target: "*"
-  # NOTE: pr-review-agent does NOT auto-trigger on pull_request:opened because
-  # GitHub suppresses events from GitHub App tokens (anti-cascade protection).
-  # repo-assist must explicitly dispatch pr-review-agent.lock.yml after creating a PR.
-  # The re-dispatch loop (repo-assist cycling) is handled by pr-review-submit after
-  # it approves and merges.
+  # NOTE: pr-review-agent usually auto-triggers via pull_request:opened, but we
+  # also explicitly dispatch it as a safety net for bot-authored PR creation
+  # paths where GitHub may suppress events. The review agent's concurrency
+  # group ensures duplicate runs are harmless.
 
 tools:
   web-fetch:
