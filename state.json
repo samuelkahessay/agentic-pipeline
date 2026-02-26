@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-02-26T03:50:00Z",
+  "last_run": "2026-02-26T03:54:54Z",
   "attempts": [
     {
       "issue": 63,
@@ -58,24 +58,24 @@
     {
       "issue": 72,
       "title": "OG Image API Route — Social Media Preview Image Generation",
-      "branch": "repo-assist/issue-72-og-image",
+      "branch": "repo-assist/issue-72-og-image-42705db9773b3389",
       "pr": 84,
-      "status": "pr_open",
+      "status": "in_review",
       "ci": "passing",
       "timestamp": "2026-02-26T03:42:00Z"
     },
     {
       "issue": 69,
       "title": "Card Themes — Theme Data, DevCard Theming, and Theme Selector",
-      "branch": "repo-assist/issue-69-card-themes",
-      "pr": null,
-      "status": "pr_open",
-      "ci": "pending",
+      "branch": "repo-assist/issue-69-card-themes-62adfbaac8e42e19",
+      "pr": 85,
+      "status": "in_review",
+      "ci": "passing",
       "timestamp": "2026-02-26T03:50:00Z"
     }
   ],
   "completed_issues": [63, 64, 65, 66, 67, 68],
   "in_progress_issues": [69, 72],
   "blocked_issues": [70, 71, 73],
-  "notes": "PRs open for #69 (card themes, just created) and #84 for #72. Issue #70 depends on #69 (PR in review) and #65 (closed). Once #69 merges, implement #70 (card generator page). #71 depends on #70. #73 depends on #70. Note for #70: the OG image generateMetadata update should be added when implementing #70."
+  "notes": "PR #85 for #69 (card themes) review in progress. PR #84 for #72 (OG image) review completed/dismissed, awaiting human merge. After #69 merges, implement #70 (Card Generator Page) and #73 (Gallery Page). After #70 merges, implement #71 (Card Export). Issue #72 note: generateMetadata openGraph.images update is already in PR #84 scope."
 }
