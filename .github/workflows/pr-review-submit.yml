@@ -192,6 +192,46 @@ jobs:
             echo "PR #${PR_NUMBER} approved. Non-pipeline PR — skipping auto-merge."
           fi
 
+      - name: Close linked issues after merge (APPROVE only)
+        if: steps.idempotency.outputs.skip != 'true' && steps.review.outputs.verdict == 'APPROVE'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_NUMBER: ${{ steps.review.outputs.issue_number }}
+          REPO: ${{ github.repository }}
+        run: |
+          # GITHUB_TOKEN auto-merge suppresses pull_request:closed events, so
+          # close-issues.yml never fires. Close linked issues deterministically here.
+          # Poll for merge completion (auto-merge typically completes within seconds).
+          MERGED=false
+          for i in 1 2 3 4 5 6 7 8 9 10 11 12; do
+            sleep 5
+            STATE=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json state --jq '.state')
+            if [ "$STATE" = "MERGED" ]; then
+              MERGED=true
+              break
+            fi
+            echo "PR #${PR_NUMBER} state: ${STATE} (attempt $i/12)"
+          done
+
+          if [ "$MERGED" = "true" ]; then
+            echo "PR #${PR_NUMBER} merged. Closing linked issues."
+            if [ -n "${ISSUE_NUMBER:-}" ]; then
+              ISSUE_STATE=$(gh issue view "$ISSUE_NUMBER" --repo "$REPO" --json state --jq '.state' 2>/dev/null || echo "UNKNOWN")
+              if [ "$ISSUE_STATE" = "OPEN" ]; then
+                gh issue close "$ISSUE_NUMBER" --repo "$REPO" \
+                  -c "Closed by merge of PR #${PR_NUMBER}." || \
+                  echo "::warning::Could not close issue #${ISSUE_NUMBER}"
+              else
+                echo "Issue #${ISSUE_NUMBER} already ${ISSUE_STATE}"
+              fi
+            else
+              echo "No linked issue found — skipping issue close"
+            fi
+          else
+            echo "::warning::PR #${PR_NUMBER} did not merge within 60s — issue closure deferred to close-issues.yml"
+          fi
+
       - name: Dispatch repo-assist for next cycle
         if: always() && steps.idempotency.outputs.skip != 'true' && steps.review.outputs.verdict != ''
         env:
@@ -349,6 +389,49 @@ jobs:
             echo "PR #${PR_NUMBER} approved and auto-merge enabled."
           else
             echo "PR #${PR_NUMBER} approved. Non-pipeline PR — skipping auto-merge."
+          fi
+
+      - name: Close linked issues after merge (APPROVE only)
+        if: always() && github.event.inputs.verdict == 'APPROVE'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.inputs.pr_number }}
+          ISSUE_NUMBER: ${{ steps.review.outputs.issue_number }}
+          REPO: ${{ github.repository }}
+        run: |
+          MERGED=false
+          for i in 1 2 3 4 5 6 7 8 9 10 11 12; do
+            sleep 5
+            STATE=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json state --jq '.state')
+            if [ "$STATE" = "MERGED" ]; then
+              MERGED=true
+              break
+            fi
+            echo "PR #${PR_NUMBER} state: ${STATE} (attempt $i/12)"
+          done
+
+          if [ "$MERGED" = "true" ]; then
+            echo "PR #${PR_NUMBER} merged. Closing linked issues."
+            TARGET="${ISSUE_NUMBER:-}"
+            if [ -z "$TARGET" ]; then
+              TARGET=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json body \
+                --jq '[.body | scan("(?i)(?:closes|close|fix|fixes|resolve|resolves)\\s+#(\\d+)")] | first | .[]? // empty' \
+                | head -1 || true)
+            fi
+            if [ -n "$TARGET" ]; then
+              ISSUE_STATE=$(gh issue view "$TARGET" --repo "$REPO" --json state --jq '.state' 2>/dev/null || echo "UNKNOWN")
+              if [ "$ISSUE_STATE" = "OPEN" ]; then
+                gh issue close "$TARGET" --repo "$REPO" \
+                  -c "Closed by merge of PR #${PR_NUMBER}." || \
+                  echo "::warning::Could not close issue #${TARGET}"
+              else
+                echo "Issue #${TARGET} already ${ISSUE_STATE}"
+              fi
+            else
+              echo "No linked issue found — skipping issue close"
+            fi
+          else
+            echo "::warning::PR #${PR_NUMBER} did not merge within 60s — issue closure deferred to close-issues.yml"
           fi
 
       - name: Dispatch repo-assist for next cycle
