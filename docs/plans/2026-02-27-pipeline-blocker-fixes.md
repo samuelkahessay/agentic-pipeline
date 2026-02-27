@@ -23,9 +23,9 @@
 
 Run:
 ```bash
-gh api repos/samuelkahessay/agentic-pipeline/actions/permissions
+gh api repos/samuelkahessay/agentic-pipeline/actions/permissions/fork-pr-contributor-approval
 ```
-Expected: See current settings including default workflow permissions.
+Expected: JSON showing current `approval_policy` (likely `first_time_contributors`).
 
 **Step 2: Update fork PR contributor approval policy**
 
@@ -44,15 +44,7 @@ gh api repos/samuelkahessay/agentic-pipeline/actions/permissions/fork-pr-contrib
 ```
 Expected: `"approval_policy": "first_time_contributors_new_to_github"`
 
-**Step 4: Commit**
-
-No file changes — document in commit message only:
-```bash
-git commit --allow-empty -m "chore: relax action_required gate to first_time_contributors_new_to_github
-
-Bot accounts with prior GitHub activity now bypass workflow approval.
-API: actions/permissions/fork-pr-contributor-approval"
-```
+No commit — this is a repo setting change with no tracked files. The design doc serves as the audit record.
 
 ---
 
@@ -152,22 +144,22 @@ Best-effort layer — repo-assist dedup check is the authoritative guard."
 **Files:**
 - Modify: `.github/workflows/repo-assist.md:106-121` (Task 1 steps)
 
-**Step 1: Add dedup check before checkout (new step 3a-ii)**
+**Step 1: Add dedup check before checkout (new step 3b)**
 
 In `.github/workflows/repo-assist.md`, find Task 1 step 3 (line ~108). After sub-step `a` ("Read the issue carefully") and before sub-step `b` ("CRITICAL: Always git checkout main"), insert:
 
 ```
-   b. **Dedup check (required)**: Before starting work, run: `gh pr list --repo $REPO --search "Closes #N" --state all --json number,state,title`. Filter results to PRs whose title starts with `[Pipeline]`. If any result has state `open` or `merged`, skip this issue silently — update memory that issue #N is already covered and move to the next issue. PRs that are `closed` (without merge) do NOT count as covered — those are failed attempts and the issue still needs work.
+   b. **Dedup check (required)**: Before starting work, check if a `[Pipeline]` PR already exists for this issue. Run: `gh pr list --repo $REPO --state all --json number,state,title,body`. Parse each PR's body for close keywords (`closes`, `close`, `fix`, `fixes`, `resolve`, `resolves`) followed by `#N`. Filter to PRs whose title starts with `[Pipeline]`. If any matching result has state `open` or `merged`, skip this issue silently — update memory that issue #N is already covered and move to the next issue. PRs that are `closed` (without merge) do NOT count as covered — those are failed attempts and the issue still needs work.
 ```
 
 Re-letter subsequent steps: old b→c, old c→d, etc.
 
-**Step 2: Add pre-creation dedup recheck (updated step before PR creation)**
+**Step 2: Add pre-creation dedup recheck (new step 3h)**
 
 Find the step that creates the PR (currently step 3g, will be 3h after re-lettering). Insert a new step immediately before it:
 
 ```
-   h. **Dedup recheck (required)**: Immediately before creating the PR, re-run the dedup check from step 3b. If a `[Pipeline]` PR is now `open` or `merged` for this issue (a concurrent run may have created one while you were coding), abandon your branch and skip this issue. Do not create a duplicate PR.
+   h. **Dedup recheck (required)**: Immediately before creating the PR, re-run the dedup check from step 3b (parse PR bodies for close keywords matching `#N`, filter to `[Pipeline]` prefix, check for `open` or `merged` state). If a `[Pipeline]` PR is now `open` or `merged` for this issue (a concurrent run may have created one while you were coding), abandon your branch and skip this issue. Do not create a duplicate PR.
 ```
 
 Re-letter the PR creation step to 3i.
@@ -178,13 +170,13 @@ The updated step 3 should be:
 ```
 3. For each implementable issue (check memory — skip if already attempted):
    a. Read the issue carefully, including acceptance criteria and technical notes.
-   b. **Dedup check (required)**: Before starting work, run: `gh pr list --repo $REPO --search "Closes #N" --state all --json number,state,title`. Filter results to PRs whose title starts with `[Pipeline]`. If any result has state `open` or `merged`, skip this issue silently — update memory that issue #N is already covered and move to the next issue. PRs that are `closed` (without merge) do NOT count as covered — those are failed attempts and the issue still needs work.
+   b. **Dedup check (required)**: Before starting work, check if a `[Pipeline]` PR already exists for this issue. Run: `gh pr list --repo $REPO --state all --json number,state,title,body`. Parse each PR's body for close keywords (`closes`, `close`, `fix`, `fixes`, `resolve`, `resolves`) followed by `#N`. Filter to PRs whose title starts with `[Pipeline]`. If any matching result has state `open` or `merged`, skip this issue silently — update memory that issue #N is already covered and move to the next issue. PRs that are `closed` (without merge) do NOT count as covered — those are failed attempts and the issue still needs work.
    c. **CRITICAL**: Always `git checkout main && git pull origin main` before creating each new branch. Create a fresh branch off the latest `main`: `repo-assist/issue-<N>-<short-desc>`. NEVER branch off another feature branch — each PR must be independently mergeable.
    d. Set up the development environment as described in AGENTS.md (run `npm install` if package.json exists).
    e. Implement the feature/task described in the issue. Follow acceptance criteria exactly.
    f. **Build and test (required)**: Run the build and test commands from AGENTS.md. Do not create a PR if tests fail due to your changes.
    g. Add tests if the issue type is `feature` or `infra` and tests aren't explicitly excluded.
-   h. **Dedup recheck (required)**: Immediately before creating the PR, re-run the dedup check from step 3b. If a `[Pipeline]` PR is now `open` or `merged` for this issue (a concurrent run may have created one while you were coding), abandon your branch and skip this issue. Do not create a duplicate PR.
+   h. **Dedup recheck (required)**: Immediately before creating the PR, re-run the dedup check from step 3b (parse PR bodies for close keywords matching `#N`, filter to `[Pipeline]` prefix, check for `open` or `merged` state). If a `[Pipeline]` PR is now `open` or `merged` for this issue (a concurrent run may have created one while you were coding), abandon your branch and skip this issue. Do not create a duplicate PR.
    i. Create a PR with:
       - Title matching the issue title
       - Body containing: `Closes #N`, description of changes, and test results
@@ -257,7 +249,7 @@ Replace lines 217-243:
               ISSUE_STATE=$(gh issue view "$ISSUE_NUMBER" --repo "$REPO" --json state --jq '.state' 2>/dev/null || echo "UNKNOWN")
               if [ "$ISSUE_STATE" = "OPEN" ]; then
                 gh issue comment "$ISSUE_NUMBER" --repo "$REPO" \
-                  -c "Merge not observed within 120s for PR #${PR_NUMBER}. Issue closure deferred to watchdog." || true
+                  --body "Merge not observed within 120s for PR #${PR_NUMBER}. Issue closure deferred to watchdog." || true
               fi
             fi
           fi
@@ -313,6 +305,9 @@ Replace lines 420-453:
               if [ "$ISSUE_STATE" = "OPEN" ]; then
                 gh issue comment "$TARGET" --repo "$REPO" \
                   --body "Merge not observed within 120s for PR #${PR_NUMBER}. Issue closure deferred to watchdog." || true
+```
+
+Note: `gh issue close` uses `-c` for comment, but `gh issue comment` uses `--body`. These are different subcommands with different flags.
               fi
             fi
           fi
@@ -616,7 +611,7 @@ Run:
 ```bash
 git log --oneline -10
 ```
-Expected: 8 new commits (1 empty for repo setting, 7 file changes) plus the design doc commit.
+Expected: 7 new commits (Tasks 2-8, no commit for Task 1 repo setting) plus the design doc commit.
 
 **Step 4: Verify YAML syntax**
 
