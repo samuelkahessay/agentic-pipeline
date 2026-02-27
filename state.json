@@ -1,6 +1,6 @@
 {
-  "last_run": "2026-02-27T22:12:17Z",
-  "workflow_run_id": "22505784346",
+  "last_run": "2026-02-27T22:32:03Z",
+  "workflow_run_id": "22506349782",
   "current_prd": {
     "issue": 123,
     "title": "PRD: Ticket Deflection Service (Run 04 — C#/.NET 8)",
@@ -10,13 +10,12 @@
     {"issue": 125, "title": "Scaffold ASP.NET Core 8 Solution Structure", "pr": 138, "status": "merged"},
     {"issue": 126, "title": "Ticket Data Model & EF Core InMemory DbContext", "pr": 139, "status": "merged"},
     {"issue": 137, "title": "Knowledge Base CRUD Endpoints & Seed Data", "pr": 142, "status": "merged"},
-    {"issue": 127, "title": "Ticket CRUD Minimal API Endpoints", "pr": 141, "branch": "repo-assist/issue-127-ticket-crud-endpoints-c0188cc06cdd2dbd", "status": "pr_open_conflict_fixed"},
+    {"issue": 127, "title": "Ticket CRUD Minimal API Endpoints", "pr": 141, "branch": "repo-assist/issue-127-ticket-crud-endpoints", "status": "pr_open_changes_requested_vercel_noise"},
     {"issue": 140, "title": "Add .NET 8 CI workflow for build and test verification", "branch": "repo-assist/issue-140-dotnet-ci-workflow", "status": "pr_submitted"},
     {"issue": 128, "title": "Ticket Classification Service & Classify Endpoint", "branch": "repo-assist/issue-128-classification-service", "status": "pr_submitted"}
   ],
   "completed_issues": [125, 126, 137],
   "in_progress_issues": [127, 140, 128],
-  "open_stale_prs": [],
   "environment_notes": "Squid proxy at 172.30.0.10:3128 blocks api.nuget.org (ERR_ACCESS_DENIED). NuGet package restore fails locally. github.com and api.github.com are accessible.",
-  "notes": "Run 04. #125, #126, #137 merged. PR #141 (#127) had merge conflict after #142 merged — fixed this run by merging main (seed data + both endpoint registrations). New PRs submitted for #140 (CI workflow) and #128 (Classification Service). Next: after #128 merges, implement #129."
+  "notes": "Run 04. #125, #126, #137 merged. PR #141 (#127) has REQUEST_CHANGES from review but all code criteria pass — Vercel deployment failure is unrelated to .NET code. New PRs submitted for #140 (CI workflow) and #128 (Classification Service). TicketDtos.cs added in both #128 PR and PR #141 — merge conflict expected but trivial. Next: after #128 merges, implement #129."
 }

@@ -1,8 +1,8 @@
 # Pipeline State — 2026-02-27
 
 ## Last Run
-- Workflow run: 22505784346
-- Date: 2026-02-27T22:12:17Z
+- Workflow run: 22506349782
+- Date: 2026-02-27T22:32:03Z
 
 ## Current Run: Run 04 — Ticket Deflection Service (C#/.NET 8)
 
@@ -11,7 +11,7 @@
 |-------|-------|------|--------|----|
 | #125 | Scaffold ASP.NET Core 8 Solution Structure | None | merged | #138 |
 | #126 | Ticket Data Model & EF Core InMemory DbContext | #125 | merged | #139 |
-| #127 | Ticket CRUD Minimal API Endpoints | #126 | in-progress | #141 (open, conflict fixed) |
+| #127 | Ticket CRUD Minimal API Endpoints | #126 | in-progress | #141 (open, changes requested - Vercel noise) |
 | #128 | Ticket Classification Service & Classify Endpoint | #126 | in-progress | submitted this run |
 | #129 | Knowledge Base Matching & Resolution Service | #128 | blocked | — |
 | #130 | Ticket Pipeline Orchestrator & Submit Endpoint | #128,#129 | blocked | — |
