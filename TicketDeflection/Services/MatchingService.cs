@@ -36,7 +36,10 @@ public class MatchingService
         if (bestScore >= _threshold && bestArticle is not null)
         {
             ticket.Status = TicketStatus.AutoResolved;
-            ticket.Resolution = bestArticle.Title;
+            var snippet = bestArticle.Content.Length > 150
+                ? bestArticle.Content[..150] + "..."
+                : bestArticle.Content;
+            ticket.Resolution = $"{bestArticle.Title}: {snippet}";
         }
         else
         {
