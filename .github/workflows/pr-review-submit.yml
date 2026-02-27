@@ -214,14 +214,14 @@ jobs:
           # close-issues.yml never fires. Close linked issues deterministically here.
           # Poll for merge completion (auto-merge typically completes within seconds).
           MERGED=false
-          for i in 1 2 3 4 5 6 7 8 9 10 11 12; do
+          for i in $(seq 1 24); do
             sleep 5
             STATE=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json state --jq '.state')
             if [ "$STATE" = "MERGED" ]; then
               MERGED=true
               break
             fi
-            echo "PR #${PR_NUMBER} state: ${STATE} (attempt $i/12)"
+            echo "PR #${PR_NUMBER} state: ${STATE} (attempt $i/24)"
           done
 
           if [ "$MERGED" = "true" ]; then
@@ -239,8 +239,56 @@ jobs:
               echo "No linked issue found — skipping issue close"
             fi
           else
-            echo "::warning::PR #${PR_NUMBER} did not merge within 60s — issue closure deferred to close-issues.yml"
+            echo "::warning::Merge not observed within 120s for PR #${PR_NUMBER}."
+            if [ -n "${ISSUE_NUMBER:-}" ]; then
+              ISSUE_STATE=$(gh issue view "$ISSUE_NUMBER" --repo "$REPO" --json state --jq '.state' 2>/dev/null || echo "UNKNOWN")
+              if [ "$ISSUE_STATE" = "OPEN" ]; then
+                gh issue comment "$ISSUE_NUMBER" --repo "$REPO" \
+                  --body "Merge not observed within 120s for PR #${PR_NUMBER}. Issue closure deferred to watchdog." || true
+              fi
+            fi
           fi
+
+      - name: Close superseded duplicate PRs
+        if: steps.idempotency.outputs.skip != 'true' && steps.review.outputs.verdict == 'APPROVE'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_NUMBER: ${{ steps.review.outputs.issue_number }}
+          REPO: ${{ github.repository }}
+        run: |
+          if [ -z "${ISSUE_NUMBER:-}" ]; then
+            echo "No linked issue — skipping superseded PR check"
+            exit 0
+          fi
+
+          # Check if this PR actually merged
+          STATE=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json state --jq '.state')
+          if [ "$STATE" != "MERGED" ]; then
+            echo "PR #${PR_NUMBER} not merged — skipping superseded PR cleanup"
+            exit 0
+          fi
+
+          # Find other open [Pipeline] PRs referencing the same issue
+          DUPES=$(gh pr list --repo "$REPO" --state open \
+            --json number,title,body \
+            --jq "[.[] | select(
+              .number != ${PR_NUMBER} and
+              (.title | startswith(\"[Pipeline]\")) and
+              (.body | test(\"(?i)(closes?|fix(es)?|resolves?)\\\\s+#${ISSUE_NUMBER}\\\\b\"))
+            )] | .[].number")
+
+          if [ -z "$DUPES" ]; then
+            echo "No superseded PRs found for issue #${ISSUE_NUMBER}"
+            exit 0
+          fi
+
+          for DUP in $DUPES; do
+            echo "Closing superseded PR #${DUP}"
+            gh pr close "$DUP" --repo "$REPO" --delete-branch \
+              -c "Superseded by PR #${PR_NUMBER} which merged and closed issue #${ISSUE_NUMBER}." || \
+              echo "::warning::Could not close PR #${DUP}"
+          done
 
       - name: Dispatch repo-assist for next cycle
         if: always() && steps.idempotency.outputs.skip != 'true' && steps.review.outputs.verdict != ''
@@ -418,14 +466,14 @@ jobs:
           REPO: ${{ github.repository }}
         run: |
           MERGED=false
-          for i in 1 2 3 4 5 6 7 8 9 10 11 12; do
+          for i in $(seq 1 24); do
             sleep 5
             STATE=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json state --jq '.state')
             if [ "$STATE" = "MERGED" ]; then
               MERGED=true
               break
             fi
-            echo "PR #${PR_NUMBER} state: ${STATE} (attempt $i/12)"
+            echo "PR #${PR_NUMBER} state: ${STATE} (attempt $i/24)"
           done
 
           if [ "$MERGED" = "true" ]; then
@@ -449,8 +497,66 @@ jobs:
               echo "No linked issue found — skipping issue close"
             fi
           else
-            echo "::warning::PR #${PR_NUMBER} did not merge within 60s — issue closure deferred to close-issues.yml"
+            echo "::warning::Merge not observed within 120s for PR #${PR_NUMBER}."
+            TARGET="${ISSUE_NUMBER:-}"
+            if [ -z "$TARGET" ]; then
+              TARGET=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json body \
+                --jq '[.body | scan("(?i)(?:closes|close|fix|fixes|resolve|resolves)\\s+#(\\d+)")] | first | .[]? // empty' \
+                | head -1 || true)
+            fi
+            if [ -n "$TARGET" ]; then
+              ISSUE_STATE=$(gh issue view "$TARGET" --repo "$REPO" --json state --jq '.state' 2>/dev/null || echo "UNKNOWN")
+              if [ "$ISSUE_STATE" = "OPEN" ]; then
+                gh issue comment "$TARGET" --repo "$REPO" \
+                  --body "Merge not observed within 120s for PR #${PR_NUMBER}. Issue closure deferred to watchdog." || true
+              fi
+            fi
           fi
+
+      - name: Close superseded duplicate PRs
+        if: always() && github.event.inputs.verdict == 'APPROVE'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.inputs.pr_number }}
+          ISSUE_NUMBER: ${{ steps.review.outputs.issue_number }}
+          REPO: ${{ github.repository }}
+        run: |
+          TARGET="${ISSUE_NUMBER:-}"
+          if [ -z "$TARGET" ]; then
+            TARGET=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json body \
+              --jq '[.body | scan("(?i)(?:closes|close|fix|fixes|resolve|resolves)\\s+#(\\d+)")] | first | .[]? // empty' \
+              | head -1 || true)
+          fi
+          if [ -z "$TARGET" ]; then
+            echo "No linked issue — skipping superseded PR check"
+            exit 0
+          fi
+
+          STATE=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json state --jq '.state')
+          if [ "$STATE" != "MERGED" ]; then
+            echo "PR #${PR_NUMBER} not merged — skipping superseded PR cleanup"
+            exit 0
+          fi
+
+          DUPES=$(gh pr list --repo "$REPO" --state open \
+            --json number,title,body \
+            --jq "[.[] | select(
+              .number != ${PR_NUMBER} and
+              (.title | startswith(\"[Pipeline]\")) and
+              (.body | test(\"(?i)(closes?|fix(es)?|resolves?)\\\\s+#${TARGET}\\\\b\"))
+            )] | .[].number")
+
+          if [ -z "$DUPES" ]; then
+            echo "No superseded PRs found for issue #${TARGET}"
+            exit 0
+          fi
+
+          for DUP in $DUPES; do
+            echo "Closing superseded PR #${DUP}"
+            gh pr close "$DUP" --repo "$REPO" --delete-branch \
+              -c "Superseded by PR #${PR_NUMBER} which merged and closed issue #${TARGET}." || \
+              echo "::warning::Could not close PR #${DUP}"
+          done
 
       - name: Dispatch repo-assist for next cycle
         if: always()
