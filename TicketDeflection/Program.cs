@@ -21,6 +21,7 @@ using (var scope = app.Services.CreateScope())
 
 // --- Endpoint Mappings ---
 app.MapRazorPages();
+app.MapTicketEndpoints();
 app.MapKnowledgeEndpoints();
 app.MapClassifyEndpoints();
 
