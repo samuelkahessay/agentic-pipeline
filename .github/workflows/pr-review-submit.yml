@@ -131,7 +131,7 @@ jobs:
 
           # Extract linked issue number from PR body via jq (zero shell exposure to body)
           ISSUE_NUMBER=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json body \
-            --jq '[.body | scan("(?i)(?:closes|close|fix|fixes|resolve|resolves)\\s+#(\\d+)")] | first | .[]? // empty' \
+            --jq '[.body | scan("(?i)(?:close[ds]?|fix(?:e[ds])?|resolve[ds]?)\\s+#(\\d+)")] | first | .[]? // empty' \
             | head -1 || true)
           echo "issue_number=${ISSUE_NUMBER}" >> "$GITHUB_OUTPUT"
 
@@ -275,7 +275,7 @@ jobs:
             --jq "[.[] | select(
               .number != ${PR_NUMBER} and
               (.title | startswith(\"[Pipeline]\")) and
-              (.body | test(\"(?i)(closes?|fix(es)?|resolves?)\\\\s+#${ISSUE_NUMBER}\\\\b\"))
+              (.body | test(\"(?i)(close[ds]?|fix(?:e[ds])?|resolve[ds]?)\\\\s+#${ISSUE_NUMBER}\\\\b\"))
             )] | .[].number")
 
           if [ -z "$DUPES" ]; then
@@ -395,7 +395,7 @@ jobs:
 
           # Extract linked issue number from PR body
           ISSUE_NUMBER=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json body \
-            --jq '[.body | scan("(?i)(?:closes|close|fix|fixes|resolve|resolves)\\s+#(\\d+)")] | first | .[]? // empty' \
+            --jq '[.body | scan("(?i)(?:close[ds]?|fix(?:e[ds])?|resolve[ds]?)\\s+#(\\d+)")] | first | .[]? // empty' \
             | head -1 || true)
           echo "issue_number=${ISSUE_NUMBER}" >> "$GITHUB_OUTPUT"
 
@@ -481,7 +481,7 @@ jobs:
             TARGET="${ISSUE_NUMBER:-}"
             if [ -z "$TARGET" ]; then
               TARGET=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json body \
-                --jq '[.body | scan("(?i)(?:closes|close|fix|fixes|resolve|resolves)\\s+#(\\d+)")] | first | .[]? // empty' \
+                --jq '[.body | scan("(?i)(?:close[ds]?|fix(?:e[ds])?|resolve[ds]?)\\s+#(\\d+)")] | first | .[]? // empty' \
                 | head -1 || true)
             fi
             if [ -n "$TARGET" ]; then
@@ -501,7 +501,7 @@ jobs:
             TARGET="${ISSUE_NUMBER:-}"
             if [ -z "$TARGET" ]; then
               TARGET=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json body \
-                --jq '[.body | scan("(?i)(?:closes|close|fix|fixes|resolve|resolves)\\s+#(\\d+)")] | first | .[]? // empty' \
+                --jq '[.body | scan("(?i)(?:close[ds]?|fix(?:e[ds])?|resolve[ds]?)\\s+#(\\d+)")] | first | .[]? // empty' \
                 | head -1 || true)
             fi
             if [ -n "$TARGET" ]; then
@@ -524,7 +524,7 @@ jobs:
           TARGET="${ISSUE_NUMBER:-}"
           if [ -z "$TARGET" ]; then
             TARGET=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json body \
-              --jq '[.body | scan("(?i)(?:closes|close|fix|fixes|resolve|resolves)\\s+#(\\d+)")] | first | .[]? // empty' \
+              --jq '[.body | scan("(?i)(?:close[ds]?|fix(?:e[ds])?|resolve[ds]?)\\s+#(\\d+)")] | first | .[]? // empty' \
               | head -1 || true)
           fi
           if [ -z "$TARGET" ]; then
@@ -543,7 +543,7 @@ jobs:
             --jq "[.[] | select(
               .number != ${PR_NUMBER} and
               (.title | startswith(\"[Pipeline]\")) and
-              (.body | test(\"(?i)(closes?|fix(es)?|resolves?)\\\\s+#${TARGET}\\\\b\"))
+              (.body | test(\"(?i)(close[ds]?|fix(?:e[ds])?|resolve[ds]?)\\\\s+#${TARGET}\\\\b\"))
             )] | .[].number")
 
           if [ -z "$DUPES" ]; then

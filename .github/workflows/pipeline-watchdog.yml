@@ -100,7 +100,7 @@ jobs:
 
             # Extract linked issue number from PR body via jq — zero shell exposure to body
             ISSUE_NUM=$(gh pr view "$PR_NUM" --repo "$REPO" --json body \
-              --jq '[.body | scan("(?i)(?:closes|close|fix|fixes|resolve|resolves)\\s+#(\\d+)")] | first | .[]? // empty' | head -1 || true)
+              --jq '[.body | scan("(?i)(?:close[ds]?|fix(?:e[ds])?|resolve[ds]?)\\s+#(\\d+)")] | first | .[]? // empty' | head -1 || true)
 
             if [ -n "$ISSUE_NUM" ]; then
               echo "Posting /repo-assist on issue #${ISSUE_NUM} for stalled PR #${PR_NUM}"
@@ -127,7 +127,7 @@ jobs:
           # Get all open pipeline PR numbers and their linked issues
           LINKED_ISSUES=$(echo "$PIPELINE_PRS" | jq -r '.[].number' | while read -r PR_N; do
             gh pr view "$PR_N" --repo "$REPO" --json body \
-              --jq '[.body | scan("(?i)(?:closes|close|fix|fixes|resolve|resolves)\\s+#(\\d+)")] | .[][]' 2>/dev/null || true
+              --jq '[.body | scan("(?i)(?:close[ds]?|fix(?:e[ds])?|resolve[ds]?)\\s+#(\\d+)")] | .[][]' 2>/dev/null || true
           done | sort -u)
 
           while IFS= read -r ISSUE_ROW; do
@@ -175,7 +175,7 @@ jobs:
 
             # Extract linked issue number from PR body
             LINKED_ISSUE=$(gh pr view "$PR_NUM" --repo "$REPO" --json body \
-              --jq '[.body | scan("(?i)(?:closes|close|fix|fixes|resolve|resolves)\\s+#(\\d+)")] | first | .[]? // empty' \
+              --jq '[.body | scan("(?i)(?:close[ds]?|fix(?:e[ds])?|resolve[ds]?)\\s+#(\\d+)")] | first | .[]? // empty' \
               | head -1 || true)
 
             if [ -z "$LINKED_ISSUE" ]; then
@@ -196,7 +196,7 @@ jobs:
               --jq "[.[] | select(
                 .number != ${PR_NUM} and
                 (.title | startswith(\"[Pipeline]\")) and
-                (.body | test(\"(?i)(closes?|fix(es)?|resolves?)\\\\s+#${LINKED_ISSUE}\\\\b\"))
+                (.body | test(\"(?i)(close[ds]?|fix(?:e[ds])?|resolve[ds]?)\\\\s+#${LINKED_ISSUE}\\\\b\"))
               )] | first | .number // empty" | head -1 || true)
 
             if [ -z "$MERGED_PR" ]; then
