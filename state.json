@@ -1,5 +1,10 @@
 {
-  "last_run": "2026-02-27T19:56:54Z",
+  "last_run": "2026-02-27T21:14:06Z",
+  "current_prd": {
+    "issue": 123,
+    "title": "PRD: Ticket Deflection Service (Run 04 — C#/.NET 8)",
+    "status": "waiting_decompose"
+  },
   "attempts": [
     {"issue": 63, "title": "Project Scaffold", "pr": 74, "status": "merged"},
     {"issue": 64, "title": "GitHub Data Layer", "pr": 79, "status": "merged"},
@@ -23,5 +28,5 @@
   "completed_issues": [63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 89, 90, 91, 101, 102, 103, 104],
   "in_progress_issues": [],
   "open_stale_prs": [],
-  "notes": "All 18 pipeline issues closed and merged. Pipeline fully complete. Ready for archive."
+  "notes": "New PRD #123 (Run 04 Ticket Deflection Service C#/.NET 8) waiting for /decompose. No feature issues yet."
 }
