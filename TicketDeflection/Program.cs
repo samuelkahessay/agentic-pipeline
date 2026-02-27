@@ -1,6 +1,10 @@
+using Microsoft.EntityFrameworkCore;
+using TicketDeflection.Data;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // --- Service Registrations ---
+builder.Services.AddDbContext<TicketDbContext>(o => o.UseInMemoryDatabase("TicketDb"));
 builder.Services.AddRazorPages();
 
 var app = builder.Build();
