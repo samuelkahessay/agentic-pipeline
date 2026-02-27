@@ -9,6 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<TicketDbContext>(o => o.UseInMemoryDatabase("TicketDb"));
 builder.Services.AddScoped<ClassificationService>();
 builder.Services.AddScoped<MatchingService>();
+builder.Services.AddScoped<PipelineService>();
 builder.Services.AddRazorPages();
 
 var app = builder.Build();
@@ -21,6 +22,7 @@ using (var scope = app.Services.CreateScope())
 }
 
 // --- Endpoint Mappings ---
+app.MapPipelineEndpoints();
 app.MapRazorPages();
 app.MapTicketEndpoints();
 app.MapKnowledgeEndpoints();
