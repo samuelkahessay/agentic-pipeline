@@ -1,6 +1,6 @@
 {
-  "last_run": "2026-02-27T23:20:52Z",
-  "workflow_run_id": "22507633512",
+  "last_run": "2026-02-27T23:26:52Z",
+  "workflow_run_id": "22507720053",
   "current_prd": {
     "issue": 123,
     "title": "PRD: Ticket Deflection Service (Run 04 — C#/.NET 8)",
@@ -11,13 +11,13 @@
     {"issue": 126, "title": "Ticket Data Model & EF Core InMemory DbContext", "pr": 139, "status": "merged"},
     {"issue": 137, "title": "Knowledge Base CRUD Endpoints & Seed Data", "pr": 142, "status": "merged"},
     {"issue": 128, "title": "Ticket Classification Service & Classify Endpoint", "pr": 145, "status": "merged"},
-    {"issue": 140, "title": "Add .NET 8 CI workflow", "branch": "repo-assist/issue-140-dotnet-ci", "status": "pr_created_this_run"},
-    {"issue": 127, "title": "Ticket CRUD Minimal API Endpoints", "pr": 150, "status": "open"},
-    {"issue": 129, "title": "Knowledge Base Matching & Resolution Service", "pr": 151, "status": "open"}
+    {"issue": 127, "title": "Ticket CRUD Minimal API Endpoints", "pr": 150, "status": "merged"},
+    {"issue": 129, "title": "Knowledge Base Matching & Resolution Service", "pr": 151, "status": "open_fix_pushed"},
+    {"issue": 140, "title": "Add .NET 8 CI workflow", "branch": "repo-assist/issue-140-dotnet-ci", "status": "pr_created_this_run"}
   ],
-  "completed_issues": [125, 126, 137, 128],
-  "in_progress_issues": [127, 129, 140],
+  "completed_issues": [125, 126, 137, 128, 127],
+  "in_progress_issues": [129, 140],
   "next_up": [130],
   "environment_notes": "Squid proxy at 172.30.0.10:3128 blocks api.nuget.org (ERR_ACCESS_DENIED). NuGet package restore fails locally. github.com and api.github.com are accessible.",
-  "notes": "Run 07. Previous run created issue #149 (fallback, push failed for #140 CI workflow). This run created proper branch repo-assist/issue-140-dotnet-ci. After #127 (PR #150) and #129 (PR #151) merge, implement #130 (Orchestrator & Submit Endpoint)."
+  "notes": "Run 08. PR #150 (#127 CRUD) merged. Fixed PR #151 (#129 KB Matching) - added article snippet to ticket.Resolution. Created CI workflow PR for #140. After #129 merges, implement #130 (Orchestrator & Submit Endpoint). Issues #149 and #152 are dead-end issues (failed prior push attempts) - ignore them."
 }
