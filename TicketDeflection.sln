@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TicketDeflection", "TicketDeflection\TicketDeflection.csproj", "{05A8A446-44FE-4D44-87AE-B4AD7AEC9C07}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TicketDeflection.Tests", "TicketDeflection.Tests\TicketDeflection.Tests.csproj", "{2CD36078-64A8-4A3C-A259-8F92E478AD6D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{05A8A446-44FE-4D44-87AE-B4AD7AEC9C07}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{05A8A446-44FE-4D44-87AE-B4AD7AEC9C07}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{05A8A446-44FE-4D44-87AE-B4AD7AEC9C07}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{05A8A446-44FE-4D44-87AE-B4AD7AEC9C07}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2CD36078-64A8-4A3C-A259-8F92E478AD6D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2CD36078-64A8-4A3C-A259-8F92E478AD6D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2CD36078-64A8-4A3C-A259-8F92E478AD6D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2CD36078-64A8-4A3C-A259-8F92E478AD6D}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

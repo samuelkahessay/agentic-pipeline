@@ -18,3 +18,8 @@ mcp-logs/
 *.patch
 .vercel
 docs/internal/
+# .NET
+bin/
+obj/
+*.user
+.vs/
