@@ -2,19 +2,22 @@ name: Auto-Dispatch Pipeline Issues
 
 on:
   issues:
-    types: [opened, reopened, labeled]
+    types: [opened, reopened]
+
+# Only one dispatch at a time — rapid issue creation collapses into a single run
+concurrency:
+  group: auto-dispatch-pipeline
+  cancel-in-progress: true
 
 jobs:
   dispatch:
-    # For 'opened' and 'reopened': fire if issue has 'pipeline' label
-    # For 'labeled': fire only when the label being added IS 'pipeline'
-    if: >
-      (github.event.action == 'opened' || github.event.action == 'reopened') &&
-      contains(github.event.issue.labels.*.name, 'pipeline')
-      ||
-      github.event.action == 'labeled' && github.event.label.name == 'pipeline'
+    if: contains(github.event.issue.labels.*.name, 'pipeline')
     runs-on: ubuntu-latest
     steps:
+      # Brief pause so concurrent issue creations collapse via cancel-in-progress
+      - name: Debounce
+        run: sleep 10
+
       - name: Dispatch repo-assist scheduled mode
         env:
           GH_TOKEN: ${{ secrets.GH_AW_GITHUB_TOKEN }}
