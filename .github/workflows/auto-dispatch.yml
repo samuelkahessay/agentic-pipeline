@@ -2,23 +2,48 @@ name: Auto-Dispatch Pipeline Issues
 
 on:
   issues:
-    types: [opened, reopened]
+    types: [opened, reopened, labeled]
 
-# Only one dispatch at a time — rapid issue creation collapses into a single run
+# Collapse rapid issue creation (e.g., decomposer burst) to one dispatch.
 concurrency:
   group: auto-dispatch-pipeline
   cancel-in-progress: true
 
 jobs:
   dispatch:
-    if: contains(github.event.issue.labels.*.name, 'pipeline')
+    if: |
+      (github.event.action == 'labeled' && github.event.label.name == 'pipeline') ||
+      (github.event.action != 'labeled' && contains(github.event.issue.labels.*.name, 'pipeline'))
     runs-on: ubuntu-latest
     steps:
-      # Brief pause so concurrent issue creations collapse via cancel-in-progress
-      - name: Debounce
-        run: sleep 10
+      - name: Debounce (let issue burst settle)
+        run: sleep 15
+
+      - name: Skip when repo-assist already active
+        id: guard
+        env:
+          GH_TOKEN: ${{ secrets.GH_AW_GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          IN_PROGRESS=$(gh run list --repo "$REPO" \
+            --workflow repo-assist.lock.yml \
+            --status in_progress \
+            --json databaseId \
+            --jq 'length')
+          QUEUED=$(gh run list --repo "$REPO" \
+            --workflow repo-assist.lock.yml \
+            --status queued \
+            --json databaseId \
+            --jq 'length')
+          if [ "$IN_PROGRESS" -gt 0 ] || [ "$QUEUED" -gt 0 ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "repo-assist already queued/running; skipping dispatch."
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Dispatch repo-assist scheduled mode
+        if: steps.guard.outputs.skip != 'true'
         env:
           GH_TOKEN: ${{ secrets.GH_AW_GITHUB_TOKEN }}
         run: |
