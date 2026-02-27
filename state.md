@@ -1,8 +1,8 @@
 # Pipeline State — 2026-02-27
 
 ## Last Run
-- Workflow run: 22497785936
-- Date: 2026-02-27T18:02:59Z
+- Workflow run: 22500091009
+- Date: 2026-02-27T19:11:55Z
 
 ## All Issues Completed ✅
 All 18 pipeline task issues have been implemented and merged.
@@ -22,14 +22,11 @@ All 18 pipeline task issues have been implemented and merged.
 | #73 | Gallery Page | #87 | ✅ merged |
 | #89 | DevCard missing LanguageBar and TopRepos | #95 | ✅ merged |
 | #90 | Gallery user sarah-edo returns 404 | #98 | ✅ merged |
-| #91 | Add steipete to gallery | #99 | ✅ merged |
-| #101 | Gallery cards clip text | #108 | ✅ merged |
-| #102 | DevCard no visual separation | #107 | ✅ merged |
-| #103 | Fix gallery user sdrasner → sdras | #105 | ✅ merged |
-| #104 | Share URL wrong path | #106 | ✅ merged |
-
-## Stale Open PRs (need human cleanup)
-- #92, #96, #110, #114, #115, #116, #119, #120
+| #91 | Add OpenClaw creator steipete to gallery | #99 | ✅ merged |
+| #101 | Gallery cards clip text — overflow on scaled cards | #108 | ✅ merged |
+| #102 | DevCard has no visual separation from page background | #107 | ✅ merged |
+| #103 | Fix gallery user sdrasner — correct username is sdras | #105 | ✅ merged |
+| #104 | Share URL input shows wrong path on card page | #106 | ✅ merged |
 
 ## Status
 Pipeline is fully complete for this PRD run. Ready for archive.

@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-02-27T18:02:59Z",
+  "last_run": "2026-02-27T19:11:55Z",
   "attempts": [
     {"issue": 63, "title": "Project Scaffold", "pr": 74, "status": "merged"},
     {"issue": 64, "title": "GitHub Data Layer", "pr": 79, "status": "merged"},
@@ -22,6 +22,6 @@
   ],
   "completed_issues": [63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 89, 90, 91, 101, 102, 103, 104],
   "in_progress_issues": [],
-  "open_stale_prs": [92, 96, 110, 114, 115, 116, 119, 120],
-  "notes": "All pipeline issues closed and merged. 4 bug fixes in latest batch (#101-#104). Multiple duplicate PRs exist due to parallel runs — stale, need manual cleanup."
+  "open_stale_prs": [],
+  "notes": "All 18 pipeline issues closed and merged. Pipeline fully complete. Ready for archive."
 }
