@@ -1,0 +1,31 @@
+name: Auto-Dispatch Pipeline Issues
+
+on:
+  issues:
+    types: [opened, labeled, reopened]
+
+jobs:
+  dispatch:
+    # Only fire for issues carrying the 'pipeline' label
+    if: contains(github.event.issue.labels.*.name, 'pipeline')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check for existing /repo-assist comment
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GH_AW_GITHUB_TOKEN }}
+        run: |
+          EXISTS=$(gh issue view ${{ github.event.issue.number }} \
+            --repo ${{ github.repository }} \
+            --json comments \
+            --jq '[.comments[] | select(.body == "/repo-assist")] | length')
+          echo "already_dispatched=$([[ "$EXISTS" -gt 0 ]] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
+      - name: Comment /repo-assist to trigger the agent
+        if: steps.check.outputs.already_dispatched != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GH_AW_GITHUB_TOKEN }}
+        run: |
+          gh issue comment ${{ github.event.issue.number }} \
+            --repo ${{ github.repository }} \
+            --body "/repo-assist"

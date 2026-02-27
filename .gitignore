@@ -16,3 +16,4 @@ aw-prompts/
 aw_info.json
 mcp-logs/
 *.patch
+.vercel
