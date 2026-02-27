@@ -1,11 +1,13 @@
 using Microsoft.EntityFrameworkCore;
 using TicketDeflection.Data;
 using TicketDeflection.Endpoints;
+using TicketDeflection.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // --- Service Registrations ---
 builder.Services.AddDbContext<TicketDbContext>(o => o.UseInMemoryDatabase("TicketDb"));
+builder.Services.AddScoped<ClassificationService>();
 builder.Services.AddRazorPages();
 
 var app = builder.Build();
@@ -20,6 +22,7 @@ using (var scope = app.Services.CreateScope())
 // --- Endpoint Mappings ---
 app.MapRazorPages();
 app.MapKnowledgeEndpoints();
+app.MapClassifyEndpoints();
 
 app.MapGet("/health", () => Results.Ok(new { status = "healthy", version = "1.0.0" }));
 
