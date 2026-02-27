@@ -75,6 +75,8 @@ If the instructions above contain a URL or file path, fetch/read that content as
 
 7. **Use valid `temporary_id` values** for cross-referencing issues. Format: `aw_` + 3-8 alphanumeric chars (A-Za-z0-9 only). Use short codes like `aw_task1`, `aw_task2`, `aw_feat01`. Do NOT use `aw_create_task` or `aw_scaffold_project`. Reference dependencies with `#aw_task1` syntax.
 
+8. **Self-contained acceptance criteria.** Each issue's acceptance criteria must ONLY reference files, functions, and artifacts that will be created or modified IN THAT ISSUE. Do not include criteria that depend on artifacts from other issues — those belong on the issue that creates the artifact. If a feature spans multiple issues, each issue's criteria cover only its portion. Example: if Issue A creates `page.tsx` and Issue B adds OG metadata to it, Issue B's criteria should say "Add OG metadata to the card page" NOT "Update `generateMetadata` in `src/app/card/[username]/page.tsx`" — because that file doesn't exist until Issue A merges.
+
 ## Output Format
 
 After creating all issues:
