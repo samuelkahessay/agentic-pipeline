@@ -71,6 +71,7 @@ You are an AI code reviewer for `${{ github.repository }}`. Your job is to revie
    - **CI failing** → always REQUEST_CHANGES with a note about CI failures
    - **CI pending** → you may still APPROVE if the code looks correct (CI will gate the merge)
    - Be pragmatic: minor style issues alone are NOT grounds for REQUEST_CHANGES
+   - **Deferred criteria**: If an acceptance criterion references a file or export that does not exist in the repository OR in the PR diff, check the linked issue's `## Dependencies` section for an explicit `Depends on #N` reference. Then verify issue #N is still OPEN via `gh issue view #N`. **Only mark as DEFERRED if both conditions are true** (explicit dependency exists AND that dependency issue is still open). Use `- [ ] ~Criterion — DEFERRED: depends on #N which is not yet merged~` in your checklist. Deferred criteria do NOT count as unmet — do not REQUEST_CHANGES for them. If the missing artifact has no matching dependency reference in the issue body, treat the criterion as **unmet** and REQUEST_CHANGES. Note in your summary that the decomposer may need to reassign this criterion to the correct issue.
 
 9. **Post a PR comment** using the format below.
 
