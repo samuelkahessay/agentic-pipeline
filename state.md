@@ -1,12 +1,12 @@
 # Pipeline State — 2026-02-28
 
 ## Last Run
-- Workflow run: 22514192430
-- Date: 2026-02-28T05:22:54Z
+- Workflow run: 22514419127
+- Date: 2026-02-28T05:38:21Z
 
 ## Current Run: Run 04 — Ticket Deflection Service (C#/.NET 10)
 
-### Status: **ON_TRACK** — 3 new PRs opened for issues #209, #210, #213
+### Status: **ON_TRACK** — 4 new PRs opened for issues #208, #214, #215, #216
 
 ### Issues
 | Issue | Title | Deps | Status | PR |
@@ -38,16 +38,24 @@
 | #201 | Redesign landing page with Blueprint×Terminal aesthetic | None | closed/completed | — |
 | #202 | Apply Blueprint×Terminal to Dashboard/Tickets/Activity pages | #201 | merged | #204 |
 | #205 | Add Run History section to landing page | #201 | merged | #206 |
-| #209 | Fix demo button: executing... state can hang indefinitely | None | **in-progress** | PR opened (branch repo-assist/issue-209-demo-btn-timeout) |
-| #210 | Fix dashboard charts: doughnut charts oversized | None | **in-progress** | PR opened (branch repo-assist/issue-210-dashboard-charts-sizing) |
+| #208 | Fix landing page stats: deflection rate hardcoded | None | **in-progress** | PR opened |
+| #209 | Fix demo button: executing... state can hang indefinitely | None | **in-progress** | PR opened |
+| #210 | Fix dashboard charts: doughnut charts oversized | None | **in-progress** | PR opened |
 | #211 | Add OpenGraph meta tags to landing page | None | closed/not_planned | superseded by #213 |
 | #212 | Add favicon to all pages | None | closed/not_planned | superseded by #213 |
-| #213 | Add OpenGraph meta tags and favicon for social sharing | None | **in-progress** | PR opened (branch repo-assist/issue-213-og-tags-favicon) |
+| #213 | Add OpenGraph meta tags and favicon for social sharing | None | **in-progress** | PR opened |
+| #214 | Fix gh-aw link on landing page | None | **in-progress** | PR opened |
+| #215 | Fix header repo name to link to GitHub repository | None | **in-progress** | PR opened |
+| #216 | Fix hero title: prd-to-prod should link to GitHub repository | None | **in-progress** | PR opened |
 
 ### Open Items
+- #208: Fix landing page stats → PR opened, awaiting review
 - #209: Fix demo button timeout → PR opened, awaiting review
 - #210: Fix dashboard charts sizing → PR opened, awaiting review
 - #213: Add OG tags and favicon → PR opened, awaiting review
+- #214: Fix gh-aw link → PR opened, awaiting review
+- #215: Fix header repo link → PR opened, awaiting review
+- #216: Fix hero prd-to-prod link → PR opened, awaiting review
 
 ### Environment Notes
 - NuGet restore succeeded (.NET 10.0.102 SDK installed)
