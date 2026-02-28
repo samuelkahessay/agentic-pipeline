@@ -6,7 +6,7 @@ description: |
 on:
   schedule: daily
 
-timeout-minutes: 5
+timeout-minutes: 10
 
 engine:
   id: copilot

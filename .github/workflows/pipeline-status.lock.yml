@@ -24,7 +24,7 @@
 # Daily pipeline progress report. Creates and updates a rolling status issue
 # tracking all pipeline issues and PRs.
 #
-# gh-aw-metadata: {"schema_version":"v1","frontmatter_hash":"c93f9d09b15d2396509bae946eda2b25979048aa7c302a380bb88027875afaf9","compiler_version":"v0.50.7"}
+# gh-aw-metadata: {"schema_version":"v1","frontmatter_hash":"9dd736e5f787b6bdc6c4d043125690697bda9d34a00f51dd2c927c1a2e74465d","compiler_version":"v0.50.7"}
 
 name: "Pipeline Status Report"
 "on":
@@ -771,7 +771,7 @@ jobs:
       - name: Execute GitHub Copilot CLI
         id: agentic_execution
         # Copilot CLI tool arguments (sorted):
-        timeout-minutes: 5
+        timeout-minutes: 10
         run: |
           set -o pipefail
           # shellcheck disable=SC1003
