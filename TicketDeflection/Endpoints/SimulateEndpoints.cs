@@ -5,7 +5,7 @@ namespace TicketDeflection.Endpoints;
 
 public static class SimulateEndpoints
 {
-    private static readonly (string Title, string Description, string Source)[] SampleTickets =
+    internal static readonly (string Title, string Description, string Source)[] SampleTickets =
     [
         // Bug category (5 templates)
         ("Application crashes on login", "The app throws a NullReferenceException when I try to log in with my Google account", "web"),
