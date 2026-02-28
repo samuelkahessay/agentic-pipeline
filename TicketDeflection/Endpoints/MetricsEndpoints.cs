@@ -9,6 +9,7 @@ public static class MetricsEndpoints
     public static void MapMetricsEndpoints(this WebApplication app)
     {
         app.MapGet("/api/metrics/overview", GetOverview);
+        app.MapGet("/api/metrics/activity", GetActivity);
     }
 
     private static async Task<IResult> GetOverview(TicketDbContext db)
@@ -30,6 +31,18 @@ public static class MetricsEndpoints
 
         return Results.Ok(new MetricsOverview(total, autoResolved, escalated, resolutionRate, byCategory, bySeverity));
     }
+
+    private static async Task<IResult> GetActivity(TicketDbContext db, int limit = 50, int offset = 0)
+    {
+        var entries = await db.ActivityLogs
+            .OrderByDescending(a => a.Timestamp)
+            .Skip(offset)
+            .Take(limit)
+            .Select(a => new ActivitySummary(a.Id, a.TicketId, a.Action, a.Details, a.Timestamp))
+            .ToListAsync();
+
+        return Results.Ok(entries);
+    }
 }
 
 public record MetricsOverview(
@@ -39,3 +52,10 @@ public record MetricsOverview(
     double ResolutionRate,
     Dictionary<string, int> ByCategory,
     Dictionary<string, int> BySeverity);
+
+public record ActivitySummary(
+    Guid Id,
+    Guid TicketId,
+    string Action,
+    string Details,
+    DateTime Timestamp);

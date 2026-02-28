@@ -1,0 +1,74 @@
+@page "/activity"
+@model ActivityModel
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Activity Log</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen p-6">
+    <div class="max-w-4xl mx-auto">
+        <div class="flex items-center justify-between mb-6">
+            <h1 class="text-3xl font-bold text-gray-800">Activity Log</h1>
+            <div class="flex gap-2">
+                <a href="/dashboard" class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition">Dashboard</a>
+                <button onclick="loadActivity()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">Refresh</button>
+            </div>
+        </div>
+
+        <div id="activity-timeline" class="relative pl-6 space-y-4">
+            <p class="text-gray-500">Loading...</p>
+        </div>
+
+        <div class="flex gap-2 mt-4">
+            <button id="prevBtn" onclick="prevPage()" disabled
+                    class="px-4 py-2 bg-gray-200 rounded disabled:opacity-50">Previous</button>
+            <button id="nextBtn" onclick="nextPage()"
+                    class="px-4 py-2 bg-gray-200 rounded disabled:opacity-50">Next</button>
+        </div>
+    </div>
+
+    <script>
+        const LIMIT = 50;
+        let offset = 0;
+
+        async function loadActivity() {
+            const res = await fetch(`/api/metrics/activity?limit=${LIMIT}&offset=${offset}`);
+            const entries = await res.json();
+            const timeline = document.getElementById('activity-timeline');
+
+            if (entries.length === 0) {
+                timeline.innerHTML = '<p class="text-gray-500">No activity yet.</p>';
+                document.getElementById('nextBtn').disabled = true;
+                return;
+            }
+
+            timeline.innerHTML = entries.map(e => {
+                const date = new Date(e.timestamp).toLocaleString();
+                return `
+                <div class="relative">
+                    <span class="absolute -left-4 top-1.5 w-2.5 h-2.5 rounded-full bg-blue-500 ring-2 ring-white"></span>
+                    <div class="bg-white rounded-lg shadow p-3">
+                        <div class="flex justify-between items-start gap-2">
+                            <span class="font-semibold text-gray-800">${e.action}</span>
+                            <span class="text-xs text-gray-400 whitespace-nowrap">${date}</span>
+                        </div>
+                        <p class="text-sm text-gray-600 mt-1">${e.details}</p>
+                        <p class="text-xs text-gray-400 mt-1">Ticket: ${e.ticketId}</p>
+                    </div>
+                </div>`;
+            }).join('');
+
+            document.getElementById('prevBtn').disabled = offset === 0;
+            document.getElementById('nextBtn').disabled = entries.length < LIMIT;
+        }
+
+        function prevPage() { offset = Math.max(0, offset - LIMIT); loadActivity(); }
+        function nextPage() { offset += LIMIT; loadActivity(); }
+
+        loadActivity();
+    </script>
+</body>
+</html>
