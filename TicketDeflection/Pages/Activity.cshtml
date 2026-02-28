@@ -1,0 +1,102 @@
+@page "/activity"
+@model ActivityModel
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Activity Log — Ticket Deflection</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen p-6">
+    <div class="max-w-4xl mx-auto">
+        <div class="flex items-center justify-between mb-6">
+            <h1 class="text-3xl font-bold text-gray-800">Activity Log</h1>
+            <div class="flex gap-3">
+                <a href="/dashboard" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">Dashboard</a>
+                <a href="/tickets" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition">Tickets</a>
+            </div>
+        </div>
+
+        <div id="activity-timeline" class="space-y-4">
+            <p class="text-gray-500">Loading activity...</p>
+        </div>
+
+        <div class="flex justify-between mt-6">
+            <button id="prevBtn" onclick="prevPage()"
+                    class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition disabled:opacity-50">
+                Previous
+            </button>
+            <span id="pageInfo" class="text-gray-600 self-center"></span>
+            <button id="nextBtn" onclick="nextPage()"
+                    class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition">
+                Next
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const PAGE_SIZE = 20;
+        let currentOffset = 0;
+        let totalLoaded = 0;
+
+        async function loadActivity() {
+            const res = await fetch(`/api/metrics/activity?limit=${PAGE_SIZE}&offset=${currentOffset}`);
+            const items = await res.json();
+            const container = document.getElementById('activity-timeline');
+
+            if (items.length === 0 && currentOffset === 0) {
+                container.innerHTML = '<p class="text-gray-500">No activity recorded yet.</p>';
+                document.getElementById('pageInfo').textContent = '';
+                document.getElementById('nextBtn').disabled = true;
+                document.getElementById('prevBtn').disabled = true;
+                return;
+            }
+
+            container.innerHTML = items.map(item => `
+                <div class="bg-white rounded-lg shadow p-4 flex gap-4 items-start">
+                    <div class="w-3 h-3 rounded-full bg-blue-500 mt-1 flex-shrink-0"></div>
+                    <div class="flex-1">
+                        <div class="flex justify-between items-start">
+                            <span class="font-semibold text-gray-800">${escapeHtml(item.action)}</span>
+                            <span class="text-xs text-gray-400">${new Date(item.timestamp).toLocaleString()}</span>
+                        </div>
+                        <p class="text-gray-600 mt-1">${escapeHtml(item.details)}</p>
+                        <p class="text-xs text-gray-400 mt-1">Ticket: ${escapeHtml(item.ticketId)}</p>
+                    </div>
+                </div>
+            `).join('');
+
+            totalLoaded = items.length;
+            const page = Math.floor(currentOffset / PAGE_SIZE) + 1;
+            document.getElementById('pageInfo').textContent = `Page ${page}`;
+            document.getElementById('prevBtn').disabled = currentOffset === 0;
+            document.getElementById('nextBtn').disabled = items.length < PAGE_SIZE;
+        }
+
+        function prevPage() {
+            if (currentOffset >= PAGE_SIZE) {
+                currentOffset -= PAGE_SIZE;
+                loadActivity();
+            }
+        }
+
+        function nextPage() {
+            if (totalLoaded === PAGE_SIZE) {
+                currentOffset += PAGE_SIZE;
+                loadActivity();
+            }
+        }
+
+        function escapeHtml(str) {
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
+        loadActivity();
+    </script>
+</body>
+</html>
