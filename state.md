@@ -1,8 +1,8 @@
 # Pipeline State — 2026-02-28
 
 ## Last Run
-- Workflow run: 22511842263
-- Date: 2026-02-28T02:56:00Z
+- Workflow run: 22512207885
+- Date: 2026-02-28T03:30:00Z
 
 ## Current Run: Run 04 — Ticket Deflection Service (C#/.NET 8 → .NET 10)
 
@@ -26,13 +26,14 @@
 | #165 | CI Build Failure: CS0246 _ViewImports | None | merged | #166 |
 | #172 | Fix CS0117: KnowledgeArticle missing CreatedAt | None | merged | #173 |
 | #176 | Update target framework from net8.0 to net10.0 | None | merged | #182 |
-| #185 | Upgrade NuGet packages to match net10.0 | None | **BLOCKED** | — |
-| #186 | Update dotnet-ci.yml to use .NET 10 SDK | #185 | **BLOCKED** | — |
+| #185 | Upgrade NuGet packages to match net10.0 | None | closed/merged | — |
+| #186 | Update dotnet-ci.yml to use .NET 10 SDK | #185 | closed | — |
+| #189 | Fix EF Core in-memory database scoping in test fixtures | None | **PATCH READY** | — |
 
-### This Run's Actions (run 22511842263)
-- Issue #176 confirmed closed/merged (PR #182 was merged)
-- Issue #185 attempted — patch created, push blocked (same env constraint as before)
-- Posted patch as comment on issue #185 for manual application
+### This Run's Actions (run 22512207885)
+- Issues #185 and #186 confirmed closed by human
+- Issue #189 implemented — 6 files changed, all 62 tests pass locally
+- Patch posted as comment on issue #189 for manual application
 - Updated project status board
 
 ### ⚠️ Environment Constraints
@@ -40,5 +41,4 @@
    NuGet packages cannot be restored locally.
 2. `GH_AW_GITHUB_TOKEN` cannot push branches to the remote repository.
    safeoutputs falls back to creating patch artifacts instead of real PRs.
-3. Issue #185 is blocked until human applies the patch from the issue comment.
-4. Issue #186 requires `workflow` scope to modify `.github/workflows/dotnet-ci.yml`.
+3. Issue #189 patch is ready — requires human to push the branch and open PR.
