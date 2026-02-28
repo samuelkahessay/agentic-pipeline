@@ -12,8 +12,11 @@ concurrency:
 jobs:
   dispatch:
     if: |
-      (github.event.action == 'labeled' && github.event.label.name == 'pipeline') ||
-      (github.event.action != 'labeled' && contains(github.event.issue.labels.*.name, 'pipeline'))
+      contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.issue.author_association) &&
+      (
+        (github.event.action == 'labeled' && github.event.label.name == 'pipeline') ||
+        (github.event.action != 'labeled' && contains(github.event.issue.labels.*.name, 'pipeline'))
+      )
     runs-on: ubuntu-latest
     steps:
       - name: Debounce (let issue burst settle)
