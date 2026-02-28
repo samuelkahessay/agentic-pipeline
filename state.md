@@ -1,8 +1,8 @@
 # Pipeline State — 2026-02-28
 
 ## Last Run
-- Workflow run: 22509922293
-- Date: 2026-02-28T01:07:45Z
+- Workflow run: 22510073293
+- Date: 2026-02-28T01:14:02Z
 
 ## Current Run: Run 04 — Ticket Deflection Service (C#/.NET 8)
 
@@ -20,20 +20,18 @@
 | #133 | Dashboard Ticket Feed Razor Page | #132 | merged | #161 |
 | #134 | Dashboard Activity Log Razor Page | #132 | merged | #164 |
 | #135 | Landing Page with Demo Run Button | #131,#133,#134 | merged | #167 |
-| #136 | Dockerfile & Production Configuration | #135 | PR open | (new this run) |
+| #136 | Dockerfile & Production Configuration | #135 | PR open | #170 |
 | #137 | Knowledge Base CRUD Endpoints & Seed Data | None | merged | #142 |
 | #140 | Add .NET 8 CI workflow | None | closed/completed | — |
 | #165 | CI Build Failure: CS0246 _ViewImports | None | merged | #166 |
 | #168 | CI Build Failure: CS0117 (PR #167) | None | fixed | pushed to #167 |
 | #169 | CI Build Failure: CS0117 (PR #166) | None | fixed | pushed to #166 |
+| #171 | CI Build Failure: CS0117 (PR #170) | None | fixed | pushed to #170 |
 
-### This Run's Actions (run 22509922293)
-- Confirmed PRs #166 and #167 both merged
-- Issue #136 (Dockerfile) is now unblocked
-- Created branch repo-assist/issue-136-dockerfile
-- Added: Dockerfile (multi-stage), appsettings.Production.json, TicketDeflection/README.md
-- PR created for issue #136
-- Labeled #136 as in-progress
+### This Run's Actions (run 22510073293)
+- Found CS0117 error on PR #170: KnowledgeArticle missing CreatedAt property
+- Added `public DateTime CreatedAt { get; set; } = DateTime.UtcNow;` to KnowledgeArticle.cs
+- Pushed fix to PR #170 branch
 - Updated pipeline status issue #124
 
 ### ⚠️ Environment Constraint
