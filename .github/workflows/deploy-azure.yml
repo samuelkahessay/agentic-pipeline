@@ -1,0 +1,51 @@
+#
+# Deploy to Azure — Builds and deploys the app to Azure App Service on every
+# push to main (i.e., after a PR merges).
+#
+# Flow:
+#   1. Push lands on main (direct or via merged PR)
+#   2. Restore, build, and publish the .NET app in Release configuration
+#   3. Deploy the published output to Azure App Service using the publish profile
+#
+# Prerequisites:
+#   - AZURE_WEBAPP_PUBLISH_PROFILE secret containing the App Service publish profile XML
+#
+# Safety:
+#   - Concurrency group ensures only one deploy runs at a time; newer pushes
+#     cancel in-progress deploys (safe because we always deploy HEAD of main)
+#
+
+name: Deploy to Azure
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-azure
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - run: dotnet restore TicketDeflection.sln
+      - run: dotnet build TicketDeflection.sln --no-restore -c Release
+      - run: dotnet test TicketDeflection.sln --no-build -c Release --verbosity normal
+      - run: dotnet publish TicketDeflection/TicketDeflection.csproj --no-build -c Release -o ./publish
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: prd-to-prod
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: ./publish
