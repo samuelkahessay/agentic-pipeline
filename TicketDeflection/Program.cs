@@ -32,6 +32,8 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
+app.UseStaticFiles();
+
 // --- Endpoint Mappings ---
 app.MapPipelineEndpoints();
 app.MapSimulateEndpoints();
