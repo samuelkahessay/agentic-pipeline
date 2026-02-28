@@ -1,10 +1,10 @@
 # Pipeline State — 2026-02-28
 
 ## Last Run
-- Workflow run: 22509708869
-- Date: 2026-02-28T01:01:27Z
+- Workflow run: 22509922293
+- Date: 2026-02-28T01:07:45Z
 
-## Current Run: Run 05 — Ticket Deflection Service (C#/.NET 8)
+## Current Run: Run 04 — Ticket Deflection Service (C#/.NET 8)
 
 ### Issues
 | Issue | Title | Deps | Status | PR |
@@ -19,19 +19,21 @@
 | #132 | Dashboard Overview Page with Metrics API | #130 | merged | #159 |
 | #133 | Dashboard Ticket Feed Razor Page | #132 | merged | #161 |
 | #134 | Dashboard Activity Log Razor Page | #132 | merged | #164 |
-| #135 | Landing Page with Demo Run Button | #131,#133,#134 | PR open | #167 |
-| #136 | Dockerfile & Production Configuration | #135 | blocked | — |
+| #135 | Landing Page with Demo Run Button | #131,#133,#134 | merged | #167 |
+| #136 | Dockerfile & Production Configuration | #135 | PR open | (new this run) |
 | #137 | Knowledge Base CRUD Endpoints & Seed Data | None | merged | #142 |
 | #140 | Add .NET 8 CI workflow | None | closed/completed | — |
-| #165 | CI Build Failure: CS0246 _ViewImports | None | PR open | #166 |
+| #165 | CI Build Failure: CS0246 _ViewImports | None | merged | #166 |
 | #168 | CI Build Failure: CS0117 (PR #167) | None | fixed | pushed to #167 |
 | #169 | CI Build Failure: CS0117 (PR #166) | None | fixed | pushed to #166 |
 
-### This Run's Actions (run 22509708869)
-- Identified CS0117 error: `KnowledgeArticle` missing `CreatedAt` property
-- Added `public DateTime CreatedAt { get; set; } = DateTime.UtcNow;` to KnowledgeArticle.cs
-- Pushed fix to PR #166 (fix-razor-viewimports branch)
-- Pushed fix to PR #167 (landing-page branch)
+### This Run's Actions (run 22509922293)
+- Confirmed PRs #166 and #167 both merged
+- Issue #136 (Dockerfile) is now unblocked
+- Created branch repo-assist/issue-136-dockerfile
+- Added: Dockerfile (multi-stage), appsettings.Production.json, TicketDeflection/README.md
+- PR created for issue #136
+- Labeled #136 as in-progress
 - Updated pipeline status issue #124
 
 ### ⚠️ Environment Constraint
