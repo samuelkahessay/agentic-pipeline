@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System.Net;
 using System.Text.Json;
@@ -15,13 +16,17 @@ public class TicketFeedEndpointTests : IClassFixture<WebApplicationFactory<Progr
     {
         var dbName = $"TicketFeedTestDb_{Guid.NewGuid()}";
         _factory = factory.WithWebHostBuilder(b =>
+        {
+            b.ConfigureAppConfiguration((_, config) =>
+                config.AddInMemoryCollection(new Dictionary<string, string?> { ["DemoSeed:Enabled"] = "false" }));
             b.ConfigureServices(services =>
             {
                 var existing = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<TicketDbContext>));
                 if (existing != null) services.Remove(existing);
                 services.AddDbContext<TicketDbContext>(o =>
                     o.UseInMemoryDatabase(dbName));
-            }));
+            });
+        });
     }
 
     [Fact]
