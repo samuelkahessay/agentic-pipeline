@@ -29,7 +29,7 @@
 name: "Pipeline Status Report"
 "on":
   schedule:
-  - cron: "58 10 * * *"
+  - cron: "14 19 * * *"
     # Friendly format: daily (scattered)
   workflow_dispatch:
 

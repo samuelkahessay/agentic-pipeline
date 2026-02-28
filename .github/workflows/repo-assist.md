@@ -12,6 +12,10 @@ on:
     name: repo-assist
   reaction: "eyes"
 
+concurrency:
+  group: "gh-aw-${{ github.workflow }}-${{ github.event.issue.number || github.event.pull_request.number || github.event_name }}"
+  cancel-in-progress: true
+
 timeout-minutes: 60
 
 engine:
@@ -44,6 +48,10 @@ safe-outputs:
     title-prefix: "[Pipeline] "
     labels: [automation, pipeline]
     max: 2
+  create-project-status-update:
+    project: "https://github.com/users/samuelkahessay/projects/2"
+    max: 1
+    github-token: ${{ secrets.GH_AW_PROJECT_GITHUB_TOKEN }}
   add-labels:
     allowed: [feature, test, infra, docs, bug, pipeline, blocked, ready, in-progress, completed]
     max: 20
@@ -150,7 +158,7 @@ Each run, work on 2-4 tasks from the list below. Use round-robin scheduling base
 
 ### Task 5: Update Pipeline Status (ALWAYS DO THIS)
 
-Maintain a single open issue titled `[Pipeline] Status` as a rolling summary:
+Post a project status update to `https://github.com/users/samuelkahessay/projects/2` as a rolling summary.
 
 ```
 ## Pipeline Status — Updated YYYY-MM-DD
@@ -174,4 +182,10 @@ Maintain a single open issue titled `[Pipeline] Status` as a rolling summary:
 - #N: <title> (ready to implement)
 ```
 
-Update this issue every run.
+Use status:
+- `ON_TRACK` when progressing normally
+- `AT_RISK` when blocked or repeatedly failing CI/review
+- `OFF_TRACK` when the pipeline is stalled
+- `COMPLETE` when no open pipeline issues/PRs remain
+
+Do NOT create or update a `[Pipeline] Status` issue for this task. Create exactly one project status update every run.
