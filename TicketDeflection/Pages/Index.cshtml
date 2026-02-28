@@ -5,132 +5,350 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Ticket Deflection Service</title>
+    <title>prd-to-prod — autonomous software pipeline</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .gradient-bg {
-            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+        :root {
+            --bg: #080c12;
+            --grid-line: rgba(0, 160, 255, 0.04);
+            --border: rgba(0, 160, 255, 0.15);
+            --accent: #00aaff;
+            --accent-dim: rgba(0, 170, 255, 0.08);
+            --green: #3ddc84;
+            --amber: #f5a623;
+            --red: #f85149;
+            --text: #b8c4d4;
+            --dim: #4a5a72;
+            --mono: 'JetBrains Mono', monospace;
+            --sans: 'Space Grotesk', sans-serif;
         }
-        .card-glow {
-            box-shadow: 0 0 40px rgba(99, 102, 241, 0.15), 0 20px 60px rgba(0, 0, 0, 0.4);
+        * { box-sizing: border-box; }
+        body {
+            background-color: var(--bg);
+            background-image:
+                linear-gradient(var(--grid-line) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+            background-size: 48px 48px;
+            font-family: var(--mono);
+            color: var(--text);
+            font-size: 14px;
         }
-        .step-connector {
-            background: linear-gradient(90deg, #6366f1, #8b5cf6);
+        h1, h2, h3, .font-sans { font-family: var(--sans); }
+        .status-bar {
+            background: rgba(0, 170, 255, 0.04);
+            border-bottom: 1px solid var(--border);
         }
-        .btn-glow:hover {
-            box-shadow: 0 0 20px rgba(99, 102, 241, 0.6);
+        .panel {
+            background: rgba(4, 10, 20, 0.7);
+            border: 1px solid var(--border);
         }
-        @@keyframes pulse-dot {
+        .panel-top {
+            border-top: 2px solid var(--accent);
+        }
+        .metric-val {
+            font-family: var(--mono);
+            color: var(--accent);
+            font-size: 1.75rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+        .metric-lbl {
+            color: var(--dim);
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            margin-top: 6px;
+        }
+        .exec-btn {
+            background: transparent;
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            font-family: var(--mono);
+            font-size: 1rem;
+            font-weight: 700;
+            padding: 14px 48px;
+            cursor: pointer;
+            transition: background 0.2s, box-shadow 0.2s;
+            letter-spacing: 0.05em;
+        }
+        .exec-btn:hover {
+            background: var(--accent-dim);
+            box-shadow: 0 0 24px rgba(0, 170, 255, 0.2), inset 0 0 20px rgba(0, 170, 255, 0.04);
+        }
+        .exec-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .stage-label {
+            color: var(--dim);
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            width: 60px;
+            flex-shrink: 0;
+            padding-top: 2px;
+        }
+        .flow-tag {
+            background: rgba(0, 170, 255, 0.08);
+            border: 1px solid var(--border);
+            color: var(--text);
+            font-family: var(--mono);
+            font-size: 0.7rem;
+            padding: 3px 10px;
+            white-space: nowrap;
+        }
+        .flow-tag-green {
+            background: rgba(61, 220, 132, 0.08);
+            border: 1px solid rgba(61, 220, 132, 0.2);
+            color: var(--green);
+        }
+        .flow-tag-amber {
+            background: rgba(245, 166, 35, 0.08);
+            border: 1px solid rgba(245, 166, 35, 0.2);
+            color: var(--amber);
+        }
+        @@keyframes cursor-blink {
             0%, 100% { opacity: 1; }
-            50% { opacity: 0.4; }
+            50% { opacity: 0; }
         }
-        .loading-dot {
-            animation: pulse-dot 1s ease-in-out infinite;
+        .cursor-blink {
+            animation: cursor-blink 1s step-end infinite;
+            color: var(--accent);
         }
-        .loading-dot:nth-child(2) { animation-delay: 0.2s; }
-        .loading-dot:nth-child(3) { animation-delay: 0.4s; }
+        @@keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .spin { display: inline-block; animation: spin 1s linear infinite; }
+        .nav-link {
+            display: block;
+            text-align: center;
+            padding: 14px 16px;
+            background: rgba(4, 10, 20, 0.7);
+            border: 1px solid var(--border);
+            transition: background 0.2s, border-color 0.2s;
+            text-decoration: none;
+        }
+        .nav-link:hover {
+            background: var(--accent-dim);
+            border-color: var(--accent);
+        }
+        .nav-link:hover .nav-path { color: var(--accent); }
+        .nav-path { color: rgba(0, 170, 255, 0.7); font-weight: 700; margin-bottom: 4px; }
+        .nav-desc { color: var(--dim); font-size: 0.65rem; }
+        .divider { border-top: 1px solid var(--border); margin: 0; }
+        .text-accent { color: var(--accent); }
+        .text-green { color: var(--green); }
+        .text-amber { color: var(--amber); }
+        .text-dim { color: var(--dim); }
+        .text-white { color: #e8edf5; }
     </style>
 </head>
-<body class="gradient-bg min-h-screen flex flex-col items-center justify-center p-6">
+<body class="min-h-screen">
 
-    <div class="max-w-3xl w-full">
+    <!-- Status bar -->
+    <div class="status-bar px-6 py-2 flex items-center justify-between text-xs">
+        <div class="flex items-center gap-4">
+            <span class="text-accent font-bold tracking-widest">PRD-TO-PROD</span>
+            <span class="text-dim">//</span>
+            <span class="text-dim">samuelkahessay/prd-to-prod</span>
+        </div>
+        <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-[var(--green)] inline-block"></span>
+            <span class="text-dim">pipeline: active</span>
+        </div>
+    </div>
+
+    <div class="max-w-4xl mx-auto px-4 py-14">
+
         <!-- Hero -->
-        <div class="text-center mb-12">
-            <div class="inline-flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/30 rounded-full px-4 py-1.5 mb-6">
-                <span class="w-2 h-2 rounded-full bg-emerald-400 inline-block"></span>
-                <span class="text-indigo-300 text-sm font-medium">Built autonomously by an AI pipeline</span>
-            </div>
-            <h1 class="text-5xl sm:text-6xl font-extrabold text-white mb-4 leading-tight tracking-tight">
-                Ticket Deflection
-                <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-violet-400">Service</span>
+        <section class="mb-16">
+            <div class="text-xs text-dim mb-5">// autonomous software factory — powered by gh-aw</div>
+            <h1 class="font-sans text-5xl sm:text-6xl font-bold text-white mb-4 leading-tight">
+                Drop a PRD.<br />Get a deployed app.
             </h1>
-            <p class="text-slate-400 text-lg sm:text-xl max-w-xl mx-auto leading-relaxed">
-                Automatically classifies, matches, and resolves support tickets using a multi-stage AI pipeline.
+            <p class="text-dim text-base mb-6">Zero human code.<span class="cursor-blink ml-1">█</span></p>
+            <p class="text-sm leading-relaxed max-w-2xl" style="color: var(--text)">
+                <span class="text-accent font-bold">prd-to-prod</span> is an autonomous software pipeline powered by
+                <span class="text-accent font-bold">gh-aw</span> (GitHub Agentic Workflows).
+                It reads a product requirements document, decomposes it into GitHub Issues,
+                writes code for each one, opens Pull Requests, reviews its own work, merges to main —
+                and self-heals when things break. No human writes a single line of code.
             </p>
-        </div>
+        </section>
 
-        <!-- Stats row -->
-        <div class="grid grid-cols-3 gap-4 mb-10 text-center">
-            <div class="bg-white/5 border border-white/10 rounded-xl p-4">
-                <div class="text-3xl font-bold text-indigo-300">25</div>
-                <div class="text-slate-400 text-sm mt-1">Tickets per demo run</div>
-            </div>
-            <div class="bg-white/5 border border-white/10 rounded-xl p-4">
-                <div class="text-3xl font-bold text-violet-300">~70%</div>
-                <div class="text-slate-400 text-sm mt-1">Expected deflection rate</div>
-            </div>
-            <div class="bg-white/5 border border-white/10 rounded-xl p-4">
-                <div class="text-3xl font-bold text-emerald-300">&lt;2s</div>
-                <div class="text-slate-400 text-sm mt-1">Pipeline processing time</div>
-            </div>
-        </div>
+        <!-- Pipeline schematic -->
+        <section class="mb-16">
+            <div class="text-xs text-dim mb-5 uppercase tracking-widest">// system schematic — prd-to-prod pipeline</div>
+            <div class="panel p-6">
+                <div class="flex flex-col gap-5">
 
-        <!-- Pipeline flow diagram -->
-        <div class="bg-white/5 border border-white/10 rounded-2xl p-6 mb-10">
-            <p class="text-slate-400 text-xs font-semibold uppercase tracking-widest text-center mb-5">Pipeline Flow</p>
-            <div class="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-0">
-                <div class="flex flex-col items-center bg-indigo-500/20 border border-indigo-500/40 rounded-xl px-5 py-3 min-w-[110px]">
-                    <span class="text-2xl mb-1">📥</span>
-                    <span class="text-indigo-200 font-semibold text-sm">Intake</span>
-                    <span class="text-slate-500 text-xs mt-0.5">Receive ticket</span>
+                    <div class="flex gap-4 items-start">
+                        <span class="stage-label">INPUT</span>
+                        <div>
+                            <div class="text-accent text-xs mb-1">[ product-requirements.md ]</div>
+                            <div class="text-dim text-xs leading-relaxed">"Build a ticket deflection service with classification, KB matching, and a live dashboard..."</div>
+                        </div>
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <div class="flex gap-4 items-start">
+                        <span class="stage-label">STAGE 1</span>
+                        <div>
+                            <div class="text-white font-bold text-sm mb-1">prd-decomposer</div>
+                            <div class="text-dim text-xs">Reads PRD → creates GitHub Issues with acceptance criteria and dependency graph</div>
+                            <div class="text-green text-xs mt-1">&gt; 13 issues created</div>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-4 items-start">
+                        <span class="stage-label">STAGE 2</span>
+                        <div>
+                            <div class="text-white font-bold text-sm mb-1">repo-assist</div>
+                            <div class="text-dim text-xs">Picks up each issue in dependency order, writes code, opens one draft Pull Request per issue</div>
+                            <div class="text-green text-xs mt-1">&gt; 13 PRs opened</div>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-4 items-start">
+                        <span class="stage-label">STAGE 3</span>
+                        <div>
+                            <div class="text-white font-bold text-sm mb-1">pr-review-agent</div>
+                            <div class="text-dim text-xs">Reads full codebase and PR diff, posts verdict — APPROVE or REQUEST_CHANGES with remediation steps</div>
+                            <div class="text-green text-xs mt-1">&gt; 13 reviews submitted</div>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-4 items-start">
+                        <span class="stage-label">STAGE 4</span>
+                        <div>
+                            <div class="text-white font-bold text-sm mb-1">pr-review-submit + auto-merge</div>
+                            <div class="text-dim text-xs">On APPROVE: enables auto-merge → PR merges to main → linked issue closes automatically</div>
+                            <div class="text-green text-xs mt-1">&gt; 13 PRs merged to main</div>
+                        </div>
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <div class="flex gap-4 items-start">
+                        <span class="stage-label">OUTPUT</span>
+                        <div>
+                            <div class="text-accent text-xs mb-1">[ production-ready application ]</div>
+                            <div class="text-dim text-xs">C#/.NET 10 · ASP.NET Core · Razor Pages · EF Core · xUnit · Dockerfile</div>
+                        </div>
+                    </div>
+
                 </div>
-                <div class="text-slate-600 font-bold text-lg sm:mx-2 rotate-90 sm:rotate-0">→</div>
-                <div class="flex flex-col items-center bg-violet-500/20 border border-violet-500/40 rounded-xl px-5 py-3 min-w-[110px]">
-                    <span class="text-2xl mb-1">🏷️</span>
-                    <span class="text-violet-200 font-semibold text-sm">Classify</span>
-                    <span class="text-slate-500 text-xs mt-0.5">Category + severity</span>
+            </div>
+            <div class="mt-3 text-xs text-dim">
+                <span class="text-accent">Self-healing:</span> pipeline-watchdog detects stalls, retries failures, cleans up superseded PRs. No human intervention required.
+            </div>
+        </section>
+
+        <!-- Specimen: what the pipeline built -->
+        <section class="mb-16">
+            <div class="text-xs text-dim mb-5 uppercase tracking-widest">// specimen — what the pipeline built</div>
+            <div class="panel p-6">
+                <div class="text-xs text-dim mb-4">BUILD_ARTIFACT: ticket-deflection-service · commit b511f76</div>
+
+                <h2 class="font-sans text-xl font-bold text-white mb-2">Ticket Deflection Service</h2>
+                <p class="text-dim text-xs mb-6 leading-relaxed max-w-xl">
+                    A complete C#/.NET application the pipeline built from a single PRD.
+                    Classifies, matches, and resolves support tickets through a multi-stage pipeline.
+                    This is the <em>proof</em> — not the point.
+                </p>
+
+                <!-- Stats as instrument panels -->
+                <div class="grid grid-cols-3 gap-4 mb-6">
+                    <div class="panel panel-top p-4">
+                        <div class="metric-val">25</div>
+                        <div class="metric-lbl">tickets / run</div>
+                    </div>
+                    <div class="panel panel-top p-4">
+                        <div class="metric-val">~70%</div>
+                        <div class="metric-lbl">deflection rate</div>
+                    </div>
+                    <div class="panel panel-top p-4">
+                        <div class="metric-val">&lt;2s</div>
+                        <div class="metric-lbl">processing time</div>
+                    </div>
                 </div>
-                <div class="text-slate-600 font-bold text-lg sm:mx-2 rotate-90 sm:rotate-0">→</div>
-                <div class="flex flex-col items-center bg-fuchsia-500/20 border border-fuchsia-500/40 rounded-xl px-5 py-3 min-w-[110px]">
-                    <span class="text-2xl mb-1">🔍</span>
-                    <span class="text-fuchsia-200 font-semibold text-sm">Match</span>
-                    <span class="text-slate-500 text-xs mt-0.5">Knowledge base</span>
-                </div>
-                <div class="text-slate-600 font-bold text-lg sm:mx-2 rotate-90 sm:rotate-0">→</div>
-                <div class="flex flex-col items-center bg-emerald-500/20 border border-emerald-500/40 rounded-xl px-5 py-3 min-w-[110px]">
-                    <span class="text-2xl mb-1">✅</span>
-                    <span class="text-emerald-200 font-semibold text-sm">Resolve/Escalate</span>
-                    <span class="text-slate-500 text-xs mt-0.5">Auto or human</span>
+
+                <!-- Ticket pipeline flow -->
+                <div class="divider mb-4"></div>
+                <div class="text-xs text-dim mb-3">TICKET_PIPELINE:</div>
+                <div class="flex flex-wrap items-center gap-2 text-xs">
+                    <span class="flow-tag">Intake</span>
+                    <span class="text-dim">──▶</span>
+                    <span class="flow-tag">Classify</span>
+                    <span class="text-dim">──▶</span>
+                    <span class="flow-tag">Match</span>
+                    <span class="text-dim">──▶</span>
+                    <span class="flow-tag flow-tag-green">Resolve/Escalate</span>
                 </div>
             </div>
-        </div>
+        </section>
 
-        <!-- CTA -->
-        <div class="flex flex-col items-center mb-10">
-            <button id="runDemoBtn" onclick="runDemo()"
-                    class="btn-glow px-10 py-4 bg-gradient-to-r from-indigo-500 to-violet-600 text-white font-bold rounded-2xl text-lg transition-all duration-200 hover:from-indigo-400 hover:to-violet-500 active:scale-95 shadow-lg shadow-indigo-500/30 min-w-[220px]">
-                <span id="btnText">🚀 Run Demo</span>
-                <span id="btnLoading" class="hidden gap-1 justify-center items-center">
-                    <span class="loading-dot w-2 h-2 rounded-full bg-white inline-block"></span>
-                    <span class="loading-dot w-2 h-2 rounded-full bg-white inline-block"></span>
-                    <span class="loading-dot w-2 h-2 rounded-full bg-white inline-block"></span>
-                </span>
-            </button>
-            <p class="text-slate-500 text-sm mt-3">Generates 25 tickets and takes you straight to the live dashboard</p>
-        </div>
+        <!-- Demo CTA -->
+        <section class="mb-16">
+            <div class="text-xs text-dim mb-5 uppercase tracking-widest">// live demo — run the pipeline now</div>
+            <div class="panel p-8 text-center">
+                <div class="text-xs text-dim mb-2">$ exec demo --tickets 25 --redirect /dashboard</div>
+                <div class="text-green text-xs mb-8">Process 25 sample tickets through the deflection pipeline.</div>
 
-        <!-- Error banner -->
-        <div id="demoError" class="hidden bg-red-900/40 border border-red-500/40 rounded-xl px-5 py-3 mb-8 text-center">
-            <p class="text-red-300 text-sm" id="demoErrorContent"></p>
-        </div>
+                <button id="runDemoBtn" onclick="runDemo()" class="exec-btn">
+                    <span id="btnText">[ Run Demo ]</span>
+                    <span id="btnLoading" class="hidden">
+                        <span class="spin">&#x21BB;</span> executing...
+                    </span>
+                </button>
 
-        <!-- Secondary nav -->
-        <nav class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <a href="/dashboard"
-               class="block text-center px-4 py-3 bg-white/5 border border-white/10 text-slate-300 rounded-xl hover:bg-indigo-500/20 hover:border-indigo-500/40 hover:text-indigo-200 transition-all duration-200 font-medium text-sm">
-                📊 Dashboard
-            </a>
-            <a href="/activity"
-               class="block text-center px-4 py-3 bg-white/5 border border-white/10 text-slate-300 rounded-xl hover:bg-violet-500/20 hover:border-violet-500/40 hover:text-violet-200 transition-all duration-200 font-medium text-sm">
-                📋 Activity Log
-            </a>
-            <a href="/tickets"
-               class="block text-center px-4 py-3 bg-white/5 border border-white/10 text-slate-300 rounded-xl hover:bg-fuchsia-500/20 hover:border-fuchsia-500/40 hover:text-fuchsia-200 transition-all duration-200 font-medium text-sm">
-                🎫 Ticket Feed
-            </a>
+                <p class="text-dim text-xs mt-5">Generates 25 tickets → redirects to /dashboard on completion</p>
+
+                <div id="demoError" class="hidden mt-5 panel text-left p-4" style="border-color: var(--red)">
+                    <div class="text-xs font-bold mb-1" style="color: var(--red)">EXEC_ERROR:</div>
+                    <div class="text-xs" style="color: var(--red)" id="demoErrorContent"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Provenance -->
+        <section class="mb-14">
+            <div class="text-xs text-dim mb-4 uppercase tracking-widest">// provenance — verify the work is real</div>
+            <div class="panel p-4 text-xs">
+                <div class="text-dim mb-1">
+                    REPO: <a href="https://github.com/samuelkahessay/prd-to-prod" class="text-accent hover:underline">github.com/samuelkahessay/prd-to-prod</a>
+                </div>
+                <div class="text-dim">Every issue, PR, review comment, and merge commit is public. The pipeline's git history is the source of truth.</div>
+            </div>
+        </section>
+
+        <!-- Navigation -->
+        <nav>
+            <div class="text-xs text-dim mb-4">// explore what the pipeline built</div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <a href="/dashboard" class="nav-link">
+                    <div class="nav-path">/dashboard</div>
+                    <div class="nav-desc">metrics &amp; resolution rates</div>
+                </a>
+                <a href="/activity" class="nav-link">
+                    <div class="nav-path">/activity</div>
+                    <div class="nav-desc">pipeline event log</div>
+                </a>
+                <a href="/tickets" class="nav-link">
+                    <div class="nav-path">/tickets</div>
+                    <div class="nav-desc">ticket feed</div>
+                </a>
+            </div>
         </nav>
 
-        <p class="text-center text-slate-600 text-xs mt-8">Built end-to-end by an autonomous AI pipeline · <a href="https://github.com/samuelkahessay/prd-to-prod" class="hover:text-slate-400 transition-colors">prd-to-prod</a></p>
+        <div class="text-center text-dim text-xs mt-12 pb-4">
+            Built end-to-end by an autonomous AI pipeline ·
+            <a href="https://github.com/samuelkahessay/prd-to-prod" class="hover:text-accent transition-colors">prd-to-prod</a>
+        </div>
+
     </div>
 
     <script>
@@ -144,7 +362,6 @@
             btn.disabled = true;
             btnText.classList.add('hidden');
             btnLoading.classList.remove('hidden');
-            btnLoading.classList.add('flex');
             errorDiv.classList.add('hidden');
 
             try {
@@ -157,15 +374,13 @@
                     btn.disabled = false;
                     btnText.classList.remove('hidden');
                     btnLoading.classList.add('hidden');
-                    btnLoading.classList.remove('flex');
                 }
             } catch (err) {
-                errorContent.textContent = `Demo failed: ${err.message}`;
+                errorContent.textContent = err.message;
                 errorDiv.classList.remove('hidden');
                 btn.disabled = false;
                 btnText.classList.remove('hidden');
                 btnLoading.classList.add('hidden');
-                btnLoading.classList.remove('flex');
             }
         }
     </script>
