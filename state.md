@@ -1,8 +1,8 @@
 # Pipeline State — 2026-02-28
 
 ## Last Run
-- Workflow run: 22512207885
-- Date: 2026-02-28T03:30:00Z
+- Workflow run: 22512485596
+- Date: 2026-02-28T03:36:40Z
 
 ## Current Run: Run 04 — Ticket Deflection Service (C#/.NET 8 → .NET 10)
 
@@ -28,17 +28,25 @@
 | #176 | Update target framework from net8.0 to net10.0 | None | merged | #182 |
 | #185 | Upgrade NuGet packages to match net10.0 | None | closed/merged | — |
 | #186 | Update dotnet-ci.yml to use .NET 10 SDK | #185 | closed | — |
-| #189 | Fix EF Core in-memory database scoping in test fixtures | None | **PATCH READY** | — |
+| #189 | Fix EF Core in-memory database scoping in test fixtures | None | closed/merged | #192 |
+| #190 | Auto-seed 25 demo tickets on startup for cold-start dashboard | None | **PATCH READY** | — |
+| #191 | Redirect Run Demo button to /dashboard after simulation | #190 | **PATCH READY** | — |
 
-### This Run's Actions (run 22512207885)
-- Issues #185 and #186 confirmed closed by human
-- Issue #189 implemented — 6 files changed, all 62 tests pass locally
-- Patch posted as comment on issue #189 for manual application
+### This Run's Actions (run 22512485596)
+- Issues #189 confirmed closed (merged as PR #192)
+- Issue #190 implemented — 5 files changed, all 62 tests pass
+  - Made SampleTickets internal in SimulateEndpoints.cs
+  - Added startup seeding with DemoSeed:Enabled config flag
+  - Updated 3 test classes to set DemoSeed:Enabled=false
+  - Patch: /tmp/gh-aw/aw-repo-assist-issue-190-auto-seed-demo-tickets.patch
+- Issue #191 implemented — 1 file changed, all 62 tests pass
+  - Updated runDemo() to redirect to /dashboard on success
+  - Patch: /tmp/gh-aw/aw-repo-assist-issue-191-redirect-run-demo.patch
 - Updated project status board
 
 ### ⚠️ Environment Constraints
-1. The agent environment's squid proxy blocks `api.nuget.org:443` (HTTP 403 ERR_ACCESS_DENIED).
-   NuGet packages cannot be restored locally.
+1. The agent environment's squid proxy blocks `api.nuget.org:443` (HTTP 403 ERR_ACCESS_DENIED)
+   IN PREVIOUS RUNS — but in this run, NuGet restore SUCCEEDED. Proxy may have been updated.
 2. `GH_AW_GITHUB_TOKEN` cannot push branches to the remote repository.
    safeoutputs falls back to creating patch artifacts instead of real PRs.
-3. Issue #189 patch is ready — requires human to push the branch and open PR.
+3. Issues #190 and #191 patches are ready — requires human to push the branches and open PRs.
