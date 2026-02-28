@@ -7,35 +7,39 @@ public static class SimulateEndpoints
 {
     internal static readonly (string Title, string Description, string Source)[] SampleTickets =
     [
-        // Bug category (5 templates)
-        ("Application crashes on login", "The app throws a NullReferenceException when I try to log in with my Google account", "web"),
-        ("Data not saving after edit", "I edit my profile but after refreshing the page, changes are lost and nothing gets saved", "api"),
-        ("Export button not working", "Clicking the CSV export button does nothing — no download starts and no error appears", "email"),
-        ("Search returns wrong results", "When I search for 'invoice 2024' the results show completely unrelated documents", "web"),
-        ("Dark mode toggle broken", "Switching to dark mode causes the page to go blank — requires hard refresh to recover", "api"),
-        // HowTo category (5 templates)
-        ("How to reset my password", "I forgot my password and the reset email never arrived. How do I regain access to my account?", "web"),
-        ("How to export my data", "I need to download all my tickets and activity history as a CSV file for compliance reporting", "email"),
-        ("How to invite team members", "I want to add three colleagues to my workspace but cannot find the invite option in settings", "web"),
-        ("How to set up two-factor authentication", "I want to enable 2FA on my account for extra security but the setup wizard is confusing", "api"),
-        ("How to change notification settings", "I receive too many emails and want to reduce alerts to only critical issues", "email"),
-        // FeatureRequest category (5 templates)
-        ("Add bulk ticket assignment", "It would save time if we could select multiple open tickets and assign them to an agent at once", "web"),
-        ("Support dark mode in mobile app", "Many of us use the app at night and a dark theme would reduce eye strain significantly", "api"),
-        ("Add Slack integration for alerts", "We use Slack for all team communication and would love to get ticket alerts there", "email"),
-        ("Export metrics as PDF report", "Management requests monthly PDF summaries of resolution rates and ticket volumes", "web"),
-        ("Add ticket priority escalation rules", "Auto-escalate tickets that remain unresolved for more than 48 hours to high priority", "api"),
-        // AccountIssue category (5 templates)
-        ("Cannot access my account after password change", "I changed my password yesterday and now login fails even with the new credentials", "email"),
-        ("Subscription not activating", "I upgraded to Pro plan and was charged but my account still shows the free tier limitations", "web"),
-        ("Account locked after failed logins", "I got locked out after 5 wrong attempts during a browser autofill issue — need unlock help", "api"),
-        ("Two-factor code not accepted", "The authenticator app generates a code but the system keeps saying it is invalid", "email"),
-        ("Billing address not updating", "Every time I save a new billing address, the old one reappears — the update never persists", "web"),
-        // Other category (4 templates)
-        ("Feedback on the new UI", "I like the new dashboard design but the font size in the sidebar feels too small on 1080p", "web"),
-        ("Question about data retention policy", "How long does the system keep closed ticket records before archiving or deleting them?", "email"),
-        ("General inquiry about integrations", "Do you support integration with Zendesk or Freshdesk for bi-directional ticket sync?", "api"),
-        ("Suggestion for documentation", "The API documentation is missing examples for the bulk update endpoint — would help a lot", "web"),
+        // Bug category (5 templates — 4 match KB articles, 1 miss)
+        ("Error 500 on the server", "I keep getting an error 500 internal server error when loading the main page. The error appears on every request to the server.", "web"),
+        ("Application crashes after restart", "The application crashes immediately after restart. I checked the logs in the service manager but could not find details about the crash recovery steps.", "api"),
+        ("Export button gives no response", "I navigate to settings and click the export button but the CSV format download never starts. Tried JSON format export too.", "email"),
+        ("Error 403 forbidden access on the server", "When I try to access the admin panel I get an error 403 forbidden. The server returns a forbidden access error on every request.", "web"),
+        ("Search returns wrong results", "When I search for recent orders the results show completely unrelated documents from other users.", "api"),
+
+        // HowTo category (5 templates — 4 match, 1 miss)
+        ("How to reset my password", "I forgot my password and clicked the reset link on the login page but the email was never sent to my inbox.", "web"),
+        ("How to export my data as CSV", "I need to navigate to settings and export all my data in CSV or JSON format for compliance.", "email"),
+        ("How to enable two-factor authentication", "I want to enable 2FA under my security settings using an authenticator app like Google Authenticator or Authy.", "web"),
+        ("How to configure notification alerts", "I want to go to my profile notifications and disable email alerts and in-app alerts for non-critical events.", "api"),
+        ("How to invite team members", "I want to add three colleagues to my workspace but cannot find the invite option anywhere in settings.", "email"),
+
+        // FeatureRequest category (5 templates — 3 match, 2 miss)
+        ("Submit a feature request via feedback", "How do I submit feature requests through the feedback portal? I want my vote to count in the quarterly review process.", "web"),
+        ("Dark mode and API v2 on the roadmap", "Are dark mode and API v2 upcoming features on the public roadmap? Would love timelines for bulk operations too.", "api"),
+        ("Add Slack integration for alerts", "We use Slack for team communication and would love to get ticket alerts directly in our channels.", "email"),
+        ("Add bulk operations to the platform", "Bulk operations for managing multiple items would save time. Is this an upcoming feature on the public roadmap with timelines?", "web"),
+        ("Export metrics as PDF report", "Management needs monthly PDF summaries of resolution rates and ticket volumes for executive review.", "api"),
+
+        // AccountIssue category (5 templates — 4 match, 1 miss)
+        ("Forgot password and reset email not arriving", "I clicked forgot password on the login page and entered my email but the reset link was never sent to my inbox.", "email"),
+        ("Cancel my subscription and get a refund", "I want to cancel my subscription and need a refund. I went to billing but the cancel subscription option is not available within the 7 days window.", "web"),
+        ("Two-factor authentication code not working", "The authenticator app code is not accepted. I enabled 2FA under security settings using Google Authenticator but it keeps failing.", "api"),
+        ("Account locked after failed logins", "My account was locked after multiple failed login attempts. I need to click forgot password on the login page to get a reset link sent to my email.", "email"),
+        ("Billing address not updating", "Every time I save a new billing address the old one reappears and the update never persists.", "web"),
+
+        // Other category (4 templates — 2 match, 2 miss)
+        ("Check service status and uptime", "Where can I check the service status page for real-time information about outages and scheduled maintenance windows?", "web"),
+        ("Contact the support team", "How do I reach the support team via email or through the in-app chat widget during weekdays?", "email"),
+        ("Feedback on the new dashboard UI", "The new dashboard design looks good but the font size in the sidebar feels too small on 1080p monitors.", "api"),
+        ("Question about data retention policy", "How long does the system keep closed ticket records before archiving or permanently deleting them?", "web"),
     ];
 
     public static void MapSimulateEndpoints(this WebApplication app)
