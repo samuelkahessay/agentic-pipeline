@@ -531,6 +531,18 @@
             }
         }
 
+        // Reset demo button on bfcache restore (browser back navigation)
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted) {
+                const btn = document.getElementById('runDemoBtn');
+                const btnText = document.getElementById('btnText');
+                const btnLoading = document.getElementById('btnLoading');
+                btn.disabled = false;
+                btnText.classList.remove('hidden');
+                btnLoading.classList.add('hidden');
+            }
+        });
+
         // Load live stats from the metrics API
         (async function loadStats() {
             try {
