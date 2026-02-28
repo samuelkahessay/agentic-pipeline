@@ -8,7 +8,8 @@
 #   3. Log in to Azure via service principal, then deploy the published output
 #
 # Prerequisites:
-#   - AZURE_CREDENTIALS secret containing the service principal JSON (--sdk-auth output)
+#   - AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID, AZURE_CLIENT_SECRET
+#     secrets for the github-deploy-prd-to-prod service principal
 #
 # Safety:
 #   - Concurrency group ensures only one deploy runs at a time; newer pushes
@@ -47,7 +48,10 @@ jobs:
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
