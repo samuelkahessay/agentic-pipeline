@@ -152,11 +152,15 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="chart-panel">
                 <div class="chart-label">// distribution by category</div>
-                <canvas id="categoryChart"></canvas>
+                <div style="position: relative; height: 240px;">
+                    <canvas id="categoryChart"></canvas>
+                </div>
             </div>
             <div class="chart-panel">
                 <div class="chart-label">// distribution by severity</div>
-                <canvas id="severityChart"></canvas>
+                <div style="position: relative; height: 240px;">
+                    <canvas id="severityChart"></canvas>
+                </div>
             </div>
         </div>
 
@@ -204,12 +208,26 @@
                         data: values,
                         backgroundColor: CHART_COLORS.slice(0, values.length),
                         borderColor: '#080c12',
-                        borderWidth: 2
+                        borderWidth: 2,
+                        hoverBorderColor: 'rgba(0,170,255,0.4)'
                     }]
                 },
                 options: {
-                    ...chartDefaults,
-                    cutout: '60%'
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '60%',
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: '#b8c4d4',
+                                font: { family: "'JetBrains Mono', monospace", size: 10 },
+                                padding: 12,
+                                boxWidth: 10,
+                                boxHeight: 10
+                            }
+                        }
+                    }
                 }
             });
 
