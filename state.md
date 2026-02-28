@@ -1,8 +1,8 @@
 # Pipeline State — 2026-02-28
 
 ## Last Run
-- Workflow run: 22508826949
-- Date: 2026-02-28T00:17:00Z
+- Workflow run: 22509139664
+- Date: 2026-02-28T00:27:24Z
 
 ## Current Run: Run 05 — Ticket Deflection Service (C#/.NET 8)
 
@@ -16,20 +16,19 @@
 | #129 | Knowledge Base Matching & Resolution Service | #128,#137 | merged | #151 |
 | #130 | Ticket Pipeline Orchestrator & Submit Endpoint | #128,#129 | merged | #154 |
 | #131 | Simulation Endpoint for Demo Data Generation | #130 | merged | #155 |
-| #132 | Dashboard Overview Page with Metrics API | #130 | PR open | new branch |
-| #133 | Dashboard Ticket Feed Razor Page | #132 | blocked | — |
-| #134 | Dashboard Activity Log Razor Page | #132 | blocked | — |
-| #135 | Landing Page with Demo Run Button | #132 | blocked | — |
+| #132 | Dashboard Overview Page with Metrics API | #130 | merged | #159 |
+| #133 | Dashboard Ticket Feed Razor Page | #132 | PR open | repo-assist/issue-133-ticket-feed |
+| #134 | Dashboard Activity Log Razor Page | #132 | PR open | repo-assist/issue-134-activity-log |
+| #135 | Landing Page with Demo Run Button | #131,#133,#134 | blocked | — |
 | #136 | Dockerfile & Production Configuration | #135 | blocked | — |
 | #137 | Knowledge Base CRUD Endpoints & Seed Data | None | merged | #142 |
 | #140 | Add .NET 8 CI workflow | None | closed/completed | — |
 
 ### This Run's Actions
-- Pipeline status #124 updated (run 22508826949)
-- PR #156 (Dashboard Overview) was closed without merging (conflicts + build error)
-- Fresh PR created for #132 from current main on branch repo-assist/issue-132-dashboard-overview
-  - Added: MetricsEndpoints.cs, Dashboard.cshtml, Dashboard.cshtml.cs, MetricsEndpointTests.cs
-  - Fixed: No reference to KnowledgeArticle.CreatedAt (that field doesn't exist)
+- Pipeline status #124 updated (run 22509139664)
+- PR #159 ([Pipeline] Dashboard Overview #132) was merged ✅
+- New PR created for #133: Dashboard Ticket Feed (GET /api/metrics/tickets + Tickets.cshtml)
+- New PR created for #134: Dashboard Activity Log (GET /api/metrics/activity + Activity.cshtml)
 
 ### ⚠️ Environment Constraint
 The agent environment's squid proxy blocks `api.nuget.org:443` (HTTP 403 ERR_ACCESS_DENIED).
