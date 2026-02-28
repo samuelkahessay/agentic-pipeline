@@ -1,63 +1,62 @@
 # Pipeline State — 2026-02-28
 
 ## Last Run
-- Workflow run: 22514419127
-- Date: 2026-02-28T05:38:21Z
+- Workflow run: 22514657714
+- Date: 2026-02-28T05:53:58Z
 
 ## Current Run: Run 04 — Ticket Deflection Service (C#/.NET 10)
 
-### Status: **ON_TRACK** — 4 new PRs opened for issues #208, #214, #215, #216
+### Status: **ON_TRACK** — 3 new PRs opened for issues #207, #220, #225
 
 ### Issues
-| Issue | Title | Deps | Status | PR |
-|-------|-------|------|--------|----|
-| #125 | Scaffold ASP.NET Core 8 Solution Structure | None | merged | #138 |
-| #126 | Ticket Data Model & EF Core InMemory DbContext | #125 | merged | #139 |
-| #127 | Ticket CRUD Minimal API Endpoints | #126 | merged | #150 |
-| #128 | Ticket Classification Service & Classify Endpoint | #126 | merged | #145 |
-| #129 | Knowledge Base Matching & Resolution Service | #128,#137 | merged | #151 |
-| #130 | Ticket Pipeline Orchestrator & Submit Endpoint | #128,#129 | merged | #154 |
-| #131 | Simulation Endpoint for Demo Data Generation | #130 | merged | #155 |
-| #132 | Dashboard Overview Page with Metrics API | #130 | merged | #159 |
-| #133 | Dashboard Ticket Feed Razor Page | #132 | merged | #161 |
-| #134 | Dashboard Activity Log Razor Page | #132 | merged | #164 |
-| #135 | Landing Page with Demo Run Button | #131,#133,#134 | merged | #167 |
-| #136 | Dockerfile & Production Configuration | #135 | merged | #170 |
-| #137 | Knowledge Base CRUD Endpoints & Seed Data | None | merged | #142 |
-| #140 | Add .NET 8 CI workflow | None | closed/completed | — |
-| #165 | CI Build Failure: CS0246 _ViewImports | None | merged | #166 |
-| #172 | Fix CS0117: KnowledgeArticle missing CreatedAt | None | merged | #173 |
-| #176 | Update target framework from net8.0 to net10.0 | None | merged | #182 |
-| #185 | Upgrade NuGet packages to match net10.0 | None | closed/completed | — |
-| #186 | Update dotnet-ci.yml to use .NET 10 SDK | #185 | closed/completed | — |
-| #189 | Fix EF Core in-memory database scoping in test fixtures | None | merged | #192 |
-| #190 | Auto-seed 25 demo tickets on startup for cold-start dashboard | None | closed/completed | — |
-| #191 | Redirect Run Demo button to /dashboard after simulation | #190 | closed/completed | — |
-| #197 | Improve landing page visual design and demo flow | None | merged | #198 |
-| #199 | Fix demo deflection rate: tune seed tickets and lower matching threshold | None | merged | #200 |
-| #201 | Redesign landing page with Blueprint×Terminal aesthetic | None | closed/completed | — |
-| #202 | Apply Blueprint×Terminal to Dashboard/Tickets/Activity pages | #201 | merged | #204 |
-| #205 | Add Run History section to landing page | #201 | merged | #206 |
-| #208 | Fix landing page stats: deflection rate hardcoded | None | **in-progress** | PR opened |
-| #209 | Fix demo button: executing... state can hang indefinitely | None | **in-progress** | PR opened |
-| #210 | Fix dashboard charts: doughnut charts oversized | None | **in-progress** | PR opened |
-| #211 | Add OpenGraph meta tags to landing page | None | closed/not_planned | superseded by #213 |
-| #212 | Add favicon to all pages | None | closed/not_planned | superseded by #213 |
-| #213 | Add OpenGraph meta tags and favicon for social sharing | None | **in-progress** | PR opened |
-| #214 | Fix gh-aw link on landing page | None | **in-progress** | PR opened |
-| #215 | Fix header repo name to link to GitHub repository | None | **in-progress** | PR opened |
-| #216 | Fix hero title: prd-to-prod should link to GitHub repository | None | **in-progress** | PR opened |
+| Issue | Title | Status | PR |
+|-------|-------|--------|----|
+| #125 | Scaffold ASP.NET Core 8 Solution Structure | merged | #138 |
+| #126 | Ticket Data Model & EF Core InMemory DbContext | merged | #139 |
+| #127 | Ticket CRUD Minimal API Endpoints | merged | #150 |
+| #128 | Ticket Classification Service & Classify Endpoint | merged | #145 |
+| #129 | Knowledge Base Matching & Resolution Service | merged | #151 |
+| #130 | Ticket Pipeline Orchestrator & Submit Endpoint | merged | #154 |
+| #131 | Simulation Endpoint for Demo Data Generation | merged | #155 |
+| #132 | Dashboard Overview Page with Metrics API | merged | #159 |
+| #133 | Dashboard Ticket Feed Razor Page | merged | #161 |
+| #134 | Dashboard Activity Log Razor Page | merged | #164 |
+| #135 | Landing Page with Demo Run Button | merged | #167 |
+| #136 | Dockerfile & Production Configuration | merged | #170 |
+| #137 | Knowledge Base CRUD Endpoints & Seed Data | merged | #142 |
+| #140 | Add .NET 8 CI workflow | closed/completed | — |
+| #165 | CI Build Failure: CS0246 _ViewImports | merged | #166 |
+| #172 | Fix CS0117: KnowledgeArticle missing CreatedAt | merged | #173 |
+| #176 | Update target framework from net8.0 to net10.0 | merged | #182 |
+| #185 | Upgrade NuGet packages to match net10.0 | closed/completed | — |
+| #186 | Update dotnet-ci.yml to use .NET 10 SDK | closed/completed | — |
+| #189 | Fix EF Core in-memory database scoping | merged | #192 |
+| #190 | Auto-seed 25 demo tickets on startup | closed/completed | — |
+| #191 | Redirect Run Demo button to /dashboard | closed/completed | — |
+| #197 | Improve landing page visual design | merged | #198 |
+| #199 | Fix demo deflection rate | merged | #200 |
+| #201 | Redesign landing page with Blueprint×Terminal | closed/completed | — |
+| #202 | Apply Blueprint×Terminal to Dashboard pages | merged | #204 |
+| #205 | Add Run History section to landing page | merged | #206 |
+| #207 | Fix demo button: each press adds 25 tickets | **in-progress** | PR opened this run |
+| #208 | Fix landing page stats: deflection rate hardcoded | merged | #224 |
+| #209 | Fix demo button: executing... state can hang | **in-progress** | PR pending review |
+| #210 | Fix dashboard charts: doughnut charts oversized | **in-progress** | PR pending review |
+| #211 | Add OpenGraph meta tags to landing page | closed/not_planned | — |
+| #212 | Add favicon to all pages | closed/not_planned | — |
+| #213 | Add OpenGraph meta tags and favicon | merged | — |
+| #214 | Fix gh-aw link on landing page | **in-progress** | #221 (open) |
+| #215 | Fix header repo name to link to GitHub | merged | — |
+| #216 | Fix hero title: prd-to-prod link to GitHub | merged | — |
+| #220 | Fix OpenGraph og:url to use correct Azure domain | **in-progress** | PR opened this run |
+| #225 | Add OpenGraph image for social sharing | **in-progress** | PR opened this run |
 
 ### Open Items
-- #208: Fix landing page stats → PR opened, awaiting review
-- #209: Fix demo button timeout → PR opened, awaiting review
-- #210: Fix dashboard charts sizing → PR opened, awaiting review
-- #213: Add OG tags and favicon → PR opened, awaiting review
-- #214: Fix gh-aw link → PR opened, awaiting review
-- #215: Fix header repo link → PR opened, awaiting review
-- #216: Fix hero prd-to-prod link → PR opened, awaiting review
+- #207: Fix demo reset → PR opened, awaiting review
+- #214: Fix gh-aw link → PR #221 open, awaiting review
+- #220: Fix og:url → PR opened, awaiting review
+- #225: Add OG image → PR opened, awaiting review
 
 ### Environment Notes
 - NuGet restore succeeded (.NET 10.0.102 SDK installed)
-- GH_AW_GITHUB_TOKEN can push branches / create PRs
 - All 62 tests pass after changes
