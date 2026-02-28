@@ -1,6 +1,6 @@
 {
-  "last_run": "2026-02-28T05:53:58Z",
-  "workflow_run_id": "22514657714",
+  "last_run": "2026-02-28T06:08:49Z",
+  "workflow_run_id": "22514896889",
   "current_prd": {
     "issue": 123,
     "title": "PRD: Ticket Deflection Service (Run 04 — C#/.NET 8)",
@@ -35,18 +35,19 @@
     {"issue": 201, "title": "Redesign landing page with Blueprint×Terminal aesthetic", "status": "closed_completed"},
     {"issue": 202, "title": "Apply Blueprint×Terminal design to Dashboard, Tickets, and Activity pages", "pr": 204, "status": "merged"},
     {"issue": 205, "title": "Add Run History section to landing page", "pr": 206, "status": "merged"},
+    {"issue": 207, "title": "Fix demo button: each press adds 25 tickets instead of resetting", "status": "merged"},
     {"issue": 208, "title": "Fix landing page stats: deflection rate is hardcoded", "pr": 224, "status": "merged"},
-    {"issue": 209, "title": "Fix demo button: executing... state can hang indefinitely", "pr": "pending_review", "status": "in_progress"},
-    {"issue": 210, "title": "Fix dashboard charts: doughnut charts oversized", "pr": "pending_review", "status": "in_progress"},
+    {"issue": 209, "title": "Fix demo button: executing... state can hang indefinitely", "status": "merged"},
+    {"issue": 210, "title": "Fix dashboard charts: doughnut charts oversized", "status": "merged"},
     {"issue": 211, "title": "Add OpenGraph meta tags to landing page", "status": "closed_not_planned"},
     {"issue": 212, "title": "Add favicon to all pages", "status": "closed_not_planned"},
-    {"issue": 213, "title": "Add OpenGraph meta tags and favicon for social sharing", "pr": "merged", "status": "merged"},
+    {"issue": 213, "title": "Add OpenGraph meta tags and favicon for social sharing", "status": "merged"},
     {"issue": 214, "title": "Fix gh-aw link on landing page", "pr": 221, "status": "in_progress"},
-    {"issue": 215, "title": "Fix header repo name to link to GitHub repository", "pr": "merged", "status": "merged"},
-    {"issue": 216, "title": "Fix hero title: prd-to-prod should link to GitHub repository", "pr": "merged", "status": "merged"},
-    {"issue": 220, "title": "Fix OpenGraph og:url to use correct Azure domain", "pr": "created_this_run", "status": "in_progress"},
-    {"issue": 207, "title": "Fix demo button: each press adds 25 tickets instead of resetting", "pr": "created_this_run", "status": "in_progress"},
-    {"issue": 225, "title": "Add OpenGraph image for social sharing preview cards", "pr": "created_this_run", "status": "in_progress"}
+    {"issue": 215, "title": "Fix header repo name to link to GitHub repository", "status": "merged"},
+    {"issue": 216, "title": "Fix hero title: prd-to-prod should link to GitHub repository", "status": "merged"},
+    {"issue": 220, "title": "Fix OpenGraph og:url to use correct Azure domain", "status": "merged"},
+    {"issue": 225, "title": "Add OpenGraph image for social sharing preview cards", "status": "merged"},
+    {"issue": 229, "title": "Fix demo button stuck in executing state after browser back navigation", "pr": "created_this_run", "status": "in_progress"}
   ],
-  "notes": "Run 40. 3 new PRs: #220 (og:url fix), #207 (demo reset - clear tickets on simulate), #225 (OG image 1200x630 + twitter:card upgrade). PR #221 (issue #214 gh-aw link) still awaiting review."
+  "notes": "Run 41. 1 new PR: #229 (bfcache pageshow fix for demo button). PR #221 (issue #214 gh-aw link) approved, awaiting auto-merge."
 }

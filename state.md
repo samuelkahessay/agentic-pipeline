@@ -1,12 +1,12 @@
 # Pipeline State — 2026-02-28
 
 ## Last Run
-- Workflow run: 22514657714
-- Date: 2026-02-28T05:53:58Z
+- Workflow run: 22514896889
+- Date: 2026-02-28T06:08:49Z
 
 ## Current Run: Run 04 — Ticket Deflection Service (C#/.NET 10)
 
-### Status: **ON_TRACK** — 3 new PRs opened for issues #207, #220, #225
+### Status: **ON_TRACK** — 1 new PR opened for issue #229
 
 ### Issues
 | Issue | Title | Status | PR |
@@ -38,24 +38,23 @@
 | #201 | Redesign landing page with Blueprint×Terminal | closed/completed | — |
 | #202 | Apply Blueprint×Terminal to Dashboard pages | merged | #204 |
 | #205 | Add Run History section to landing page | merged | #206 |
-| #207 | Fix demo button: each press adds 25 tickets | **in-progress** | PR opened this run |
+| #207 | Fix demo button: each press adds 25 tickets | merged/completed | — |
 | #208 | Fix landing page stats: deflection rate hardcoded | merged | #224 |
-| #209 | Fix demo button: executing... state can hang | **in-progress** | PR pending review |
-| #210 | Fix dashboard charts: doughnut charts oversized | **in-progress** | PR pending review |
+| #209 | Fix demo button: executing... state can hang | merged/completed | — |
+| #210 | Fix dashboard charts: doughnut charts oversized | merged/completed | — |
 | #211 | Add OpenGraph meta tags to landing page | closed/not_planned | — |
 | #212 | Add favicon to all pages | closed/not_planned | — |
 | #213 | Add OpenGraph meta tags and favicon | merged | — |
-| #214 | Fix gh-aw link on landing page | **in-progress** | #221 (open) |
+| #214 | Fix gh-aw link on landing page | in-progress | #221 (approved, awaiting merge) |
 | #215 | Fix header repo name to link to GitHub | merged | — |
 | #216 | Fix hero title: prd-to-prod link to GitHub | merged | — |
-| #220 | Fix OpenGraph og:url to use correct Azure domain | **in-progress** | PR opened this run |
-| #225 | Add OpenGraph image for social sharing | **in-progress** | PR opened this run |
+| #220 | Fix OpenGraph og:url to use correct Azure domain | merged/completed | — |
+| #225 | Add OpenGraph image for social sharing | merged/completed | — |
+| #229 | Fix demo button stuck on bfcache restore | **in-progress** | PR opened this run |
 
 ### Open Items
-- #207: Fix demo reset → PR opened, awaiting review
-- #214: Fix gh-aw link → PR #221 open, awaiting review
-- #220: Fix og:url → PR opened, awaiting review
-- #225: Add OG image → PR opened, awaiting review
+- #214: Fix gh-aw link → PR #221 approved, awaiting auto-merge
+- #229: Demo button bfcache fix → PR opened this run, awaiting review
 
 ### Environment Notes
 - NuGet restore succeeded (.NET 10.0.102 SDK installed)
