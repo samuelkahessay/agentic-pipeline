@@ -1,12 +1,12 @@
 # Pipeline State — 2026-02-28
 
 ## Last Run
-- Workflow run: 22512931965
-- Date: 2026-02-28T04:03:51Z
+- Workflow run: 22513280325
+- Date: 2026-02-28T04:26:10Z
 
 ## Current Run: Run 04 — Ticket Deflection Service (C#/.NET 10)
 
-### Status: **AT_RISK** — New issue #197 open, PR creation blocked by token scope
+### Status: **AT_RISK** — Issue #199 open, PR creation blocked by token scope
 
 ### Issues
 | Issue | Title | Deps | Status | PR |
@@ -33,14 +33,16 @@
 | #189 | Fix EF Core in-memory database scoping in test fixtures | None | merged | #192 |
 | #190 | Auto-seed 25 demo tickets on startup for cold-start dashboard | None | closed/completed | — |
 | #191 | Redirect Run Demo button to /dashboard after simulation | #190 | closed/completed | — |
-| #197 | Improve landing page visual design and demo flow | None | **attempted** | patch only |
+| #197 | Improve landing page visual design and demo flow | None | merged | #198 |
+| #199 | Fix demo deflection rate: tune seed tickets and lower matching threshold | None | **attempted** | patch only |
 
-### This Run's Actions (run 22512931965)
-- Discovered new open issue #197: visual redesign of landing page
-- Implemented Index.cshtml redesign: gradient background, pill diagram, stats tagline, gradient CTA, secondary nav
+### This Run's Actions (run 22513280325)
+- Discovered issue #199: fix deflection rate (~1.3% → ~70%)
+- Implemented: MatchingThreshold 0.3→0.15, rewrote 24 SampleTickets with KB-aligned vocabulary
 - All 62 tests pass (dotnet test)
 - safeoutputs PR creation returned patch artifact (GH_AW_GITHUB_TOKEN lacks push scope)
-- Patch at: /tmp/gh-aw/aw-repo-assist-issue-197-landing-page-visual-redesign.patch
+- Patch at: /tmp/gh-aw/aw-repo-assist-issue-199-fix-deflection-rate.patch
+- Confirmed #197 merged as PR #198 (previous run memory was inaccurate)
 
 ### ⚠️ Environment Constraints
 1. NuGet restore succeeded (.NET 10.0.102 SDK installed)
