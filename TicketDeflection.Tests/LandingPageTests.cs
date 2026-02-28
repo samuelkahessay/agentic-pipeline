@@ -48,19 +48,19 @@ public class LandingPageTests : IClassFixture<WebApplicationFactory<Program>>
     }
 
     [Fact]
-    public async Task LandingPage_ContainsActivityLink()
+    public async Task LandingPage_DoesNotContainActivityLink()
     {
         var client = _factory.CreateClient();
         var html = await client.GetStringAsync("/");
-        Assert.Contains("href=\"/activity\"", html);
+        Assert.DoesNotContain("href=\"/activity\"", html);
     }
 
     [Fact]
-    public async Task LandingPage_ContainsTicketsLink()
+    public async Task LandingPage_DoesNotContainTicketsLink()
     {
         var client = _factory.CreateClient();
         var html = await client.GetStringAsync("/");
-        Assert.Contains("href=\"/tickets\"", html);
+        Assert.DoesNotContain("href=\"/tickets\"", html);
     }
 
     [Fact]

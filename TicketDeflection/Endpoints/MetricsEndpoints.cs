@@ -30,7 +30,11 @@ public static class MetricsEndpoints
             .GroupBy(t => t.Severity.ToString())
             .ToDictionary(g => g.Key, g => g.Count());
 
-        return Results.Ok(new MetricsOverview(total, autoResolved, escalated, resolutionRate, byCategory, bySeverity));
+        var byStatus = tickets
+            .GroupBy(t => t.Status.ToString())
+            .ToDictionary(g => g.Key, g => g.Count());
+
+        return Results.Ok(new MetricsOverview(total, autoResolved, escalated, resolutionRate, byCategory, bySeverity, byStatus));
     }
 
     private static async Task<IResult> GetTickets(TicketDbContext db, int limit = 20, int offset = 0)
@@ -66,7 +70,8 @@ public record MetricsOverview(
     int Escalated,
     double ResolutionRate,
     Dictionary<string, int> ByCategory,
-    Dictionary<string, int> BySeverity);
+    Dictionary<string, int> BySeverity,
+    Dictionary<string, int> ByStatus);
 
 public record TicketSummary(
     Guid Id,

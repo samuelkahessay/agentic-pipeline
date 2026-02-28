@@ -47,6 +47,7 @@
         }
         .panel-top { border-top: 2px solid var(--accent); }
         .panel-green { border-top: 2px solid var(--green); }
+        .panel-amber { border-top: 2px solid var(--amber); }
         .panel-red { border-top: 2px solid var(--red); }
         .metric-val {
             font-family: var(--mono);
@@ -56,6 +57,7 @@
             line-height: 1;
         }
         .metric-val-green { color: var(--green); }
+        .metric-val-amber { color: var(--amber); }
         .metric-val-red { color: var(--red); }
         .metric-lbl {
             color: var(--dim);
@@ -87,17 +89,74 @@
             transition: border-color 0.2s, color 0.2s;
         }
         .refresh-btn:hover { border-color: var(--accent); color: var(--accent); }
-        .nav-link {
-            color: rgba(0, 170, 255, 0.6);
-            text-decoration: none;
-            font-size: 0.75rem;
-            padding: 4px 10px;
-            border: 1px solid transparent;
-            transition: border-color 0.2s, color 0.2s;
+        .section-hdr {
+            color: var(--dim);
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 8px;
+            margin-bottom: 12px;
         }
-        .nav-link:hover { border-color: var(--border); color: var(--accent); }
-        .nav-link.active { border-color: var(--border); color: var(--accent); }
-        .divider { border-top: 1px solid var(--border); margin: 0; }
+        .log-entry {
+            background: rgba(4, 10, 20, 0.7);
+            border: 1px solid var(--border);
+            border-left: 2px solid var(--dim);
+            padding: 10px 14px;
+            transition: border-left-color 0.15s;
+        }
+        .log-entry:hover { border-left-color: var(--accent); }
+        .log-entry.status-resolved { border-left-color: var(--green); }
+        .log-entry.status-escalated { border-left-color: var(--red); }
+        .log-entry.status-classified { border-left-color: var(--accent); }
+        .log-entry.status-matched { border-left-color: var(--amber); }
+        .status-tag {
+            font-family: var(--mono);
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            padding: 2px 8px;
+            border: 1px solid;
+            white-space: nowrap;
+        }
+        .tag-resolved { color: var(--green); border-color: rgba(61, 220, 132, 0.3); background: rgba(61, 220, 132, 0.06); }
+        .tag-escalated { color: var(--red); border-color: rgba(248, 81, 73, 0.3); background: rgba(248, 81, 73, 0.06); }
+        .tag-new { color: var(--dim); border-color: var(--border); background: transparent; }
+        .tag-classified { color: var(--accent); border-color: rgba(0, 170, 255, 0.3); background: rgba(0, 170, 255, 0.06); }
+        .tag-matched { color: var(--amber); border-color: rgba(245, 166, 35, 0.3); background: rgba(245, 166, 35, 0.06); }
+        .log-line {
+            border-bottom: 1px solid rgba(0, 160, 255, 0.06);
+            padding: 10px 0;
+            display: grid;
+            grid-template-columns: 160px 1fr;
+            gap: 16px;
+            align-items: start;
+        }
+        .log-line:last-child { border-bottom: none; }
+        .log-ts { color: var(--dim); font-size: 0.7rem; padding-top: 2px; }
+        .log-action { color: var(--accent); font-size: 0.75rem; font-weight: 700; margin-bottom: 2px; }
+        .log-details { color: var(--text); font-size: 0.8rem; margin-bottom: 3px; }
+        .log-ticket { color: var(--dim); font-size: 0.7rem; }
+        .log-ticket span { color: rgba(0, 170, 255, 0.5); }
+        .terminal-block {
+            background: rgba(4, 10, 20, 0.7);
+            border: 1px solid var(--border);
+            padding: 1.25rem 1.5rem;
+        }
+        .show-more-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--dim);
+            font-family: var(--mono);
+            font-size: 0.75rem;
+            padding: 6px 16px;
+            cursor: pointer;
+            transition: border-color 0.2s, color 0.2s;
+            margin-top: 10px;
+        }
+        .show-more-btn:hover { border-color: var(--accent); color: var(--accent); }
+        .show-more-btn:disabled { opacity: 0.3; cursor: not-allowed; }
         .text-accent { color: var(--accent); }
         .text-green { color: var(--green); }
         .text-amber { color: var(--amber); }
@@ -117,9 +176,7 @@
             <span class="text-dim">— mission control</span>
         </div>
         <div class="flex items-center gap-4">
-            <a href="/tickets" class="nav-link">/tickets</a>
-            <a href="/activity" class="nav-link">/activity</a>
-            <button onclick="loadMetrics()" class="refresh-btn">[ refresh ]</button>
+            <button onclick="refreshAll()" class="refresh-btn">[ refresh ]</button>
         </div>
     </div>
 
@@ -130,17 +187,22 @@
             <h1 class="font-sans text-3xl font-bold text-white">Mission Control</h1>
         </div>
 
-        <!-- Instrument panels row -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <!-- Instrument panels row — 4 panels -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
             <div class="panel panel-top p-5">
                 <div class="metric-lbl">total tickets</div>
                 <div id="totalTickets" class="metric-val mt-2">—</div>
-                <div class="text-xs text-dim mt-3">PROC_IN: all pipeline stages</div>
+                <div class="text-xs text-dim mt-3">PROC_IN: all stages</div>
             </div>
             <div class="panel panel-green p-5">
                 <div class="metric-lbl">deflection rate</div>
                 <div id="resolutionRate" class="metric-val metric-val-green mt-2">—</div>
                 <div class="text-xs text-dim mt-3">STATUS: auto-resolved</div>
+            </div>
+            <div class="panel panel-amber p-5">
+                <div class="metric-lbl">auto-resolved</div>
+                <div id="autoResolved" class="metric-val metric-val-amber mt-2">—</div>
+                <div class="text-xs text-dim mt-3">COUNT: no human needed</div>
             </div>
             <div class="panel panel-red p-5">
                 <div class="metric-lbl">escalated</div>
@@ -149,19 +211,57 @@
             </div>
         </div>
 
-        <!-- Charts -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Charts row — 3 doughnut charts -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
             <div class="chart-panel">
-                <div class="chart-label">// distribution by category</div>
-                <div style="position: relative; height: 240px;">
+                <div class="chart-label">// by category</div>
+                <div style="position: relative; height: 220px;">
                     <canvas id="categoryChart"></canvas>
                 </div>
             </div>
             <div class="chart-panel">
-                <div class="chart-label">// distribution by severity</div>
-                <div style="position: relative; height: 240px;">
+                <div class="chart-label">// by severity</div>
+                <div style="position: relative; height: 220px;">
                     <canvas id="severityChart"></canvas>
                 </div>
+            </div>
+            <div class="chart-panel">
+                <div class="chart-label">// by status</div>
+                <div style="position: relative; height: 220px;">
+                    <canvas id="statusChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ticket feed section -->
+        <div class="mb-10">
+            <div class="section-hdr">// ticket process log</div>
+            <div class="text-xs text-dim mb-3 flex gap-6">
+                <span>PID</span>
+                <span class="flex-1">TITLE / ROUTE</span>
+                <span>STATUS</span>
+            </div>
+            <div id="ticket-feed" class="flex flex-col gap-2">
+                <div class="text-dim text-xs py-4">loading process log...</div>
+            </div>
+            <div class="mt-3">
+                <button id="ticketShowMore" onclick="loadMoreTickets()" class="show-more-btn">[ show more ]</button>
+            </div>
+        </div>
+
+        <!-- Activity log section -->
+        <div class="mb-10">
+            <div class="section-hdr">// pipeline activity log</div>
+            <div class="terminal-block">
+                <div class="text-xs text-dim mb-4">
+                    <span class="text-accent">$</span> tail -f pipeline.log
+                </div>
+                <div id="activity-timeline">
+                    <div class="text-dim text-xs py-4">streaming activity log...</div>
+                </div>
+            </div>
+            <div class="mt-3">
+                <button id="activityShowMore" onclick="loadMoreActivity()" class="show-more-btn">[ show more ]</button>
             </div>
         </div>
 
@@ -172,36 +272,44 @@
     </div>
 
     <script>
-        let categoryChart, severityChart;
+        let categoryChart, severityChart, statusChart;
 
         const CHART_COLORS = ['#00aaff', '#3ddc84', '#f5a623', '#f85149', '#a78bfa', '#34d399', '#fbbf24', '#60a5fa'];
 
-        const chartDefaults = {
-            plugins: {
-                legend: {
-                    labels: {
-                        color: '#b8c4d4',
-                        font: { family: "'JetBrains Mono', monospace", size: 11 }
-                    }
-                }
-            }
+        const TICKET_LIMIT = 10;
+        let ticketOffset = 0;
+        let ticketHasMore = true;
+
+        const ACTIVITY_LIMIT = 10;
+        let activityOffset = 0;
+        let activityHasMore = true;
+
+        const statusClass = {
+            AutoResolved: 'status-resolved',
+            Escalated: 'status-escalated',
+            New: '',
+            Classified: 'status-classified',
+            Matched: 'status-matched'
         };
 
-        async function loadMetrics() {
-            const res = await fetch('/api/metrics/overview');
-            const data = await res.json();
+        const statusTag = {
+            AutoResolved: '<span class="status-tag tag-resolved">AUTO_RESOLVED</span>',
+            Escalated: '<span class="status-tag tag-escalated">ESCALATED</span>',
+            New: '<span class="status-tag tag-new">NEW</span>',
+            Classified: '<span class="status-tag tag-classified">CLASSIFIED</span>',
+            Matched: '<span class="status-tag tag-matched">MATCHED</span>'
+        };
 
-            document.getElementById('totalTickets').textContent = data.totalTickets;
-            document.getElementById('resolutionRate').textContent =
-                (data.resolutionRate * 100).toFixed(1) + '%';
-            document.getElementById('escalated').textContent = data.escalated;
+        function escapeHtml(str) {
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
 
-            const catLabels = Object.keys(data.byCategory);
-            const catValues = Object.values(data.byCategory);
-            const sevLabels = Object.keys(data.bySeverity);
-            const sevValues = Object.values(data.bySeverity);
-
-            const doughnutOpts = (labels, values) => ({
+        function doughnutOpts(labels, values) {
+            return {
                 type: 'doughnut',
                 data: {
                     labels,
@@ -223,23 +331,139 @@
                             labels: {
                                 color: '#b8c4d4',
                                 font: { family: "'JetBrains Mono', monospace", size: 10 },
-                                padding: 12,
+                                padding: 10,
                                 boxWidth: 10,
                                 boxHeight: 10
                             }
                         }
                     }
                 }
-            });
+            };
+        }
+
+        async function loadMetrics() {
+            const res = await fetch('/api/metrics/overview');
+            const data = await res.json();
+
+            document.getElementById('totalTickets').textContent = data.totalTickets;
+            document.getElementById('resolutionRate').textContent =
+                (data.resolutionRate * 100).toFixed(1) + '%';
+            document.getElementById('autoResolved').textContent = data.autoResolved;
+            document.getElementById('escalated').textContent = data.escalated;
+
+            const catLabels = Object.keys(data.byCategory);
+            const catValues = Object.values(data.byCategory);
+            const sevLabels = Object.keys(data.bySeverity);
+            const sevValues = Object.values(data.bySeverity);
+            const stLabels = Object.keys(data.byStatus);
+            const stValues = Object.values(data.byStatus);
 
             if (categoryChart) categoryChart.destroy();
             categoryChart = new Chart(document.getElementById('categoryChart'), doughnutOpts(catLabels, catValues));
 
             if (severityChart) severityChart.destroy();
             severityChart = new Chart(document.getElementById('severityChart'), doughnutOpts(sevLabels, sevValues));
+
+            if (statusChart) statusChart.destroy();
+            statusChart = new Chart(document.getElementById('statusChart'), doughnutOpts(stLabels, stValues));
         }
 
+        async function loadTickets(append) {
+            const res = await fetch(`/api/metrics/tickets?limit=${TICKET_LIMIT}&offset=${ticketOffset}`);
+            const tickets = await res.json();
+            const feed = document.getElementById('ticket-feed');
+
+            if (tickets.length === 0 && !append) {
+                feed.innerHTML = '<div class="text-dim text-xs py-4">no tickets found.</div>';
+                document.getElementById('ticketShowMore').disabled = true;
+                return;
+            }
+
+            const html = tickets.map((t, i) => {
+                const pid = String(ticketOffset + i + 1).padStart(4, '0');
+                const tag = statusTag[t.status] || statusTag['New'];
+                const cls = statusClass[t.status] || '';
+                const date = new Date(t.createdAt).toISOString().replace('T', ' ').slice(0, 19);
+                return `
+                <div class="log-entry ${cls}">
+                    <div class="flex items-center gap-4">
+                        <span class="text-dim text-xs w-10 flex-shrink-0">#${pid}</span>
+                        <div class="flex-1 min-w-0">
+                            <div class="text-white text-sm font-bold truncate">${escapeHtml(t.title)}</div>
+                            <div class="text-xs text-dim mt-1">${escapeHtml(t.category)} · ${escapeHtml(t.severity)} · <span style="color: rgba(0,170,255,0.4)">${date}</span></div>
+                            ${t.resolution ? `<div class="text-xs mt-1" style="color: rgba(184,196,212,0.6)">&gt; ${escapeHtml(t.resolution)}</div>` : ''}
+                        </div>
+                        <div class="flex-shrink-0">${tag}</div>
+                    </div>
+                </div>`;
+            }).join('');
+
+            if (append) {
+                feed.insertAdjacentHTML('beforeend', html);
+            } else {
+                feed.innerHTML = html;
+            }
+
+            ticketHasMore = tickets.length === TICKET_LIMIT;
+            document.getElementById('ticketShowMore').disabled = !ticketHasMore;
+        }
+
+        function loadMoreTickets() {
+            ticketOffset += TICKET_LIMIT;
+            loadTickets(true);
+        }
+
+        async function loadActivity(append) {
+            const res = await fetch(`/api/metrics/activity?limit=${ACTIVITY_LIMIT}&offset=${activityOffset}`);
+            const items = await res.json();
+            const container = document.getElementById('activity-timeline');
+
+            if (items.length === 0 && !append) {
+                container.innerHTML = '<div class="text-dim text-xs py-4">no activity recorded yet.</div>';
+                document.getElementById('activityShowMore').disabled = true;
+                return;
+            }
+
+            const html = items.map(item => {
+                const ts = new Date(item.timestamp).toISOString().replace('T', ' ').slice(0, 19);
+                return `
+                <div class="log-line">
+                    <div class="log-ts">${ts}</div>
+                    <div>
+                        <div class="log-action">&gt; ${escapeHtml(item.action)}</div>
+                        <div class="log-details">${escapeHtml(item.details)}</div>
+                        <div class="log-ticket">ticket: <span>${escapeHtml(item.ticketId)}</span></div>
+                    </div>
+                </div>`;
+            }).join('');
+
+            if (append) {
+                container.insertAdjacentHTML('beforeend', html);
+            } else {
+                container.innerHTML = html;
+            }
+
+            activityHasMore = items.length === ACTIVITY_LIMIT;
+            document.getElementById('activityShowMore').disabled = !activityHasMore;
+        }
+
+        function loadMoreActivity() {
+            activityOffset += ACTIVITY_LIMIT;
+            loadActivity(true);
+        }
+
+        function refreshAll() {
+            ticketOffset = 0;
+            activityOffset = 0;
+            loadMetrics();
+            loadTickets(false);
+            loadActivity(false);
+        }
+
+        // Initial load
         loadMetrics();
+        loadTickets(false);
+        loadActivity(false);
     </script>
 </body>
 </html>
