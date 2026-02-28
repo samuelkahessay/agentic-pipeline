@@ -1,12 +1,12 @@
 {
-  "last_run": "2026-02-28T08:38:00Z",
-  "workflow_run_id": "22517262248",
+  "last_run": "2026-02-28T09:34:00Z",
+  "workflow_run_id": "22518126734",
   "current_prd": {
     "issue": 123,
     "title": "PRD: Ticket Deflection Service (Run 04 — C#/.NET 8)",
-    "status": "in_progress"
+    "status": "complete"
   },
-  "pipeline_status": "ON_TRACK",
+  "pipeline_status": "COMPLETE",
   "attempts": [
     {"issue": 125, "title": "Scaffold ASP.NET Core 8 Solution Structure", "pr": 138, "status": "merged"},
     {"issue": 126, "title": "Ticket Data Model & EF Core InMemory DbContext", "pr": 139, "status": "merged"},
@@ -42,7 +42,7 @@
     {"issue": 211, "title": "Add OpenGraph meta tags to landing page", "status": "closed_not_planned"},
     {"issue": 212, "title": "Add favicon to all pages", "status": "closed_not_planned"},
     {"issue": 213, "title": "Add OpenGraph meta tags and favicon for social sharing", "status": "merged"},
-    {"issue": 214, "title": "Fix gh-aw link on landing page", "pr": null, "status": "in_progress", "notes": "PR #221 had merge conflict. New branch repo-assist/issue-214-gh-aw-link-fix created in run 47."},
+    {"issue": 214, "title": "Fix gh-aw link on landing page", "status": "closed_completed"},
     {"issue": 215, "title": "Fix header repo name to link to GitHub repository", "status": "merged"},
     {"issue": 216, "title": "Fix hero title: prd-to-prod should link to GitHub repository", "status": "merged"},
     {"issue": 220, "title": "Fix OpenGraph og:url to use correct Azure domain", "status": "merged"},
@@ -50,5 +50,5 @@
     {"issue": 229, "title": "Fix demo button stuck in executing state after browser back navigation", "pr": 230, "status": "merged"},
     {"issue": 231, "title": "Static files not served — og-image.png returns 404 in production", "pr": 232, "status": "merged"}
   ],
-  "notes": "Run 47. PR #221 (gh-aw link fix for #214) had persistent merge conflict. Created fresh branch repo-assist/issue-214-gh-aw-link-fix from main with clean one-line change. 62 tests pass. New PR will be created."
+  "notes": "Run 48. All pipeline issues complete. Issue #214 confirmed closed. No open PRs. Pipeline is COMPLETE — awaiting human archive/tag run."
 }
