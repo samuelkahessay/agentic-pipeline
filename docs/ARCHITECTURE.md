@@ -94,7 +94,7 @@ The PR reviewer is split into two workflows to preserve **identity separation**:
 | **File** | `.github/workflows/pr-review-agent.md` |
 | **Engine** | Copilot (gpt-5) — full 64K-128K+ context window |
 | **Trigger** | Automatic on PR opened/updated/ready; `workflow_dispatch` |
-| **Output** | Verdict comment on the PR (starting with `<!-- pr-review-verdict -->`) |
+| **Output** | Verdict comment on the PR (starting with `[PIPELINE-VERDICT]`) |
 
 Agentic workflow that runs as the Copilot app identity. Reads the **full PR diff**
 (no truncation), linked issue acceptance criteria, CI status, and AGENTS.md. Posts
@@ -105,14 +105,17 @@ Review process:
 2. Reads the full PR diff via `gh pr diff` (no truncation — full Copilot context window)
 3. Reads the PR description and extracts linked issue number from `Closes #N`
 4. Reads acceptance criteria from the linked issue
-5. Checks CI status via `gh pr checks`
+5. Checks CI status via `gh aw checks <PR_NUMBER> --json` and uses the returned `state`
 6. Reviews against: acceptance criteria, correctness, security, scope, code quality, tests
-7. Posts verdict comment with `<!-- pr-review-verdict -->` marker and `VERDICT: APPROVE` or `VERDICT: REQUEST_CHANGES`
+7. Posts verdict comment with `[PIPELINE-VERDICT]` marker and `VERDICT: APPROVE` or `VERDICT: REQUEST_CHANGES`
 
 Decision rules:
-- **APPROVE**: all acceptance criteria met, no bugs/security issues, code is in scope
-- **REQUEST_CHANGES**: any criteria not met, bugs/security issues, or out-of-scope changes
-- **CI failing**: always REQUEST_CHANGES
+- **APPROVE**: all acceptance criteria met, no bugs/security issues, code is in scope, and CI `state` is not `failed` or `policy_blocked`
+- **REQUEST_CHANGES**: any criteria not met, bugs/security issues, out-of-scope changes, CI `state` is `failed`, or CI `state` is `policy_blocked`
+- **CI `failed`**: REQUEST_CHANGES based on the authoritative `gh aw checks` state
+- **CI `pending`**: may still APPROVE because merge remains gated
+- **CI `no_checks`**: review on code/tests alone
+- **CI `policy_blocked`**: REQUEST_CHANGES until required checks or branch protection policy are satisfied
 - **Minor style issues**: not grounds for REQUEST_CHANGES (be pragmatic)
 
 #### pr-review-submit
@@ -125,14 +128,14 @@ Decision rules:
 | **Output** | Formal APPROVE or REQUEST_CHANGES GitHub review; auto-merge; repo-assist dispatch |
 
 Standard workflow that runs as `github-actions[bot]`. Watches for comments containing
-`<!-- pr-review-verdict -->` on PRs, parses the verdict, and submits the formal GitHub
+`[PIPELINE-VERDICT]` on PRs, parses the verdict, and submits the formal GitHub
 review. This is the identity that satisfies GitHub's self-approval restriction.
 For approved `[Pipeline]` PRs, the workflow then enables auto-merge with
 `GH_AW_GITHUB_TOKEN` so the merge commit to `main` still triggers downstream
 push-based workflows such as Azure deploy.
 
 Submit process:
-1. Detects verdict comment via `<!-- pr-review-verdict -->` marker
+1. Detects verdict comment via `[PIPELINE-VERDICT]` marker
 2. Fetches comment body via API (avoids shell injection — never uses `${{ github.event.comment.body }}` in run blocks)
 3. Parses `VERDICT: APPROVE` or `VERDICT: REQUEST_CHANGES` — defaults to REQUEST_CHANGES if unparseable
 4. Submits formal GitHub review as `github-actions[bot]`
