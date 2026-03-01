@@ -127,6 +127,9 @@ Decision rules:
 Standard workflow that runs as `github-actions[bot]`. Watches for comments containing
 `<!-- pr-review-verdict -->` on PRs, parses the verdict, and submits the formal GitHub
 review. This is the identity that satisfies GitHub's self-approval restriction.
+For approved `[Pipeline]` PRs, the workflow then enables auto-merge with
+`GH_AW_GITHUB_TOKEN` so the merge commit to `main` still triggers downstream
+push-based workflows such as Azure deploy.
 
 Submit process:
 1. Detects verdict comment via `<!-- pr-review-verdict -->` marker
@@ -254,9 +257,10 @@ The pipeline follows a repeatable **drop → run → tag → showcase → reset*
 
 **Squash merge with PR_BODY** — The repo is configured so squash merge commits
 use the PR body as the commit message. Since repo-assist writes `Closes #N` in
-every PR body, squash merging preserves the issue reference. However, `GITHUB_TOKEN`
-cannot trigger the `Closes #N` auto-close — the dedicated `close-issues` workflow
-handles issue closing explicitly after each merge.
+every PR body, squash merging preserves the issue reference. Pipeline PRs are
+auto-merged with `GH_AW_GITHUB_TOKEN` rather than `GITHUB_TOKEN` so the merge
+to `main` can trigger downstream workflows. The dedicated `close-issues`
+workflow remains as deterministic issue cleanup after each merge.
 
 **Orphan branch memory** — repo-assist stores state in a JSON file on the
 `memory/repo-assist` orphan branch. This persists across workflow runs without
@@ -282,7 +286,7 @@ until all issues from the PRD are implemented.
 
 | Secret | Purpose |
 |--------|---------|
-| `GH_AW_GITHUB_TOKEN` | Token for gh-aw agentic workflow engine |
+| `GH_AW_GITHUB_TOKEN` | Token for gh-aw agentic workflows and pipeline auto-merge |
 | `COPILOT_GITHUB_TOKEN` | Copilot agent token |
 
 Note: `MODELS_TOKEN` is no longer required — pr-review-agent uses the Copilot engine

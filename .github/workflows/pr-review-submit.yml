@@ -3,9 +3,12 @@
 # the formal GitHub review as github-actions[bot].
 #
 # This is a standard GitHub Actions workflow (not an agentic .md workflow)
-# so that it always uses GITHUB_TOKEN (github-actions[bot] identity).
-# This ensures a different identity from the GitHub App that creates PRs,
-# avoiding GitHub's self-approval restriction.
+# so that it submits the formal review with GITHUB_TOKEN
+# (github-actions[bot] identity). This ensures a different identity from the
+# GitHub App that creates PRs, avoiding GitHub's self-approval restriction.
+# For approved pipeline PRs, the auto-merge command intentionally switches to
+# GH_AW_GITHUB_TOKEN so the resulting push to main can trigger downstream
+# workflows such as Deploy to Azure.
 #
 # Flow:
 #   1. pr-review-agent posts a verdict comment starting with [PIPELINE-VERDICT]
@@ -183,7 +186,8 @@ jobs:
       - name: Mark draft PR ready and enable auto-merge (APPROVE only)
         if: steps.idempotency.outputs.skip != 'true' && steps.review.outputs.verdict == 'APPROVE'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MERGE_TOKEN: ${{ secrets.GH_AW_GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.issue.number }}
           PR_TITLE: ${{ steps.review.outputs.pr_title }}
           REPO: ${{ github.repository }}
@@ -196,7 +200,11 @@ jobs:
 
           # Enable auto-merge only for [Pipeline] PRs (human PRs should be merged manually)
           if [[ "$PR_TITLE" == "[Pipeline]"* ]]; then
-            gh pr merge "$PR_NUMBER" --repo "$REPO" --auto --squash || echo "::warning::Could not enable auto-merge"
+            if [ -z "$MERGE_TOKEN" ]; then
+              echo "::error::GH_AW_GITHUB_TOKEN is required for pipeline auto-merge so downstream push workflows can run."
+              exit 1
+            fi
+            GH_TOKEN="$MERGE_TOKEN" gh pr merge "$PR_NUMBER" --repo "$REPO" --auto --squash || echo "::warning::Could not enable auto-merge"
             echo "PR #${PR_NUMBER} approved and auto-merge enabled."
           else
             echo "PR #${PR_NUMBER} approved. Non-pipeline PR — skipping auto-merge."
@@ -210,8 +218,9 @@ jobs:
           ISSUE_NUMBER: ${{ steps.review.outputs.issue_number }}
           REPO: ${{ github.repository }}
         run: |
-          # GITHUB_TOKEN auto-merge suppresses pull_request:closed events, so
-          # close-issues.yml never fires. Close linked issues deterministically here.
+          # Poll for merge completion and close linked issues as a deterministic
+          # backstop. The merge itself uses GH_AW_GITHUB_TOKEN so downstream
+          # push/merge workflows can still fire normally.
           # Poll for merge completion (auto-merge typically completes within seconds).
           MERGED=false
           for i in $(seq 1 24); do
@@ -439,7 +448,8 @@ jobs:
       - name: Mark draft PR ready and enable auto-merge (APPROVE only)
         if: always() && github.event.inputs.verdict == 'APPROVE'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MERGE_TOKEN: ${{ secrets.GH_AW_GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.inputs.pr_number }}
           REPO: ${{ github.repository }}
         run: |
@@ -451,7 +461,11 @@ jobs:
           fi
 
           if [[ "$PR_TITLE" == "[Pipeline]"* ]]; then
-            gh pr merge "$PR_NUMBER" --repo "$REPO" --auto --squash || echo "::warning::Could not enable auto-merge"
+            if [ -z "$MERGE_TOKEN" ]; then
+              echo "::error::GH_AW_GITHUB_TOKEN is required for pipeline auto-merge so downstream push workflows can run."
+              exit 1
+            fi
+            GH_TOKEN="$MERGE_TOKEN" gh pr merge "$PR_NUMBER" --repo "$REPO" --auto --squash || echo "::warning::Could not enable auto-merge"
             echo "PR #${PR_NUMBER} approved and auto-merge enabled."
           else
             echo "PR #${PR_NUMBER} approved. Non-pipeline PR — skipping auto-merge."
