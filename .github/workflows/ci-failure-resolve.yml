@@ -1,0 +1,196 @@
+#
+# CI Failure Resolver — Marks active PR repair incidents resolved when the
+# current PR head passes .NET CI.
+#
+
+name: "CI Failure Resolver"
+
+on:
+  workflow_run:
+    workflows: [".NET CI"]
+    types: [completed]
+
+permissions:
+  contents: read
+  actions: read
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: "ci-failure-resolve-${{ github.event.workflow_run.id }}"
+  cancel-in-progress: false
+
+jobs:
+  resolve-failure:
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'success'
+    steps:
+      - name: Checkout repository helpers
+        uses: actions/checkout@v4
+
+      - name: Resolve repaired CI incident
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          SUCCESS_RUN_ID: ${{ github.event.workflow_run.id }}
+          SUCCESS_RUN_URL: ${{ github.event.workflow_run.html_url }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          PULL_REQUESTS_JSON: ${{ toJson(github.event.workflow_run.pull_requests) }}
+        run: |
+          set -euo pipefail
+
+          STATE_MARKER='<!-- ci-repair-state:v1'
+          NOW_ISO=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          LABEL_NAMES=$(gh label list --repo "$REPO" --limit 200 | awk '{print $1}')
+
+          has_label() {
+            local label=$1
+            printf '%s\n' "$LABEL_NAMES" | grep -qx "$label"
+          }
+
+          remove_pr_label() {
+            local label=$1
+            if has_label "$label"; then
+              gh pr edit "$PR_NUMBER" --repo "$REPO" --remove-label "$label" >/dev/null 2>&1 || true
+            fi
+          }
+
+          read_marker_field() {
+            local body=$1
+            local field=$2
+            printf '%s\n' "$body" | sed -n "s/^${field}=//p" | head -1
+          }
+
+          find_marker_comment() {
+            local item_number=$1
+            local marker=$2
+            local comments_json
+            comments_json=$(gh api "/repos/${REPO}/issues/${item_number}/comments?per_page=100" 2>/dev/null || echo '[]')
+            printf '%s' "$comments_json" | jq -c --arg marker "$marker" '[.[] | select(.body | contains($marker))] | last // {}'
+          }
+
+          upsert_comment() {
+            local item_number=$1
+            local comment_id=$2
+            local body=$3
+            local payload
+            payload=$(mktemp)
+            jq -n --arg body "$body" '{body: $body}' > "$payload"
+            if [ -n "$comment_id" ]; then
+              gh api --method PATCH "/repos/${REPO}/issues/comments/${comment_id}" --input "$payload" >/dev/null
+            else
+              gh api --method POST "/repos/${REPO}/issues/${item_number}/comments" --input "$payload" >/dev/null
+            fi
+            rm -f "$payload"
+          }
+
+          render_state_body() {
+            local status=$1
+            local linked_issue=$2
+            local attempt_count=$3
+            local failure_type=$4
+            local failure_signature=$5
+            local failure_summary=$6
+            local failure_excerpt=$7
+            printf '%s\n' \
+              "${STATE_MARKER}" \
+              "status=${status}" \
+              "pr_number=${PR_NUMBER}" \
+              "linked_issue=${linked_issue}" \
+              "head_sha=${HEAD_SHA}" \
+              "head_branch=${HEAD_BRANCH}" \
+              "failure_run_id=${FAILURE_RUN_ID_MARKER}" \
+              "failure_run_url=${FAILURE_RUN_URL_MARKER}" \
+              "failure_type=${failure_type}" \
+              "failure_signature=${failure_signature}" \
+              "attempt_count=${attempt_count}" \
+              "updated_at=${NOW_ISO}" \
+              "-->" \
+              "## CI Repair Incident" \
+              "" \
+              "- **Status**: ${status}" \
+              "- **Linked Issue**: #${linked_issue}" \
+              "- **Run**: ${FAILURE_RUN_URL_MARKER}" \
+              "- **Branch**: \`${HEAD_BRANCH}\`" \
+              "- **Head SHA**: \`${HEAD_SHA}\`" \
+              "- **Failure Type**: ${failure_type}" \
+              "- **Failure Signature**: \`${failure_signature}\`" \
+              "- **Failure Summary**: ${failure_summary}" \
+              "- **Attempt Count**: ${attempt_count}" \
+              "- **Last Updated**: ${NOW_ISO}" \
+              "- **Resolved By**: ${SUCCESS_RUN_URL}" \
+              "" \
+              "### Failure Excerpt" \
+              '```text' \
+              "${failure_excerpt}" \
+              '```'
+          }
+
+          PR_NUMBER=$(printf '%s' "$PULL_REQUESTS_JSON" | jq -r '.[0].number // empty')
+          if [ -z "$PR_NUMBER" ]; then
+            echo "Successful .NET CI run is not attached to a PR. Nothing to resolve."
+            exit 0
+          fi
+
+          PR_JSON=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json state,headRefOid,headRefName)
+          PR_STATE=$(printf '%s' "$PR_JSON" | jq -r '.state')
+          CURRENT_HEAD_SHA=$(printf '%s' "$PR_JSON" | jq -r '.headRefOid')
+          HEAD_BRANCH=$(printf '%s' "$PR_JSON" | jq -r '.headRefName')
+
+          if [ "$PR_STATE" != "OPEN" ]; then
+            echo "PR #${PR_NUMBER} is ${PR_STATE}; nothing to resolve."
+            exit 0
+          fi
+
+          if [ "$CURRENT_HEAD_SHA" != "$HEAD_SHA" ]; then
+            echo "Successful run head ${HEAD_SHA} is stale versus PR head ${CURRENT_HEAD_SHA}."
+            exit 0
+          fi
+
+          STATE_JSON=$(find_marker_comment "$PR_NUMBER" "$STATE_MARKER")
+          STATE_COMMENT_ID=$(printf '%s' "$STATE_JSON" | jq -r '.id // empty')
+          STATE_BODY=$(printf '%s' "$STATE_JSON" | jq -r '.body // empty')
+          if [ -z "$STATE_COMMENT_ID" ]; then
+            echo "No CI repair incident comment found on PR #${PR_NUMBER}."
+            exit 0
+          fi
+
+          EXISTING_STATUS=$(read_marker_field "$STATE_BODY" status)
+          FAILURE_RUN_ID_MARKER=$(read_marker_field "$STATE_BODY" failure_run_id)
+          FAILURE_RUN_URL_MARKER=$(read_marker_field "$STATE_BODY" failure_run_url)
+          FAILURE_TYPE=$(read_marker_field "$STATE_BODY" failure_type)
+          FAILURE_SIGNATURE=$(read_marker_field "$STATE_BODY" failure_signature)
+          ATTEMPT_COUNT=$(read_marker_field "$STATE_BODY" attempt_count)
+          LINKED_ISSUE=$(read_marker_field "$STATE_BODY" linked_issue)
+          MARKER_HEAD_SHA=$(read_marker_field "$STATE_BODY" head_sha)
+
+          if [ -z "$EXISTING_STATUS" ] || [ "$EXISTING_STATUS" = "resolved" ] || [ "$EXISTING_STATUS" = "superseded" ]; then
+            echo "Incident comment is already resolved/superseded or missing state."
+            exit 0
+          fi
+
+          if [ "$MARKER_HEAD_SHA" != "$HEAD_SHA" ]; then
+            echo "Incident is tracking head ${MARKER_HEAD_SHA}, not successful head ${HEAD_SHA}."
+            exit 0
+          fi
+
+          FAILURE_RAW_LOGS=$(gh run view "$FAILURE_RUN_ID_MARKER" --repo "$REPO" --log-failed 2>&1 || true)
+          if [ -z "$FAILURE_RAW_LOGS" ]; then
+            FAILURE_RAW_LOGS="$FAILURE_SIGNATURE"
+          fi
+          FAILURE_JSON=$(printf '%s' "$FAILURE_RAW_LOGS" | scripts/extract-failure-context.sh)
+          FAILURE_SUMMARY=$(printf '%s' "$FAILURE_JSON" | jq -r '.summary')
+          FAILURE_EXCERPT=$(printf '%s' "$FAILURE_JSON" | jq -r '.excerpt')
+
+          RESOLVED_STATE=$(render_state_body resolved "$LINKED_ISSUE" "${ATTEMPT_COUNT:-1}" "${FAILURE_TYPE:-unknown}" "${FAILURE_SIGNATURE:-unknown-failure}" "$FAILURE_SUMMARY" "$FAILURE_EXCERPT")
+          upsert_comment "$PR_NUMBER" "$STATE_COMMENT_ID" "$RESOLVED_STATE"
+
+          remove_pr_label "ci-failure"
+          remove_pr_label "repair-in-progress"
+          remove_pr_label "repair-escalated"
+
+          if [ -n "$LINKED_ISSUE" ] && { [ "$EXISTING_STATUS" = "dispatched" ] || [ "$EXISTING_STATUS" = "repairing" ]; }; then
+            gh issue comment "$LINKED_ISSUE" --repo "$REPO" \
+              --body "CI repair incident resolved for PR #${PR_NUMBER}. .NET CI passed on ${SUCCESS_RUN_URL} for head \`${HEAD_SHA}\`." >/dev/null || \
+              echo "::warning::Could not post resolution comment on issue #${LINKED_ISSUE}"
+          fi
