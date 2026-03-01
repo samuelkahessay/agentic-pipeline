@@ -5,7 +5,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Dashboard — prd-to-prod</title>
+    <title>Dashboard — Ticket Deflection Service</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
     <script src="https://cdn.tailwindcss.com"></script>
@@ -111,22 +111,21 @@
     <!-- Status bar -->
     <div class="status-bar px-6 py-2 flex items-center justify-between text-xs">
         <div class="flex items-center gap-4">
-            <a href="/" class="text-accent font-bold tracking-widest hover:underline">PRD-TO-PROD</a>
-            <span class="text-dim">//</span>
+            <span class="text-accent font-bold tracking-widest">TICKET DEFLECTION SERVICE</span>
             <span class="text-accent">/dashboard</span>
-            <span class="text-dim">— mission control</span>
-        </div>
-        <div class="flex items-center gap-4">
             <a href="/tickets" class="nav-link">/tickets</a>
             <a href="/activity" class="nav-link">/activity</a>
+        </div>
+        <div class="flex items-center gap-4">
             <button onclick="loadMetrics()" class="refresh-btn">[ refresh ]</button>
+            <a href="/" class="text-dim hover:text-accent transition-colors">◀ prd-to-prod</a>
         </div>
     </div>
 
     <div class="max-w-5xl mx-auto px-4 py-10">
 
         <div class="mb-8">
-            <div class="text-xs text-dim mb-2">// pipeline output — ticket deflection metrics</div>
+            <div class="text-xs text-dim mb-2">// deflection metrics — system output</div>
             <h1 class="font-sans text-3xl font-bold text-white">Mission Control</h1>
         </div>
 
