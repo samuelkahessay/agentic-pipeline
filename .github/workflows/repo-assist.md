@@ -81,7 +81,49 @@ tools:
 
 Take heed of **instructions**: "${{ steps.sanitized.outputs.text }}"
 
-If these are non-empty, follow the user's instructions instead of the normal workflow. Apply all the same guidelines (read AGENTS.md, run tests, use AI disclosure). Skip the scheduled workflow and directly do what was requested. Then exit.
+### CI Repair Command Mode
+
+If the instructions contain `ci-repair-command:v1`, ignore Scheduled Mode and enter CI Repair Command Mode.
+
+In CI Repair Command Mode:
+- **Read `AGENTS.md` first**.
+- Parse the hidden `ci-repair-command:v1` marker and extract:
+  - `pr_number`
+  - `linked_issue`
+  - `head_sha`
+  - `head_branch`
+  - `failure_run_id`
+  - `failure_run_url`
+  - `failure_type`
+  - `failure_signature`
+  - `attempt_count`
+- Fetch the current PR head SHA with `gh pr view <PR_NUMBER> --json headRefOid,headRefName`.
+- If the current PR head SHA does **not** match `head_sha`, post a short stale-command comment on the linked source issue and exit without code changes.
+- Checkout the existing PR branch from `head_branch`. Do **not** checkout `main`, create a new branch, or create a new PR.
+- Read the failing run logs with `gh run view <FAILURE_RUN_ID> --log-failed` and read the PR diff with `gh pr diff <PR_NUMBER>` before making changes.
+- Apply the **minimum** code change needed to fix the failing `.NET CI` check.
+- Run the build/test commands from `AGENTS.md`. If local environment blockers prevent validation, report the exact blocker in the PR comment.
+- Push fixes directly to the existing PR branch using `push_to_pull_request_branch` with both:
+  - `pull_request_number: <PR_NUMBER>`
+  - `branch: <HEAD_BRANCH>`
+- Never use `create_pull_request` in this mode.
+- After a successful push, add a PR comment with `item_number: <PR_NUMBER>` that includes:
+  - a concise summary of the fix
+  - test/build results or blockers
+  - a hidden marker:
+    - `<!-- ci-repair-attempt:v1`
+    - `pr_number=<PR_NUMBER>`
+    - `head_sha_before=<COMMAND_HEAD_SHA>`
+    - `head_sha_after=<NEW_HEAD_SHA>`
+    - `attempt_count=<ATTEMPT_COUNT>`
+    - `-->`
+- Add a short confirmation comment on the linked source issue using `item_number: <LINKED_ISSUE>`.
+- If you cannot reproduce the failure or cannot fix it safely, add `needs escalation` comments to both the PR and linked issue, explain why, and exit without creating duplicate issues or PRs.
+- This mode overrides all normal backlog work. Do not implement unrelated issues, do not rotate through scheduled tasks, and do not update unrelated PRs.
+
+### General Command Mode
+
+If the instructions are non-empty and do **not** contain `ci-repair-command:v1`, follow the user's instructions instead of the normal workflow. Apply all the same guidelines (read AGENTS.md, run tests, use AI disclosure). Skip the scheduled workflow and directly do what was requested. Then exit.
 
 ## Scheduled Mode
 

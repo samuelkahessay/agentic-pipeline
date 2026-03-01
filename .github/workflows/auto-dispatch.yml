@@ -12,6 +12,7 @@ concurrency:
 jobs:
   dispatch:
     if: |
+      !startsWith(github.event.issue.title, '[CI Incident]') &&
       contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.issue.author_association) &&
       (
         (github.event.action == 'labeled' && github.event.label.name == 'pipeline') ||

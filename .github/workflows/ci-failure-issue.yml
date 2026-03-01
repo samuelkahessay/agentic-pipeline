@@ -1,20 +1,17 @@
 #
-# CI Failure Issue Creator — Automatically opens a [Pipeline] bug issue when
-# the .NET CI workflow fails, giving repo-assist an actionable item to fix.
+# CI Failure Router — Routes failing .NET CI runs on pipeline PRs back into the
+# existing repair loop instead of creating duplicate backlog issues.
 #
 # Flow:
 #   1. .NET CI fails on a PR → workflow_run:completed fires with conclusion=failure
-#   2. This workflow fetches the failed-step logs via `gh run view --log-failed`
-#   3. Dedup check: if an open pipeline+bug issue already starts with
-#      "[Pipeline] CI Build Failure", skip creation to avoid flooding
-#   4. Creates an issue with labels `pipeline` and `bug` so that
-#      auto-dispatch.yml picks it up and dispatches repo-assist
-#
-# Security: all github.event.* values are passed through `env:` blocks —
-# never interpolated directly into `run:` scripts — to prevent shell injection.
+#   2. Router fetches failed-step logs and normalizes the failure signature
+#   3. For open [Pipeline] PRs with a linked source issue, router upserts PR state
+#      and posts a structured /repo-assist repair command to the linked issue
+#   4. Router creates a standalone [CI Incident] issue only for fallback/escalation
+#      cases (no PR, non-pipeline PR, missing linked issue, dispatch failure)
 #
 
-name: "CI Failure Issue Creator"
+name: "CI Failure Router"
 
 on:
   workflow_run:
@@ -23,112 +20,308 @@ on:
 
 permissions:
   contents: read
-  issues: write
   actions: read
+  issues: write
+  pull-requests: write
 
-# One run per failing CI run ID — prevents double-processing if the event
-# fires more than once for the same run.
 concurrency:
-  group: "ci-failure-issue-${{ github.event.workflow_run.id }}"
+  group: "ci-failure-router-${{ github.event.workflow_run.id }}"
   cancel-in-progress: false
 
 jobs:
-  create-issue:
+  route-failure:
     runs-on: ubuntu-latest
     if: github.event.workflow_run.conclusion == 'failure'
     steps:
-      - name: Extract failure details and create issue
+      - name: Checkout repository helpers
+        uses: actions/checkout@v4
+
+      - name: Route failing CI run
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_AW_GITHUB_TOKEN: ${{ secrets.GH_AW_GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
           RUN_ID: ${{ github.event.workflow_run.id }}
           RUN_URL: ${{ github.event.workflow_run.html_url }}
           HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
           HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
-          PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number || '' }}
+          PULL_REQUESTS_JSON: ${{ toJson(github.event.workflow_run.pull_requests) }}
         run: |
-          echo "=== CI Failure Issue Creator ==="
-          echo "Run ID  : ${RUN_ID}"
-          echo "Branch  : ${HEAD_BRANCH}"
-          echo "SHA     : ${HEAD_SHA}"
+          set -euo pipefail
 
-          # ── Fetch failed-step logs ──
+          STATE_MARKER='<!-- ci-repair-state:v1'
+          COMMAND_MARKER='<!-- ci-repair-command:v1'
+          NOW_ISO=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          LABEL_NAMES=$(gh label list --repo "$REPO" --limit 200 | awk '{print $1}')
+
+          has_label() {
+            local label=$1
+            printf '%s\n' "$LABEL_NAMES" | grep -qx "$label"
+          }
+
+          add_pr_label() {
+            local label=$1
+            if has_label "$label"; then
+              gh pr edit "$PR_NUMBER" --repo "$REPO" --add-label "$label" >/dev/null 2>&1 || \
+                echo "::warning::Could not add label '$label' to PR #${PR_NUMBER}"
+            else
+              echo "::warning::Label '$label' is missing from the repository"
+            fi
+          }
+
+          remove_pr_label() {
+            local label=$1
+            if has_label "$label"; then
+              gh pr edit "$PR_NUMBER" --repo "$REPO" --remove-label "$label" >/dev/null 2>&1 || true
+            fi
+          }
+
+          read_marker_field() {
+            local body=$1
+            local field=$2
+            printf '%s\n' "$body" | sed -n "s/^${field}=//p" | head -1
+          }
+
+          find_marker_comment() {
+            local item_number=$1
+            local marker=$2
+            local comments_json
+            comments_json=$(gh api "/repos/${REPO}/issues/${item_number}/comments?per_page=100" 2>/dev/null || echo '[]')
+            printf '%s' "$comments_json" | jq -c --arg marker "$marker" '[.[] | select(.body | contains($marker))] | last // {}'
+          }
+
+          upsert_comment() {
+            local token=$1
+            local item_number=$2
+            local comment_id=$3
+            local body=$4
+            local payload
+            payload=$(mktemp)
+            jq -n --arg body "$body" '{body: $body}' > "$payload"
+            if [ -n "$comment_id" ]; then
+              GH_TOKEN="$token" gh api --method PATCH "/repos/${REPO}/issues/comments/${comment_id}" --input "$payload" >/dev/null
+            else
+              GH_TOKEN="$token" gh api --method POST "/repos/${REPO}/issues/${item_number}/comments" --input "$payload" >/dev/null
+            fi
+            rm -f "$payload"
+          }
+
+          render_state_body() {
+            local status=$1
+            local linked_issue=$2
+            local attempt_count=$3
+            local failure_type=$4
+            local failure_signature=$5
+            local failure_summary=$6
+            local failure_excerpt=$7
+            printf '%s\n' \
+              "${STATE_MARKER}" \
+              "status=${status}" \
+              "pr_number=${PR_NUMBER}" \
+              "linked_issue=${linked_issue}" \
+              "head_sha=${HEAD_SHA}" \
+              "head_branch=${HEAD_BRANCH}" \
+              "failure_run_id=${RUN_ID}" \
+              "failure_run_url=${RUN_URL}" \
+              "failure_type=${failure_type}" \
+              "failure_signature=${failure_signature}" \
+              "attempt_count=${attempt_count}" \
+              "updated_at=${NOW_ISO}" \
+              "-->" \
+              "## CI Repair Incident" \
+              "" \
+              "- **Status**: ${status}" \
+              "- **Linked Issue**: #${linked_issue}" \
+              "- **Run**: ${RUN_URL}" \
+              "- **Branch**: \`${HEAD_BRANCH}\`" \
+              "- **Head SHA**: \`${HEAD_SHA}\`" \
+              "- **Failure Type**: ${failure_type}" \
+              "- **Failure Signature**: \`${failure_signature}\`" \
+              "- **Failure Summary**: ${failure_summary}" \
+              "- **Attempt Count**: ${attempt_count}" \
+              "- **Last Updated**: ${NOW_ISO}" \
+              "" \
+              "### Failure Excerpt" \
+              '```text' \
+              "${failure_excerpt}" \
+              '```'
+          }
+
+          render_incident_body() {
+            local reason=$1
+            local context_line=$2
+            printf '%s\n' \
+              "## CI Incident" \
+              "" \
+              "- **Run**: ${RUN_URL}"
+            printf '%b\n' "${context_line}"
+            printf '%s\n' \
+              "- **Commit**: \`${HEAD_SHA}\`" \
+              "- **Reason**: ${reason}" \
+              "- **Failure Type**: ${FAILURE_TYPE}" \
+              "- **Failure Signature**: \`${FAILURE_SIGNATURE}\`" \
+              "" \
+              "### Failure Summary" \
+              "${FAILURE_SUMMARY}" \
+              "" \
+              "### Failed-Step Excerpt" \
+              '```text' \
+              "${FAILURE_EXCERPT}" \
+              '```' \
+              "" \
+              "> This incident was created automatically by the CI Failure Router workflow."
+          }
+
+          create_or_update_incident_issue() {
+            local title=$1
+            local body=$2
+            local existing_issue
+            local issue_args=()
+            existing_issue=$(gh issue list --repo "$REPO" --state open --limit 200 --json number,title \
+              | jq -r --arg title "$title" '.[] | select(.title == $title) | .number' | head -1)
+
+            if [ -n "$existing_issue" ]; then
+              gh issue comment "$existing_issue" --repo "$REPO" --body "$body" >/dev/null || \
+                echo "::warning::Could not update existing incident issue #${existing_issue}"
+              return
+            fi
+
+            for label in automation bug ci-failure; do
+              if has_label "$label"; then
+                issue_args+=(--label "$label")
+              fi
+            done
+
+            gh issue create --repo "$REPO" --title "$title" --body "$body" "${issue_args[@]}" >/dev/null
+          }
+
           RAW_LOGS=$(gh run view "$RUN_ID" --repo "$REPO" --log-failed 2>&1 || true)
-
-          # ── Extract .NET error lines (CS/FS/BC codes, "Build FAILED", etc.) ──
-          ERROR_LINES=$(printf '%s' "$RAW_LOGS" \
-            | grep -iE "(error (CS|FS|BC)[0-9]+|Build FAILED|Tests? failed)" \
-            | head -20 \
-            || true)
-
-          if [ -z "$ERROR_LINES" ]; then
-            ERROR_LINES="(no structured error lines found — see run logs)"
+          if [ -z "$RAW_LOGS" ]; then
+            RAW_LOGS="(no failed-step logs found — see run logs)"
           fi
 
-          # ── Build a title-safe short summary ──
-          FIRST_CODE=$(printf '%s' "$RAW_LOGS" \
-            | grep -oiE "error (CS|FS|BC)[0-9]+" \
-            | head -1 \
-            || true)
+          FAILURE_JSON=$(printf '%s' "$RAW_LOGS" | scripts/extract-failure-context.sh)
+          FAILURE_TYPE=$(printf '%s' "$FAILURE_JSON" | jq -r '.failure_type')
+          FAILURE_SIGNATURE=$(printf '%s' "$FAILURE_JSON" | jq -r '.failure_signature')
+          FAILURE_SUMMARY=$(printf '%s' "$FAILURE_JSON" | jq -r '.summary')
+          FAILURE_EXCERPT=$(printf '%s' "$FAILURE_JSON" | jq -r '.excerpt')
+          SHORT_SUMMARY=$(printf '%.80s' "$FAILURE_SUMMARY")
 
-          if [ -n "$FIRST_CODE" ]; then
-            SHORT_ERROR=$(printf '%.80s' "$FIRST_CODE")
-          else
-            SHORT_ERROR="Build failure"
-          fi
-
-          TITLE="[Pipeline] CI Build Failure: ${SHORT_ERROR}"
-
-          # ── Dedup check ──
-          # Skip if an open pipeline+bug issue with the same title prefix exists.
-          EXISTING=$(gh issue list --repo "$REPO" \
-            --label "pipeline" --label "bug" \
-            --state open \
-            --json number,title \
-            --jq '[.[] | select(.title | startswith("[Pipeline] CI Build Failure"))] | length')
-
-          if [ "${EXISTING:-0}" -gt 0 ]; then
-            echo "An open CI failure issue already exists — skipping creation to avoid duplicates."
+          PR_NUMBER=$(printf '%s' "$PULL_REQUESTS_JSON" | jq -r '.[0].number // empty')
+          if [ -z "$PR_NUMBER" ]; then
+            TITLE="[CI Incident] Branch ${HEAD_BRANCH} .NET CI Failure: ${SHORT_SUMMARY}"
+            BODY=$(render_incident_body \
+              "The failing .NET CI run is not attached to a pull request." \
+              "- **Branch**: \`${HEAD_BRANCH}\`")
+            create_or_update_incident_issue "$TITLE" "$BODY"
             exit 0
           fi
 
-          # ── Build PR/branch context line ──
-          if [ -n "$PR_NUMBER" ]; then
-            CONTEXT_LINE="- **PR**: #${PR_NUMBER} (branch: \`${HEAD_BRANCH}\`)"
-          else
-            CONTEXT_LINE="- **Branch**: \`${HEAD_BRANCH}\`"
+          PR_JSON=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json number,title,body,state,headRefOid,headRefName,url)
+          PR_STATE=$(printf '%s' "$PR_JSON" | jq -r '.state')
+          PR_TITLE=$(printf '%s' "$PR_JSON" | jq -r '.title')
+          CURRENT_HEAD_SHA=$(printf '%s' "$PR_JSON" | jq -r '.headRefOid')
+          CURRENT_HEAD_BRANCH=$(printf '%s' "$PR_JSON" | jq -r '.headRefName')
+          PR_URL=$(printf '%s' "$PR_JSON" | jq -r '.url')
+
+          if [ "$PR_STATE" != "OPEN" ]; then
+            echo "PR #${PR_NUMBER} is ${PR_STATE}; treating failure as superseded."
+            exit 0
           fi
 
-          # ── Write issue body to a temp file (avoids YAML block-scalar issues) ──
-          BODY_FILE=$(mktemp "${RUNNER_TEMP}/ci-failure-body.XXXXXX.md")
-          {
-            printf '## CI Build Failure Detected\n\n'
-            printf 'The `.NET CI` workflow failed and requires a fix.\n\n'
-            printf '### Failure Details\n'
-            printf -- '- **Run**: %s\n' "$RUN_URL"
-            printf '%s\n' "$CONTEXT_LINE"
-            printf -- '- **Commit**: `%s`\n\n' "$HEAD_SHA"
-            printf '### Error Output\n'
-            printf '```\n'
-            printf '%s\n' "$ERROR_LINES"
-            printf '```\n\n'
-            printf '### Instructions\n'
-            printf '1. Review the error output above and the [full run logs](%s).\n' "$RUN_URL"
-            printf '2. Identify the root cause of the build/test failure.\n'
-            printf '3. Implement the necessary fix in the codebase.\n'
-            printf '4. Ensure `dotnet build` and `dotnet test` pass before opening a PR.\n'
-            printf '5. Open a PR with `Closes #<this-issue-number>` in the body.\n\n'
-            printf '> This issue was created automatically by the CI Failure Issue Creator workflow.\n'
-          } > "$BODY_FILE"
+          if [ "$CURRENT_HEAD_SHA" != "$HEAD_SHA" ]; then
+            echo "PR #${PR_NUMBER} head moved from ${HEAD_SHA} to ${CURRENT_HEAD_SHA}; treating failure as stale."
+            exit 0
+          fi
 
-          # ── Create the issue ──
-          gh issue create \
-            --repo "$REPO" \
-            --title "$TITLE" \
-            --body-file "$BODY_FILE" \
-            --label "pipeline" \
-            --label "bug"
+          HEAD_BRANCH=$CURRENT_HEAD_BRANCH
 
-          rm -f "$BODY_FILE"
+          if ! printf '%s' "$PR_TITLE" | grep -q '^\[Pipeline\]'; then
+            TITLE="[CI Incident] PR #${PR_NUMBER} .NET CI Failure: ${SHORT_SUMMARY}"
+            BODY=$(render_incident_body \
+              "The failing PR is not a [Pipeline] PR, so it is not eligible for automatic repair." \
+              "- **PR**: #${PR_NUMBER} (${PR_URL})\n- **Branch**: \`${HEAD_BRANCH}\`")
+            create_or_update_incident_issue "$TITLE" "$BODY"
+            exit 0
+          fi
 
-          echo "Issue created."
+          LINKED_ISSUE=$(printf '%s' "$PR_JSON" | jq -r '[.body | scan("(?i)(?:close[ds]?|fix(?:e[ds])?|resolve[ds]?)\\s+#(\\d+)")] | first | .[]? // empty' | head -1)
+          if [ -z "$LINKED_ISSUE" ]; then
+            TITLE="[CI Incident] PR #${PR_NUMBER} .NET CI Failure: ${SHORT_SUMMARY}"
+            BODY=$(render_incident_body \
+              "The failing [Pipeline] PR has no linked source issue in its PR body." \
+              "- **PR**: #${PR_NUMBER} (${PR_URL})\n- **Branch**: \`${HEAD_BRANCH}\`")
+            create_or_update_incident_issue "$TITLE" "$BODY"
+            exit 0
+          fi
+
+          EXISTING_STATE_JSON=$(find_marker_comment "$PR_NUMBER" "$STATE_MARKER")
+          STATE_COMMENT_ID=$(printf '%s' "$EXISTING_STATE_JSON" | jq -r '.id // empty')
+          STATE_COMMENT_BODY=$(printf '%s' "$EXISTING_STATE_JSON" | jq -r '.body // empty')
+          EXISTING_STATUS=$(read_marker_field "$STATE_COMMENT_BODY" status)
+          EXISTING_HEAD_SHA=$(read_marker_field "$STATE_COMMENT_BODY" head_sha)
+
+          if [ "$EXISTING_HEAD_SHA" = "$HEAD_SHA" ] && { [ "$EXISTING_STATUS" = "dispatched" ] || [ "$EXISTING_STATUS" = "repairing" ]; }; then
+            echo "Repair incident already active for PR #${PR_NUMBER} at ${HEAD_SHA}; skipping duplicate dispatch."
+            exit 0
+          fi
+
+          DETECTED_STATE=$(render_state_body detected "$LINKED_ISSUE" 1 "$FAILURE_TYPE" "$FAILURE_SIGNATURE" "$FAILURE_SUMMARY" "$FAILURE_EXCERPT")
+          upsert_comment "$GH_TOKEN" "$PR_NUMBER" "$STATE_COMMENT_ID" "$DETECTED_STATE"
+          add_pr_label "ci-failure"
+          add_pr_label "repair-in-progress"
+          remove_pr_label "repair-escalated"
+
+          COMMAND_EXISTS=$(gh api "/repos/${REPO}/issues/${LINKED_ISSUE}/comments?per_page=100" 2>/dev/null \
+            | jq -r --arg pr "$PR_NUMBER" --arg sha "$HEAD_SHA" --arg marker "$COMMAND_MARKER" \
+              '[.[] | select(.body | contains($marker) and contains("pr_number=" + $pr) and contains("head_sha=" + $sha))] | length')
+          if [ "${COMMAND_EXISTS:-0}" -gt 0 ]; then
+            DISPATCHED_STATE=$(render_state_body dispatched "$LINKED_ISSUE" 1 "$FAILURE_TYPE" "$FAILURE_SIGNATURE" "$FAILURE_SUMMARY" "$FAILURE_EXCERPT")
+            upsert_comment "$GH_TOKEN" "$PR_NUMBER" "$STATE_COMMENT_ID" "$DISPATCHED_STATE"
+            echo "Repair command already exists for issue #${LINKED_ISSUE}; skipping duplicate post."
+            exit 0
+          fi
+
+          if [ -z "${GH_AW_GITHUB_TOKEN:-}" ]; then
+            ESCALATED_STATE=$(render_state_body escalated "$LINKED_ISSUE" 1 "$FAILURE_TYPE" "$FAILURE_SIGNATURE" "$FAILURE_SUMMARY" "$FAILURE_EXCERPT")
+            upsert_comment "$GH_TOKEN" "$PR_NUMBER" "$STATE_COMMENT_ID" "$ESCALATED_STATE"
+            remove_pr_label "repair-in-progress"
+            add_pr_label "repair-escalated"
+            TITLE="[CI Incident] Escalation: PR #${PR_NUMBER} repeated .NET CI failure"
+            BODY=$(render_incident_body \
+              "GH_AW_GITHUB_TOKEN is unavailable, so the router could not post the repair command that triggers repo-assist." \
+              "- **PR**: #${PR_NUMBER} (${PR_URL})\n- **Branch**: \`${HEAD_BRANCH}\`\n- **Linked Issue**: #${LINKED_ISSUE}")
+            create_or_update_incident_issue "$TITLE" "$BODY"
+            exit 0
+          fi
+
+          COMMAND_BODY=$(scripts/render-ci-repair-command.sh \
+            --pr-number "$PR_NUMBER" \
+            --linked-issue "$LINKED_ISSUE" \
+            --head-sha "$HEAD_SHA" \
+            --head-branch "$HEAD_BRANCH" \
+            --failure-run-id "$RUN_ID" \
+            --failure-run-url "$RUN_URL" \
+            --failure-type "$FAILURE_TYPE" \
+            --failure-signature "$FAILURE_SIGNATURE" \
+            --attempt-count 1 \
+            --failure-summary "$FAILURE_SUMMARY" \
+            --failure-excerpt "$FAILURE_EXCERPT")
+
+          if ! GH_TOKEN="$GH_AW_GITHUB_TOKEN" gh issue comment "$LINKED_ISSUE" --repo "$REPO" --body "$COMMAND_BODY" >/dev/null; then
+            echo "::warning::Repair command dispatch failed for issue #${LINKED_ISSUE}"
+            ESCALATED_STATE=$(render_state_body escalated "$LINKED_ISSUE" 1 "$FAILURE_TYPE" "$FAILURE_SIGNATURE" "$FAILURE_SUMMARY" "$FAILURE_EXCERPT")
+            upsert_comment "$GH_TOKEN" "$PR_NUMBER" "$STATE_COMMENT_ID" "$ESCALATED_STATE"
+            remove_pr_label "repair-in-progress"
+            add_pr_label "repair-escalated"
+            TITLE="[CI Incident] Escalation: PR #${PR_NUMBER} repeated .NET CI failure"
+            BODY=$(render_incident_body \
+              "Router could not post the repair command that triggers repo-assist on the linked source issue." \
+              "- **PR**: #${PR_NUMBER} (${PR_URL})\n- **Branch**: \`${HEAD_BRANCH}\`\n- **Linked Issue**: #${LINKED_ISSUE}")
+            create_or_update_incident_issue "$TITLE" "$BODY"
+            exit 0
+          fi
+
+          DISPATCHED_STATE=$(render_state_body dispatched "$LINKED_ISSUE" 1 "$FAILURE_TYPE" "$FAILURE_SIGNATURE" "$FAILURE_SUMMARY" "$FAILURE_EXCERPT")
+          upsert_comment "$GH_TOKEN" "$PR_NUMBER" "$STATE_COMMENT_ID" "$DISPATCHED_STATE"
+          echo "Posted repair command for PR #${PR_NUMBER} on issue #${LINKED_ISSUE}."
