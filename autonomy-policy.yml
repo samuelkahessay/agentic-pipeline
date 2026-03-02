@@ -88,7 +88,7 @@ actions:
   - action: sensitive_app_change
     scope: Modify application code in security-sensitive, compliance, or payment paths.
     default_mode: human_required
-    requires_human_reason: >
+    requires_human_reason: >-
       Changes to authentication, compliance, or payment logic carry elevated risk
       and require human review before merge.
     allowed_targets:
