@@ -1,0 +1,20 @@
+# prd-to-prod
+
+> Autonomous software pipeline powered by gh-aw (GitHub Agentic Workflows).
+> Issues labeled `pipeline` are implemented by AI agents. No human writes implementation code.
+
+## Agent Instructions
+- [AGENTS.md](AGENTS.md) — Coding standards, build commands, PR requirements
+- [autonomy-policy.yml](autonomy-policy.yml) — What agents can and cannot do autonomously
+
+## Architecture
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — System architecture
+
+## Key Workflows
+- .github/workflows/auto-dispatch.yml — Dispatches repo-assist for pipeline issues
+- .github/workflows/ci-failure-issue.yml — Routes CI failures to repair
+- .github/workflows/pr-review-submit.yml — Submits reviews and arms auto-merge
+
+## Configuration
+- .deploy-profile — Active deployment profile
+- .github/deploy-profiles/ — Stack-specific build/test/deploy commands
