@@ -1,6 +1,6 @@
 {
-  "last_run": "2026-03-02T15:23:25Z",
-  "workflow_run_id": "22582569232",
+  "last_run": "2026-03-02T18:44:00Z",
+  "workflow_run_id": "22590470009",
   "current_prd": {
     "issue": 297,
     "title": "PRD: Run 05 Landing Page Demo",
@@ -54,9 +54,10 @@
     {"issue": 313, "pr": 314, "status": "merged"},
     {"issue": 315, "pr": 317, "status": "merged"},
     {"issue": 316, "pr": 318, "status": "merged"},
-    {"issue": 327, "status": "pr_opened", "notes": "CS1002 drill fix — missing semicolon in DrillCanary.cs, PR created 2026-03-02"}
+    {"issue": 327, "pr": 328, "status": "merged"},
+    {"issue": 329, "branch": "repo-assist/issue-329-default-run-selection", "status": "pr_opened", "notes": "Auto-select latest run on landing page — 3-line JS fix in Index.cshtml"}
   ],
-  "open_issues": [327],
+  "open_issues": [329],
   "open_prs": [],
-  "notes": "Run 05 complete. Drill #327 triggered build failure on main; PR opened to fix missing semicolon in DrillCanary.cs. Ready to archive as 05-landing-page-demo / v5.0.0 after merge."
+  "notes": "Run 05 complete. PR for #329 (default run selection) opened. Ready to archive as 05-landing-page-demo / v5.0.0 after #329 is merged."
 }

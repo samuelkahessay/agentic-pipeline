@@ -1,18 +1,18 @@
 # Pipeline State — 2026-03-02
 
 ## Last Run
-- Workflow run: 22571210138
-- Date: 2026-03-02T10:12:00Z
+- Workflow run: 22590470009
+- Date: 2026-03-02T18:44:00Z
 
-## Run 05 — Landing Page Demo: **COMPLETE** ✅
+## Run 05 — Landing Page Demo: **IN PROGRESS** 🔄
 
-All pipeline issues implemented and merged.
+Issue #329 (default run selection bug) has a PR open.
 
 | Issue | Title | Status |
 |-------|-------|--------|
-| #315 | WCAG Contrast Fix — Landing Page | ✅ Merged (PR #317) |
-| #316 | WCAG Contrast Fix — All Pages | ✅ Merged (PR #318) |
+| #329 | Default selection of a run on the landing page | 🔄 PR opened |
 
 ### Next Actions
-1. Archive Run 05 via `scripts/archive-run.sh`
-2. Tag as `v5.0.0` with showcase slug `05-landing-page-demo`
+1. Merge PR for #329
+2. Archive Run 05 via `scripts/archive-run.sh`
+3. Tag as `v5.0.0` with showcase slug `05-landing-page-demo`
