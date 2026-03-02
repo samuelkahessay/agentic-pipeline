@@ -41,6 +41,7 @@ CHECKS=(
   "bash scripts/tests/test-check-autonomy-policy.sh"
   "bash scripts/tests/test-ci-failure-context.sh"
   "bash scripts/tests/test-classify-pipeline-issue.sh"
+  "bash scripts/tests/test-log-decision.sh"
   "bash scripts/tests/test-pipeline-watchdog.sh"
   "bash scripts/tests/test-pr-review-submit-policy-gate.sh"
   "bash scripts/tests/test-render-ci-repair-command.sh"

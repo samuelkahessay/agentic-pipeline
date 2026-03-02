@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "event_id": "20260302T201905Z-workflow-file-change-blocked",
+  "timestamp": "2026-03-02T20:19:05Z",
+  "actor": {
+    "type": "workflow",
+    "name": "pr-review-submit"
+  },
+  "workflow": "pr-review-submit",
+  "requested_action": "workflow_file_change",
+  "policy_result": {
+    "mode": "human_required",
+    "reason": "Workflow changes alter the control plane and can widen blast radius across the repo."
+  },
+  "target": {
+    "type": "file",
+    "id": null,
+    "path": ".github/workflows/auto-dispatch.yml",
+    "display": ".github/workflows/auto-dispatch.yml"
+  },
+  "evidence": [
+    "PR file list included .github/workflows/auto-dispatch.yml",
+    "Policy action workflow_file_change matched the target path",
+    "Merge gate evaluated after an APPROVE verdict"
+  ],
+  "outcome": "blocked",
+  "summary": "Autonomous merge blocked because the PR touched a workflow file.",
+  "human_owner": "repo maintainer"
+}
