@@ -1,0 +1,179 @@
+version: 1
+last_reviewed: 2026-03-02
+policy_owner: human
+
+defaults:
+  unknown_action: human_required
+  fail_closed: true
+  escalation_rule: Create a human-required decision and stop.
+
+principles:
+  - AI can execute inside policy, but it cannot redefine policy.
+  - Any change that expands system authority or blast radius is human_required.
+  - Control-plane changes remain human-owned even when application work is autonomous.
+
+actions:
+  - action: issue_decomposition
+    scope: Convert a human-authored PRD or source issue into dependency-ordered pipeline issues.
+    default_mode: autonomous
+    requires_human_reason: null
+    allowed_targets:
+      - GitHub issues with the "[Pipeline]" prefix
+      - GitHub project status updates for the active run
+    evidence_required:
+      - Human-authored source issue or PRD
+      - Acceptance criteria in the source material
+      - Dependency ordering between created issues
+
+  - action: app_code_change
+    scope: Implement or refine application and test code for the active product surface.
+    default_mode: autonomous
+    requires_human_reason: null
+    allowed_targets:
+      - TicketDeflection/**
+      - TicketDeflection.Tests/**
+      - src/**
+      - tests/**
+      - package.json
+      - TicketDeflection.sln
+      - Dockerfile
+      - global.json
+    evidence_required:
+      - Linked issue with acceptance criteria
+      - Tests or verification commands for the change
+      - Diff scoped to the active product surface
+
+  - action: documentation_change
+    scope: Update public documentation that explains implemented behavior without changing system authority.
+    default_mode: autonomous
+    requires_human_reason: null
+    allowed_targets:
+      - README.md
+      - docs/ARCHITECTURE.md
+      - docs/SELF_HEALING_MVP.md
+      - showcase/**
+    evidence_required:
+      - Behavior already implemented in code or validated by run evidence
+      - No expansion of automation scope or authority
+
+  - action: observability_change
+    scope: Add or refine operator-facing decision logs, metrics, drill evidence, and queue views.
+    default_mode: autonomous
+    requires_human_reason: null
+    allowed_targets:
+      - docs/decision-ledger/**
+      - drills/decisions/**
+      - scripts/log-decision.sh
+      - scripts/demo-preflight.sh
+      - TicketDeflection/Pages/Operator.cshtml
+      - TicketDeflection/Pages/Operator.cshtml.cs
+      - TicketDeflection/Endpoints/AutonomyEndpoints.cs
+      - TicketDeflection/Services/**
+    evidence_required:
+      - Existing workflow events or drill outputs to render
+      - No authority expansion in the underlying workflows
+
+  - action: ci_repair_existing_pr
+    scope: Repair a failing or stalled pipeline PR without expanding scope beyond the linked issue.
+    default_mode: autonomous
+    requires_human_reason: null
+    allowed_targets:
+      - Existing "[Pipeline]" PR branches
+      - Application and test files already in scope for the linked issue
+    evidence_required:
+      - Linked source issue
+      - Failure logs or review comments
+      - Current head SHA and failing run context
+
+  - action: auto_merge_pipeline_pr
+    scope: Arm auto-merge for an approved pipeline PR.
+    default_mode: autonomous
+    requires_human_reason: null
+    allowed_targets:
+      - Pull requests whose titles start with "[Pipeline]"
+    evidence_required:
+      - Green required checks
+      - Formal APPROVE review
+      - PR body links to the source issue
+
+  - action: policy_artifact_change
+    scope: Modify autonomy-policy.yml or any artifact that defines system authority.
+    default_mode: human_required
+    requires_human_reason: Changes to policy redefine the system's authority and must remain human-owned.
+    allowed_targets:
+      - autonomy-policy.yml
+    evidence_required:
+      - Human decision naming the policy change
+      - Explicit reason for expanding or narrowing authority
+      - Review of downstream workflow impact
+
+  - action: workflow_file_change
+    scope: Modify GitHub workflow definitions or agent instructions that change autonomous behavior.
+    default_mode: human_required
+    requires_human_reason: Workflow changes alter the control plane and can widen blast radius across the repo.
+    allowed_targets:
+      - .github/workflows/**
+      - .github/*.md
+    evidence_required:
+      - Human-approved change request
+      - Expected effect on dispatch, review, merge, or deployment behavior
+      - Rollback plan
+
+  - action: secret_or_token_change
+    scope: Create, rotate, expose, or change secrets, tokens, or repo variables used by automation.
+    default_mode: human_required
+    requires_human_reason: Credentials and kill-switch variables govern system authority and must stay under human control.
+    allowed_targets:
+      - GitHub Actions secrets
+      - GitHub Actions variables
+      - Azure credentials
+      - COPILOT_GITHUB_TOKEN
+      - GH_AW_GITHUB_TOKEN
+      - GH_AW_PROJECT_GITHUB_TOKEN
+      - PIPELINE_HEALING_ENABLED
+    evidence_required:
+      - Human-approved secret or variable change
+      - Scope and expiry review
+      - Confirmation of downstream impact
+
+  - action: deploy_policy_change
+    scope: Change deployment destinations, deployment workflows, or environment routing.
+    default_mode: human_required
+    requires_human_reason: Deployment policy changes can affect live systems and widen operational blast radius.
+    allowed_targets:
+      - .deploy-profile
+      - Azure App Service configuration
+      - Vercel configuration
+      - Docker deployment workflow inputs
+    evidence_required:
+      - Human-approved deployment change
+      - Environment impact assessment
+      - Rollback plan
+
+  - action: merge_scope_expansion
+    scope: Expand which pull requests may be auto-merged or reduce review or check requirements.
+    default_mode: human_required
+    requires_human_reason: Expanding merge scope changes the authority boundary of the system itself.
+    allowed_targets:
+      - .github/workflows/pr-review-submit.yml
+      - Repository auto-merge settings
+      - Required status check configuration
+      - Pull request title gating rules
+    evidence_required:
+      - Human approval naming the new scope
+      - Required checks before and after the change
+      - Blast-radius assessment
+
+  - action: branch_protection_change
+    scope: Change branch protection, rulesets, or required checks on protected branches.
+    default_mode: human_required
+    requires_human_reason: Protected-branch policy is the final safety boundary and must remain human-owned.
+    allowed_targets:
+      - GitHub rulesets for main
+      - Required reviews
+      - Required checks
+      - Direct push permissions
+    evidence_required:
+      - Human-approved ruleset change
+      - Audit trail for who approved it
+      - Expected effect on autonomous workflows
