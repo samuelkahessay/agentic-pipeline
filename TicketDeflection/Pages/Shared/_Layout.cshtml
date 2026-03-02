@@ -1,0 +1,51 @@
+@using Microsoft.AspNetCore.Http
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] — prd-to-prod</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/css/site.css" />
+    @await RenderSectionAsync("Head", required: false)
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body class="min-h-screen">
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    @{
+        var path = Context.Request.Path.Value?.TrimEnd('/') ?? "";
+    }
+
+    <nav aria-label="Main navigation">
+        <div class="status-bar px-6 py-2 flex items-center justify-between text-xs">
+            <div class="flex items-center gap-4">
+                <span class="text-accent font-bold tracking-widest">@(ViewData["NavTitle"] ?? "PRD-TO-PROD")</span>
+                <a href="/" class="nav-link @(path == "" ? "active" : "")">overview</a>
+                <a href="/dashboard" class="nav-link @(path == "/dashboard" ? "active" : "")">dashboard</a>
+                <a href="/tickets" class="nav-link @(path == "/tickets" ? "active" : "")">tickets</a>
+                <a href="/activity" class="nav-link @(path == "/activity" ? "active" : "")">activity</a>
+                <a href="/operator" class="nav-link @(path == "/operator" ? "active" : "")">operator</a>
+                <a href="/pipeline" class="nav-link @(path == "/pipeline" ? "active" : "")">pipeline</a>
+            </div>
+            <div class="flex items-center gap-4">
+                <a href="https://github.com/samuelkahessay/prd-to-prod" target="_blank" rel="noopener noreferrer" class="text-dim hover:text-accent transition-colors" aria-label="View source on GitHub">GitHub</a>
+            </div>
+        </div>
+    </nav>
+
+    <main id="main-content">
+        @RenderBody()
+    </main>
+
+    <footer class="text-center text-dim text-xs mt-12 pb-6">
+        Built and operated through a policy-bounded AI delivery loop ·
+        <a href="https://github.com/samuelkahessay/prd-to-prod" target="_blank" rel="noopener noreferrer" class="hover:text-accent transition-colors">prd-to-prod</a>
+    </footer>
+
+    <script src="/js/shared.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

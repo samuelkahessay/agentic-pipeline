@@ -52,10 +52,9 @@ public class LandingPageTests : IClassFixture<WebApplicationFactory<Program>>
     {
         var client = _factory.CreateClient();
         var html = await client.GetStringAsync("/");
-        // Three-link nav grid replaced with single /dashboard CTA (#252)
+        // Shared layout nav includes all links; verify CTA still present
         Assert.Contains("href=\"/dashboard\"", html);
-        Assert.DoesNotContain("href=\"/activity\"", html);
-        Assert.DoesNotContain("href=\"/tickets\"", html);
+        Assert.Contains("open dashboard", html);
     }
 
     [Fact]

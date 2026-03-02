@@ -1,655 +1,568 @@
 @page "/"
 @model IndexModel
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>prd-to-prod — policy-bounded AI execution system</title>
+@{
+    ViewData["Title"] = "prd-to-prod — policy-bounded AI execution system";
+    ViewData["NavTitle"] = "PRD-TO-PROD";
+}
+
+@section Head {
     <meta name="description" content="An AI-native delivery loop for software delivery. Humans own intent, policy, and escalation. AI executes decomposition, implementation, review, merge preparation, and first-line repair inside a bounded lane." />
-    <!-- OpenGraph -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="prd-to-prod" />
     <meta property="og:url" content="https://prd-to-prod.azurewebsites.net" />
     <meta property="og:title" content="prd-to-prod — policy-bounded AI execution system" />
     <meta property="og:description" content="A bounded AI-native delivery loop: humans own policy and escalation, AI executes decomposition, implementation, review, merge preparation, and first-line repair." />
     <meta property="og:image" content="https://prd-to-prod.azurewebsites.net/og-image.png" />
-    <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="prd-to-prod — policy-bounded AI execution system" />
     <meta name="twitter:description" content="A bounded AI-native delivery loop: humans own policy and escalation, AI executes inside the lane." />
     <meta name="twitter:image" content="https://prd-to-prod.azurewebsites.net/og-image.png" />
-    <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        :root {
-            --bg: #080c12;
-            --grid-line: rgba(0, 160, 255, 0.04);
-            --border: rgba(0, 160, 255, 0.15);
-            --accent: #00aaff;
-            --accent-dim: rgba(0, 170, 255, 0.08);
-            --green: #3ddc84;
-            --amber: #f5a623;
-            --red: #f85149;
-            --text: #b8c4d4;
-            --dim: #7a8fa8;
-            --mono: 'JetBrains Mono', monospace;
-            --sans: 'Space Grotesk', sans-serif;
-        }
-        * { box-sizing: border-box; }
-        body {
-            background-color: var(--bg);
-            background-image:
-                linear-gradient(var(--grid-line) 1px, transparent 1px),
-                linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
-            background-size: 48px 48px;
-            font-family: var(--mono);
-            color: var(--text);
-            font-size: 14px;
-        }
-        h1, h2, h3, .font-sans { font-family: var(--sans); }
-        .status-bar {
-            background: rgba(0, 170, 255, 0.04);
-            border-bottom: 1px solid var(--border);
-        }
-        .panel {
-            background: rgba(4, 10, 20, 0.7);
-            border: 1px solid var(--border);
-        }
-        .panel-top {
-            border-top: 2px solid var(--accent);
-        }
-        .metric-val {
-            font-family: var(--mono);
-            color: var(--accent);
-            font-size: 1.75rem;
-            font-weight: 700;
-            line-height: 1;
-        }
-        .metric-lbl {
-            color: var(--dim);
-            font-size: 0.65rem;
-            text-transform: uppercase;
-            letter-spacing: 0.12em;
-            margin-top: 6px;
-        }
-        .exec-btn {
-            background: transparent;
-            border: 1px solid var(--accent);
-            color: var(--accent);
-            font-family: var(--mono);
-            font-size: 1rem;
-            font-weight: 700;
-            padding: 14px 28px;
-            cursor: pointer;
-            transition: background 0.2s, box-shadow 0.2s;
-            letter-spacing: 0.05em;
-        }
-        .exec-btn:hover {
-            background: var(--accent-dim);
-            box-shadow: 0 0 24px rgba(0, 170, 255, 0.2), inset 0 0 20px rgba(0, 170, 255, 0.04);
-        }
-        .exec-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        .stage-label {
-            color: var(--dim);
-            font-size: 0.65rem;
-            text-transform: uppercase;
-            letter-spacing: 0.12em;
-            width: 60px;
-            flex-shrink: 0;
-            padding-top: 2px;
-        }
-        .flow-tag {
-            background: rgba(0, 170, 255, 0.08);
-            border: 1px solid var(--border);
-            color: var(--text);
-            font-family: var(--mono);
-            font-size: 0.7rem;
-            padding: 3px 10px;
-            white-space: nowrap;
-        }
-        .flow-tag-green {
-            background: rgba(61, 220, 132, 0.08);
-            border: 1px solid rgba(61, 220, 132, 0.2);
-            color: var(--green);
-        }
-        .flow-tag-amber {
-            background: rgba(245, 166, 35, 0.08);
-            border: 1px solid rgba(245, 166, 35, 0.2);
-            color: var(--amber);
-        }
-        @@keyframes cursor-blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0; }
-        }
-        .cursor-blink {
-            animation: cursor-blink 1s step-end infinite;
-            color: var(--accent);
-        }
-        .divider { border-top: 1px solid var(--border); margin: 0; }
-        .text-accent { color: var(--accent); }
-        .text-green { color: var(--green); }
-        .text-amber { color: var(--amber); }
-        .text-dim { color: var(--dim); }
-        .text-white { color: #e8edf5; }
-    </style>
-</head>
-<body class="min-h-screen">
+}
 
-    <!-- Status bar -->
-    <div class="status-bar px-6 py-2 flex items-center justify-between text-xs">
-        <div class="flex items-center gap-4">
-            <span class="text-accent font-bold tracking-widest">PRD-TO-PROD</span>
-            <span class="text-dim">//</span>
-            <span class="text-dim"><a href="https://github.com/samuelkahessay/prd-to-prod" target="_blank" rel="noopener noreferrer" class="text-dim hover:text-accent transition-colors">samuelkahessay/prd-to-prod</a></span>
+@section Styles {
+<style>
+    .metric-val-hero {
+        font-family: var(--mono);
+        color: var(--accent);
+        font-size: 1.75rem;
+        font-weight: 700;
+        line-height: 1;
+    }
+    .exec-btn-hero {
+        background: transparent;
+        border: 1px solid var(--accent);
+        color: var(--accent);
+        font-family: var(--mono);
+        font-size: 1rem;
+        font-weight: 700;
+        padding: 14px 28px;
+        cursor: pointer;
+        transition: background 0.2s, box-shadow 0.2s;
+        letter-spacing: 0.05em;
+    }
+    .exec-btn-hero:hover {
+        background: var(--accent-dim);
+        box-shadow: 0 0 24px rgba(0, 170, 255, 0.2), inset 0 0 20px rgba(0, 170, 255, 0.04);
+    }
+    .stage-label {
+        color: var(--dim);
+        font-size: 0.65rem;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        width: 60px;
+        flex-shrink: 0;
+        padding-top: 2px;
+    }
+    .flow-tag {
+        background: rgba(0, 170, 255, 0.08);
+        border: 1px solid var(--border);
+        color: var(--text);
+        font-family: var(--mono);
+        font-size: 0.7rem;
+        padding: 3px 10px;
+        white-space: nowrap;
+    }
+    .flow-tag-green {
+        background: rgba(61, 220, 132, 0.08);
+        border: 1px solid rgba(61, 220, 132, 0.2);
+        color: var(--green);
+    }
+    .flow-tag-amber {
+        background: rgba(245, 166, 35, 0.08);
+        border: 1px solid rgba(245, 166, 35, 0.2);
+        color: var(--amber);
+    }
+    @@keyframes cursor-blink {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0; }
+    }
+    .cursor-blink {
+        animation: cursor-blink 1s step-end infinite;
+        color: var(--accent);
+    }
+    .event-row:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: -2px;
+    }
+</style>
+}
+
+<div class="max-w-4xl mx-auto px-4 py-14">
+
+    <!-- Hero -->
+    <section class="mb-16" aria-labelledby="hero-heading">
+        <div class="text-xs text-dim mb-5">// policy-bounded AI delivery loop — software delivery as the proving ground</div>
+        <h1 id="hero-heading" class="font-sans text-5xl sm:text-6xl font-bold text-white mb-4 leading-tight">
+            Bounded AI.<br />Autonomous delivery.
+        </h1>
+        <p class="text-dim text-base mb-6">Humans own intent, policy, and escalation. AI executes inside the lane.<span class="cursor-blink ml-1" aria-hidden="true">█</span></p>
+        <p class="text-sm leading-relaxed max-w-2xl mb-8" style="color: var(--text)">
+            <a href="https://github.com/samuelkahessay/prd-to-prod" target="_blank" rel="noopener noreferrer" class="text-accent font-bold hover:underline">prd-to-prod</a> is a policy-bounded AI execution system powered by
+            <a href="https://github.com/github/gh-aw" target="_blank" rel="noopener noreferrer" class="text-accent font-bold hover:underline">gh-aw</a> (GitHub Agentic Workflows).
+            It turns intent into a bounded delivery loop: decompose work, implement scoped changes,
+            review against acceptance criteria, enforce a merge gate, ship, and route common failures
+            back into repair or escalation. The interesting part is not code generation alone. It is
+            the full operating loop and the explicit place where the system stops.
+        </p>
+        <div class="flex flex-wrap gap-3">
+            <a href="https://github.com/samuelkahessay/prd-to-prod" target="_blank" rel="noopener noreferrer" class="exec-btn-hero inline-block" style="text-decoration: none; display: inline-block;">[ View on GitHub ]</a>
+            <a href="/operator" class="exec-btn-hero inline-block" style="text-decoration: none; display: inline-block;">[ Open /operator ]</a>
+            <a href="/pipeline" class="exec-btn-hero inline-block" style="text-decoration: none; display: inline-block;">[ Open /pipeline ]</a>
         </div>
-        <div class="flex items-center gap-4">
-            <a href="/operator" class="text-dim hover:text-accent transition-colors">/operator</a>
-            <a href="/pipeline" class="text-dim hover:text-accent transition-colors">/pipeline</a>
-            <span class="flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-[var(--green)] inline-block"></span>
-                <span class="text-dim">bounded lane: active</span>
-            </span>
+    </section>
+
+    <!-- Pipeline schematic -->
+    <section class="mb-16" aria-labelledby="schematic-heading">
+        <div class="text-xs text-dim mb-5 uppercase tracking-widest">// system schematic — bounded execution loop</div>
+        <h2 id="schematic-heading" class="sr-only">System Schematic</h2>
+        <div class="panel p-6">
+            <div class="flex flex-col gap-5">
+
+                <div class="flex gap-4 items-start">
+                    <span class="stage-label">INPUT</span>
+                    <div>
+                        <div class="text-accent text-xs mb-1">[ human intent + acceptance criteria ]</div>
+                        <div class="text-dim text-xs leading-relaxed">A human defines the work, the boundary, and the escalation rules.</div>
+                    </div>
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="flex gap-4 items-start">
+                    <span class="stage-label">STAGE 1</span>
+                    <div>
+                        <div class="text-white font-bold text-sm mb-1">policy + ingress</div>
+                        <div class="text-dim text-xs">The autonomy policy defines what is allowed. `prd-decomposer` and `auto-dispatch` translate intent into actionable pipeline work.</div>
+                        <div class="text-green text-xs mt-1">&gt; explicit lane entry</div>
+                    </div>
+                </div>
+
+                <div class="flex gap-4 items-start">
+                    <span class="stage-label">STAGE 2</span>
+                    <div>
+                        <div class="text-white font-bold text-sm mb-1">bounded execution</div>
+                        <div class="text-dim text-xs">`repo-assist` implements scoped issues, updates existing PRs, and handles bounded repair work on the same branch.</div>
+                        <div class="text-green text-xs mt-1">&gt; implementation inside policy</div>
+                    </div>
+                </div>
+
+                <div class="flex gap-4 items-start">
+                    <span class="stage-label">STAGE 3</span>
+                    <div>
+                        <div class="text-white font-bold text-sm mb-1">review + merge gate</div>
+                        <div class="text-dim text-xs">`pr-review-agent` evaluates the full diff. `pr-review-submit` enforces policy, blocks human-required changes, and only arms auto-merge inside the lane.</div>
+                        <div class="text-green text-xs mt-1">&gt; control plane stays human-owned</div>
+                    </div>
+                </div>
+
+                <div class="flex gap-4 items-start">
+                    <span class="stage-label">STAGE 4</span>
+                    <div>
+                        <div class="text-white font-bold text-sm mb-1">ship + recover + observe</div>
+                        <div class="text-dim text-xs">CI, deploy, failure routing, and the watchdog repair common failures. The decision ledger, `/operator`, and `/pipeline` expose what the system did and what it refused to do.</div>
+                        <div class="text-green text-xs mt-1">&gt; bounded autonomy with operator visibility</div>
+                    </div>
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="flex gap-4 items-start">
+                    <span class="stage-label">OUTPUT</span>
+                    <div>
+                        <div class="text-accent text-xs mb-1">[ shipped code + visible control boundary ]</div>
+                        <div class="text-dim text-xs">A running application is part of the proof. The stronger proof is that the authority boundary, repair loop, and operator surfaces are explicit.</div>
+                    </div>
+                </div>
+
+            </div>
         </div>
-    </div>
+        <div class="mt-3 text-xs text-dim">
+            <span class="text-accent">Bounded repair:</span> watchdog and CI-failure routing handle common stalls and failures, but control-plane changes, deploy policy, and authority expansion remain human-owned.
+        </div>
+    </section>
 
-    <div class="max-w-4xl mx-auto px-4 py-14">
-
-        <!-- Hero -->
-        <section class="mb-16">
-            <div class="text-xs text-dim mb-5">// policy-bounded AI delivery loop — software delivery as the proving ground</div>
-            <h1 class="font-sans text-5xl sm:text-6xl font-bold text-white mb-4 leading-tight">
-                Bounded AI.<br />Autonomous delivery.
-            </h1>
-            <p class="text-dim text-base mb-6">Humans own intent, policy, and escalation. AI executes inside the lane.<span class="cursor-blink ml-1">█</span></p>
-            <p class="text-sm leading-relaxed max-w-2xl mb-8" style="color: var(--text)">
-                <a href="https://github.com/samuelkahessay/prd-to-prod" target="_blank" rel="noopener noreferrer" class="text-accent font-bold hover:underline">prd-to-prod</a> is a policy-bounded AI execution system powered by
-                <a href="https://github.com/github/gh-aw" target="_blank" rel="noopener noreferrer" class="text-accent font-bold hover:underline">gh-aw</a> (GitHub Agentic Workflows).
-                It turns intent into a bounded delivery loop: decompose work, implement scoped changes,
-                review against acceptance criteria, enforce a merge gate, ship, and route common failures
-                back into repair or escalation. The interesting part is not code generation alone. It is
-                the full operating loop and the explicit place where the system stops.
-            </p>
-            <div class="flex flex-wrap gap-3">
-                <a href="https://github.com/samuelkahessay/prd-to-prod" target="_blank" rel="noopener noreferrer" class="exec-btn inline-block" style="text-decoration: none; display: inline-block;">[ View on GitHub ]</a>
-                <a href="/operator" class="exec-btn inline-block" style="text-decoration: none; display: inline-block;">[ Open /operator ]</a>
-                <a href="/pipeline" class="exec-btn inline-block" style="text-decoration: none; display: inline-block;">[ Open /pipeline ]</a>
+    <!-- Run History -->
+    <section class="mb-16" aria-labelledby="history-heading">
+        <div class="text-xs text-dim mb-1 uppercase tracking-widest">// build manifest — pipeline run history</div>
+        <h2 id="history-heading" class="sr-only">Run History</h2>
+        <div class="text-xs font-bold mb-5 text-accent">@Model.TotalRuns runs · @Model.TotalIssues+ issues · @Model.TotalPrs+ PRs · evidence of bounded autonomy</div>
+        <div class="panel overflow-hidden">
+            <div class="hidden sm:grid px-4 py-2 text-xs" style="grid-template-columns: 44px 1fr 1fr 60px 60px 72px; border-bottom: 1px solid var(--border); color: var(--dim);" aria-hidden="true">
+                <span>RUN</span>
+                <span>CODENAME</span>
+                <span>STACK</span>
+                <span class="text-right">ISSUES</span>
+                <span class="text-right">PRS</span>
+                <span class="text-right">STATUS</span>
             </div>
-        </section>
 
-        <!-- Pipeline schematic -->
-        <section class="mb-16">
-            <div class="text-xs text-dim mb-5 uppercase tracking-widest">// system schematic — bounded execution loop</div>
-            <div class="panel p-6">
-                <div class="flex flex-col gap-5">
-
-                    <div class="flex gap-4 items-start">
-                        <span class="stage-label">INPUT</span>
-                        <div>
-                            <div class="text-accent text-xs mb-1">[ human intent + acceptance criteria ]</div>
-                            <div class="text-dim text-xs leading-relaxed">A human defines the work, the boundary, and the escalation rules.</div>
-                        </div>
-                    </div>
-
-                    <div class="divider"></div>
-
-                    <div class="flex gap-4 items-start">
-                        <span class="stage-label">STAGE 1</span>
-                        <div>
-                            <div class="text-white font-bold text-sm mb-1">policy + ingress</div>
-                            <div class="text-dim text-xs">The autonomy policy defines what is allowed. `prd-decomposer` and `auto-dispatch` translate intent into actionable pipeline work.</div>
-                            <div class="text-green text-xs mt-1">&gt; explicit lane entry</div>
-                        </div>
-                    </div>
-
-                    <div class="flex gap-4 items-start">
-                        <span class="stage-label">STAGE 2</span>
-                        <div>
-                            <div class="text-white font-bold text-sm mb-1">bounded execution</div>
-                            <div class="text-dim text-xs">`repo-assist` implements scoped issues, updates existing PRs, and handles bounded repair work on the same branch.</div>
-                            <div class="text-green text-xs mt-1">&gt; implementation inside policy</div>
-                        </div>
-                    </div>
-
-                    <div class="flex gap-4 items-start">
-                        <span class="stage-label">STAGE 3</span>
-                        <div>
-                            <div class="text-white font-bold text-sm mb-1">review + merge gate</div>
-                            <div class="text-dim text-xs">`pr-review-agent` evaluates the full diff. `pr-review-submit` enforces policy, blocks human-required changes, and only arms auto-merge inside the lane.</div>
-                            <div class="text-green text-xs mt-1">&gt; control plane stays human-owned</div>
-                        </div>
-                    </div>
-
-                    <div class="flex gap-4 items-start">
-                        <span class="stage-label">STAGE 4</span>
-                        <div>
-                            <div class="text-white font-bold text-sm mb-1">ship + recover + observe</div>
-                            <div class="text-dim text-xs">CI, deploy, failure routing, and the watchdog repair common failures. The decision ledger, `/operator`, and `/pipeline` expose what the system did and what it refused to do.</div>
-                            <div class="text-green text-xs mt-1">&gt; bounded autonomy with operator visibility</div>
-                        </div>
-                    </div>
-
-                    <div class="divider"></div>
-
-                    <div class="flex gap-4 items-start">
-                        <span class="stage-label">OUTPUT</span>
-                        <div>
-                            <div class="text-accent text-xs mb-1">[ shipped code + visible control boundary ]</div>
-                            <div class="text-dim text-xs">A running application is part of the proof. The stronger proof is that the authority boundary, repair loop, and operator surfaces are explicit.</div>
-                        </div>
-                    </div>
-
-                </div>
-            </div>
-            <div class="mt-3 text-xs text-dim">
-                <span class="text-accent">Bounded repair:</span> watchdog and CI-failure routing handle common stalls and failures, but control-plane changes, deploy policy, and authority expansion remain human-owned.
-            </div>
-        </section>
-
-        <!-- Run History -->
-        <section class="mb-16">
-            <div class="text-xs text-dim mb-1 uppercase tracking-widest">// build manifest — pipeline run history</div>
-            <div class="text-xs font-bold mb-5 text-accent">@Model.TotalRuns runs · @Model.TotalIssues+ issues · @Model.TotalPrs+ PRs · evidence of bounded autonomy</div>
-            <div class="panel overflow-hidden">
-                <!-- Column headers (desktop) -->
-                <div class="hidden sm:grid px-4 py-2 text-xs" style="grid-template-columns: 44px 1fr 1fr 60px 60px 72px; border-bottom: 1px solid var(--border); color: var(--dim);">
-                    <span>RUN</span>
-                    <span>CODENAME</span>
-                    <span>STACK</span>
-                    <span class="text-right">ISSUES</span>
-                    <span class="text-right">PRS</span>
-                    <span class="text-right">STATUS</span>
-                </div>
-
-                <!-- Run rows — data-driven from IShowcaseService -->
-                @if (!Model.CompletedRuns.Any())
+            @if (!Model.CompletedRuns.Any())
+            {
+                <div class="px-4 py-6 text-dim text-xs text-center">No completed runs yet.</div>
+            }
+            else
+            {
+                var maxNumber = Model.CompletedRuns.Max(r => r.Number);
+                var descRuns = Model.CompletedRuns.OrderByDescending(r => r.Number).ToList();
+                foreach (var run in descRuns)
                 {
-                    <div class="px-4 py-6 text-dim text-xs text-center">No completed runs yet.</div>
-                }
-                else
-                {
-                    var maxNumber = Model.CompletedRuns.Max(r => r.Number);
-                    var descRuns = Model.CompletedRuns.OrderByDescending(r => r.Number).ToList();
-                    foreach (var run in descRuns)
-                    {
-                        var isActive = run.Number == maxNumber;
-                        var isLast = run == descRuns[descRuns.Count - 1];
-                        var tagUrl = isActive
-                            ? "https://github.com/samuelkahessay/prd-to-prod/tree/main"
-                            : $"https://github.com/samuelkahessay/prd-to-prod/tree/{run.Tag}";
-                        var tagLabel = isActive ? "main" : run.Tag;
-                        var borderStyle = isLast ? "" : (isActive
-                            ? "border-bottom: 1px solid rgba(0,170,255,0.08);"
-                            : "border-bottom: 1px solid var(--border);");
-                        var bgStyle = isActive ? "background: rgba(0,170,255,0.03);" : "";
-                        var numClass = isActive ? "text-accent font-bold pt-0.5" : "text-dim font-bold pt-0.5";
-                        var valClass = isActive ? "text-accent text-right font-bold" : "text-dim text-right";
+                    var isActive = run.Number == maxNumber;
+                    var isLast = run == descRuns[descRuns.Count - 1];
+                    var tagUrl = isActive
+                        ? "https://github.com/samuelkahessay/prd-to-prod/tree/main"
+                        : $"https://github.com/samuelkahessay/prd-to-prod/tree/{run.Tag}";
+                    var tagLabel = isActive ? "main" : run.Tag;
+                    var borderStyle = isLast ? "" : (isActive
+                        ? "border-bottom: 1px solid rgba(0,170,255,0.08);"
+                        : "border-bottom: 1px solid var(--border);");
+                    var bgStyle = isActive ? "background: rgba(0,170,255,0.03);" : "";
+                    var numClass = isActive ? "text-accent font-bold pt-0.5" : "text-dim font-bold pt-0.5";
+                    var valClass = isActive ? "text-accent text-right font-bold" : "text-dim text-right";
 
-                        <div class="px-4 py-4" style="@borderStyle@bgStyle">
-                            <!-- desktop row -->
-                            <div class="hidden sm:grid text-xs items-start" style="grid-template-columns: 44px 1fr 1fr 60px 60px 72px;">
-                                <span class="@numClass">@run.Number.ToString("D2")</span>
-                                <div>
-                                    <div class="text-white font-bold">@run.Name</div>
-                                    <div class="text-dim text-xs mt-1">
-                                        @if (isActive) { <text>this instance · </text> }
-                                        <a href="@tagUrl" class="@(isActive ? "text-accent hover:underline" : "hover:text-accent transition-colors")">@tagLabel</a>
-                                    </div>
-                                </div>
-                                <div class="text-dim leading-relaxed">@run.TechStack</div>
-                                <span class="@valClass">@run.IssueCount</span>
-                                <span class="@valClass">@run.PrCount</span>
-                                <div class="text-right">
-                                    @if (isActive) { <span class="text-green font-bold">ACTIVE</span> }
-                                    else { <span class="text-dim">merged</span> }
-                                </div>
-                            </div>
-                            <!-- mobile -->
-                            <div class="sm:hidden">
-                                <div class="flex items-center justify-between mb-1">
-                                    <span class="@(isActive ? "text-accent" : "text-dim") font-bold text-xs">RUN @run.Number.ToString("D2")</span>
-                                    @if (isActive) { <span class="text-green font-bold text-xs">ACTIVE</span> }
-                                    else { <span class="text-dim text-xs">merged</span> }
-                                </div>
-                                <div class="text-white font-bold text-sm">@run.Name</div>
-                                <div class="text-dim text-xs mt-1">@run.TechStack</div>
-                                <div class="text-xs mt-1">
-                                    <span class="text-dim">@run.IssueCount issues · @run.PrCount PRs</span>
-                                    · <a href="@tagUrl" class="@(isActive ? "text-accent hover:underline" : "hover:text-accent transition-colors text-dim")">@tagLabel</a>
-                                </div>
-                            </div>
-                        </div>
-                    }
-                }
-            </div>
-            <div class="mt-3 text-xs text-dim">
-                Runs 01–03: git tags are the source of truth — inspect the full commit history at each tag link above.
-            </div>
-        </section>
-
-        <!-- Replay -->
-        <section class="mb-16" id="replay-section">
-            <div class="text-xs text-dim mb-1 uppercase tracking-widest">// run replay — step through a completed pipeline run</div>
-            <div class="text-xs text-dim mb-5">Select a run to inspect its timeline event-by-event.</div>
-            <div class="panel p-4">
-                <!-- Run selector -->
-                <div class="mb-4">
-                    <label class="text-xs text-dim uppercase tracking-widest block mb-2">Select run:</label>
-                    <div id="run-selector" class="flex flex-wrap gap-2">
-                        @foreach (var run in Model.CompletedRuns.OrderByDescending(r => r.Number))
-                        {
-                            <button
-                                class="run-select-btn text-xs px-3 py-1.5 border border-border text-dim hover:text-accent hover:border-accent transition-colors"
-                                style="border-color: var(--border); font-family: var(--mono);"
-                                data-slug="@run.Slug">
-                                @run.Number.ToString("D2") · @run.Name
-                            </button>
-                        }
-                    </div>
-                </div>
-
-                <!-- No-selection state -->
-                <div id="replay-empty" class="text-dim text-xs py-6">No replay selected — choose a run above to begin.</div>
-
-                <!-- Replay pane (hidden until run selected) -->
-                <div id="replay-pane" class="hidden">
-                    <!-- Run meta -->
-                    <div id="run-meta" class="mb-4 text-xs grid grid-cols-2 sm:grid-cols-4 gap-3"></div>
-
-                    <!-- Step controls -->
-                    <div class="flex items-center gap-3 mb-4">
-                        <button id="btn-prev" class="exec-btn text-xs px-4 py-1.5" style="font-size:0.75rem; padding:6px 18px;" disabled>&#8592; Prev</button>
-                        <span id="step-counter" class="text-dim text-xs"></span>
-                        <button id="btn-next" class="exec-btn text-xs px-4 py-1.5" style="font-size:0.75rem; padding:6px 18px;">Next &#8594;</button>
-                    </div>
-
-                    <!-- Detail panel -->
-                    <div id="event-detail" class="panel p-3 mb-4 text-xs hidden">
-                        <div class="flex items-start gap-3">
-                            <span id="detail-badge" class="px-2 py-0.5 text-xs font-bold" style="background: rgba(0,170,255,0.1); border: 1px solid var(--border); color: var(--accent); white-space: nowrap;"></span>
+                    <div class="px-4 py-4" style="@borderStyle@bgStyle">
+                        <div class="hidden sm:grid text-xs items-start" style="grid-template-columns: 44px 1fr 1fr 60px 60px 72px;">
+                            <span class="@numClass">@run.Number.ToString("D2")</span>
                             <div>
-                                <div id="detail-title" class="text-white font-bold mb-1"></div>
-                                <div id="detail-meta" class="text-dim"></div>
+                                <div class="text-white font-bold">@run.Name</div>
+                                <div class="text-dim text-xs mt-1">
+                                    @if (isActive) { <text>this instance · </text> }
+                                    <a href="@tagUrl" class="@(isActive ? "text-accent hover:underline" : "hover:text-accent transition-colors")">@tagLabel</a>
+                                </div>
+                            </div>
+                            <div class="text-dim leading-relaxed">@run.TechStack</div>
+                            <span class="@valClass">@run.IssueCount</span>
+                            <span class="@valClass">@run.PrCount</span>
+                            <div class="text-right">
+                                @if (isActive) { <span class="text-green font-bold">ACTIVE</span> }
+                                else { <span class="text-dim">merged</span> }
+                            </div>
+                        </div>
+                        <div class="sm:hidden">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="@(isActive ? "text-accent" : "text-dim") font-bold text-xs">RUN @run.Number.ToString("D2")</span>
+                                @if (isActive) { <span class="text-green font-bold text-xs">ACTIVE</span> }
+                                else { <span class="text-dim text-xs">merged</span> }
+                            </div>
+                            <div class="text-white font-bold text-sm">@run.Name</div>
+                            <div class="text-dim text-xs mt-1">@run.TechStack</div>
+                            <div class="text-xs mt-1">
+                                <span class="text-dim">@run.IssueCount issues · @run.PrCount PRs</span>
+                                · <a href="@tagUrl" class="@(isActive ? "text-accent hover:underline" : "hover:text-accent transition-colors text-dim")">@tagLabel</a>
                             </div>
                         </div>
                     </div>
-
-                    <!-- Timeline list -->
-                    <div id="timeline-list" class="space-y-1 max-h-64 overflow-y-auto pr-1"></div>
-                </div>
-
-                <!-- Loading state -->
-                <div id="replay-loading" class="hidden text-dim text-xs py-4">Loading timeline...</div>
-
-                <!-- Error state -->
-                <div id="replay-error" class="hidden text-red-400 text-xs py-4"></div>
-            </div>
-        </section>
-
-        <script>
-        (function () {
-            var state = { runs: [], events: [], current: -1 };
-
-            var elEmpty   = document.getElementById('replay-empty');
-            var elPane    = document.getElementById('replay-pane');
-            var elLoading = document.getElementById('replay-loading');
-            var elError   = document.getElementById('replay-error');
-            var elMeta    = document.getElementById('run-meta');
-            var elList    = document.getElementById('timeline-list');
-            var elDetail  = document.getElementById('event-detail');
-            var elBadge   = document.getElementById('detail-badge');
-            var elTitle   = document.getElementById('detail-title');
-            var elMetaD   = document.getElementById('detail-meta');
-            var elPrev    = document.getElementById('btn-prev');
-            var elNext    = document.getElementById('btn-next');
-            var elCounter = document.getElementById('step-counter');
-
-            var eventColors = {
-                issue_created: { bg: 'rgba(245,166,35,0.1)', border: 'rgba(245,166,35,0.3)', color: '#f5a623', label: 'ISSUE' },
-                pr_opened:     { bg: 'rgba(0,170,255,0.08)', border: 'var(--border)',          color: 'var(--accent)', label: 'PR OPEN' },
-                pr_reviewed:   { bg: 'rgba(61,220,132,0.08)', border: 'rgba(61,220,132,0.2)', color: '#3ddc84', label: 'REVIEW' },
-                pr_merged:     { bg: 'rgba(61,220,132,0.15)', border: 'rgba(61,220,132,0.3)', color: '#3ddc84', label: 'MERGED' }
-            };
-
-            function colorFor(ev) {
-                return eventColors[ev] || { bg: 'rgba(74,90,114,0.2)', border: 'var(--border)', color: 'var(--dim)', label: ev.toUpperCase() };
+                }
             }
-
-            function show(el) { el.classList.remove('hidden'); }
-            function hide(el) { el.classList.add('hidden'); }
-
-            function renderMeta(run, stats) {
-                elMeta.innerHTML = [
-                    ['NAME', run.name],
-                    ['STACK', run.tech_stack],
-                    ['ISSUES', stats.issues_created],
-                    ['LINES +', stats.lines_added.toLocaleString()]
-                ].map(function(p) {
-                    return '<div><div class="text-dim uppercase tracking-widest mb-0.5" style="font-size:0.6rem">' + p[0] + '</div>'
-                         + '<div class="text-accent font-bold">' + p[1] + '</div></div>';
-                }).join('');
-            }
-
-            function renderList(idx) {
-                elList.innerHTML = state.events.map(function(ev, i) {
-                    var c = colorFor(ev.event);
-                    var active = (i === idx);
-                    return '<div class="flex items-start gap-2 px-2 py-1.5 cursor-pointer event-row ' + (active ? 'selected-event' : '') + '" '
-                         + 'style="' + (active ? 'background: rgba(0,170,255,0.07);' : '') + '" '
-                         + 'data-idx="' + i + '">'
-                         + '<span class="px-1.5 py-0.5 text-xs font-bold flex-shrink-0" style="background:' + c.bg + ';border:1px solid ' + c.border + ';color:' + c.color + ';font-size:0.6rem">' + c.label + '</span>'
-                         + '<div class="min-w-0">'
-                         + '<div class="text-white text-xs truncate">#' + ev.item + ' ' + ev.title + '</div>'
-                         + '<div class="text-dim" style="font-size:0.65rem">' + new Date(ev.timestamp).toISOString().slice(0, 10) + '</div>'
-                         + '</div></div>';
-                }).join('');
-                elList.querySelectorAll('.event-row').forEach(function(row) {
-                    row.addEventListener('click', function() { goTo(parseInt(row.dataset.idx)); });
-                });
-            }
-
-            function renderDetail(idx) {
-                var ev = state.events[idx];
-                if (!ev) { hide(elDetail); return; }
-                var c = colorFor(ev.event);
-                elBadge.textContent = c.label;
-                elBadge.style.cssText = 'background:' + c.bg + ';border:1px solid ' + c.border + ';color:' + c.color + ';padding:2px 8px;font-size:0.7rem;white-space:nowrap;';
-                elTitle.textContent = '#' + ev.item + ' ' + ev.title;
-                elMetaD.textContent = new Date(ev.timestamp).toUTCString();
-                show(elDetail);
-            }
-
-            function goTo(idx) {
-                state.current = idx;
-                elPrev.disabled = (idx <= 0);
-                elNext.disabled = (idx >= state.events.length - 1);
-                elCounter.textContent = 'Event ' + (idx + 1) + ' of ' + state.events.length;
-                renderList(idx);
-                renderDetail(idx);
-                var active = elList.querySelector('.selected-event');
-                if (active) active.scrollIntoView({ block: 'nearest' });
-            }
-
-            elPrev.addEventListener('click', function() { if (state.current > 0) goTo(state.current - 1); });
-            elNext.addEventListener('click', function() { if (state.current < state.events.length - 1) goTo(state.current + 1); });
-
-            document.querySelectorAll('.run-select-btn').forEach(function(btn) {
-                btn.addEventListener('click', function() {
-                    var slug = btn.dataset.slug;
-                    document.querySelectorAll('.run-select-btn').forEach(function(b) {
-                        b.style.borderColor = 'var(--border)'; b.style.color = 'var(--dim)';
-                    });
-                    btn.style.borderColor = 'var(--accent)'; btn.style.color = 'var(--accent)';
-
-                    hide(elEmpty); hide(elPane); hide(elError);
-                    show(elLoading);
-
-                    fetch('/api/showcase/' + encodeURIComponent(slug) + '/timeline')
-                        .then(function(r) {
-                            if (!r.ok) throw new Error('HTTP ' + r.status);
-                            return r.json();
-                        })
-                        .then(function(data) {
-                            hide(elLoading);
-                            state.events = data.timeline || [];
-                            state.current = -1;
-                            renderMeta(data.run, data.stats);
-                            elList.innerHTML = '';
-                            hide(elDetail);
-                            elCounter.textContent = '';
-                            elPrev.disabled = true;
-                            elNext.disabled = state.events.length === 0;
-                            show(elPane);
-                            if (state.events.length > 0) goTo(0);
-                        })
-                        .catch(function(err) {
-                            hide(elLoading);
-                            elError.textContent = 'Failed to load timeline: ' + err.message;
-                            show(elError);
-                        });
-                });
-            });
-
-            // Auto-select the latest run (first button, sorted descending) on page load
-            var defaultBtn = document.querySelector('.run-select-btn');
-            if (defaultBtn) defaultBtn.click();
-        })();
-        </script>
-
-        <!-- Provenance -->
-        <section class="mb-14">
-            <div class="text-xs text-dim mb-4 uppercase tracking-widest">// provenance — verify the work is real</div>
-            <div class="panel p-4 text-xs">
-                <div class="text-dim mb-1">
-                    REPO: <a href="https://github.com/samuelkahessay/prd-to-prod" class="text-accent hover:underline">github.com/samuelkahessay/prd-to-prod</a>
-                </div>
-                <div class="text-dim">Every issue, PR, review comment, merge commit, drill report, and live operator surface is part of the evidence. The git history is the source of truth.</div>
-            </div>
-        </section>
-
-        <!-- Get Started -->
-        <section class="mb-14">
-            <div class="text-xs text-dim mb-4 uppercase tracking-widest">// get started — inspect or run the lane yourself</div>
-            <div class="panel p-6 text-xs">
-                <div class="grid sm:grid-cols-2 gap-6">
-                    <div>
-                        <div class="text-accent font-bold mb-3">four steps to your first bounded run</div>
-                        <ol class="space-y-3 text-dim leading-relaxed list-none">
-                            <li><span class="text-accent">01 ·</span> fork <a href="https://github.com/samuelkahessay/prd-to-prod" class="text-accent hover:underline">samuelkahessay/prd-to-prod</a> and clone it locally</li>
-                            <li><span class="text-accent">02 ·</span> create <code class="text-white bg-opacity-10 px-1">docs/prd/my-feature.md</code> — describe the work, acceptance criteria, and constraints, then push to <code class="text-white px-1">main</code></li>
-                            <li><span class="text-accent">03 ·</span> open an issue linking your PRD, then comment <code class="text-white px-1">/decompose</code> — the decomposer creates implementation issues automatically</li>
-                            <li><span class="text-accent">04 ·</span> watch <a href="https://github.com/samuelkahessay/prd-to-prod/actions" class="text-accent hover:underline">GitHub Actions</a>, <a href="/operator" class="text-accent hover:underline">/operator</a>, and <a href="/pipeline" class="text-accent hover:underline">/pipeline</a> — the system will either act inside policy or stop and escalate</li>
-                        </ol>
-                    </div>
-                    <div>
-                        <div class="text-accent font-bold mb-3">useful links</div>
-                        <ul class="space-y-2 text-dim">
-                            <li>→ <a href="https://github.com/samuelkahessay/prd-to-prod" class="text-accent hover:underline">github.com/samuelkahessay/prd-to-prod</a></li>
-                            <li>→ <a href="https://github.com/samuelkahessay/prd-to-prod/blob/main/AGENTS.md" class="text-accent hover:underline">AGENTS.md</a> — coding standards &amp; pipeline conventions</li>
-                            <li>→ <a href="https://github.com/samuelkahessay/prd-to-prod/blob/main/docs/prd/ticket-deflection-prd.md" class="text-accent hover:underline">example PRD</a> — the PRD that built this app</li>
-                            <li>→ <a href="/operator" class="text-accent hover:underline">/operator</a> — queue, blocked actions, recent autonomous decisions</li>
-                            <li>→ <a href="/pipeline" class="text-accent hover:underline">/pipeline</a> — live pipeline view backed by GitHub state</li>
-                            <li>→ <a href="https://github.com/github/gh-aw" class="text-accent hover:underline">gh-aw</a> — the agentic workflow engine powering this pipeline</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Visual boundary: pipeline story ends, specimen begins -->
-        <div class="mb-16" style="border-top: 2px solid var(--border); padding-top: 3rem; position: relative;">
-            <div class="text-xs font-bold mb-1 uppercase tracking-widest" style="color: var(--accent)">// specimen — the proof, not the point</div>
-            <p class="text-dim text-xs max-w-2xl" style="margin-top: 6px;">
-                What follows is the app the pipeline built. It runs. Explore it or ignore it — the pipeline story above is complete either way.
-            </p>
         </div>
-
-        <!-- Specimen stats -->
-        <section class="mb-10">
-            <div class="text-xs text-dim mb-4 uppercase tracking-widest">// ticket deflection service — specimen output</div>
-            <div class="panel p-6">
-                <h2 class="font-sans text-xl font-bold text-white mb-2">Ticket Deflection Service</h2>
-                <p class="text-dim text-xs mb-6 leading-relaxed max-w-xl">
-                    A complete C#/.NET application the pipeline built from a single PRD.
-                    It is the specimen output. The system above it is the point: a bounded AI delivery loop with explicit operator visibility and stop conditions.
-                </p>
-
-                <!-- Stats as instrument panels -->
-                <div class="grid grid-cols-3 gap-4 mb-6">
-                    <div class="panel panel-top p-4">
-                        <div class="metric-val" id="statTickets">25</div>
-                        <div class="metric-lbl">tickets processed</div>
-                    </div>
-                    <div class="panel panel-top p-4">
-                        <div class="metric-val" id="statDeflection">--</div>
-                        <div class="metric-lbl">deflection rate</div>
-                    </div>
-                    <div class="panel panel-top p-4">
-                        <div class="metric-val">&lt;2s</div>
-                        <div class="metric-lbl">processing time</div>
-                    </div>
-                </div>
-
-                <!-- Ticket pipeline flow -->
-                <div class="divider mb-4"></div>
-                <div class="text-xs text-dim mb-3">ticket pipeline:</div>
-                <div class="flex flex-wrap items-center gap-2 text-xs">
-                    <span class="flow-tag">Intake</span>
-                    <span class="text-dim">──▶</span>
-                    <span class="flow-tag">Classify</span>
-                    <span class="text-dim">──▶</span>
-                    <span class="flow-tag">Match</span>
-                    <span class="text-dim">──▶</span>
-                    <span class="flow-tag flow-tag-green">Resolve/Escalate</span>
-                </div>
-            </div>
-        </section>
-
-        <!-- Specimen entry -->
-        <section class="mb-16">
-            <div class="text-xs text-dim mb-5 uppercase tracking-widest">// enter the specimen</div>
-            <div class="panel p-8 text-center">
-                <div class="text-xs text-dim mb-6">The dashboard is the specimen. Submit a ticket and watch the pipeline process it in real time.</div>
-                <a href="/dashboard" class="exec-btn inline-block" style="text-decoration: none;">[ open dashboard ]</a>
-            </div>
-        </section>
-
-        <div class="text-center text-dim text-xs mt-12 pb-4">
-            Built and operated through a policy-bounded AI delivery loop ·
-            <a href="https://github.com/samuelkahessay/prd-to-prod" class="hover:text-accent transition-colors">prd-to-prod</a> ·
-            <a href="https://github.com/github/gh-aw" class="hover:text-accent transition-colors">gh-aw</a> ·
-            <a href="https://github.com/samuelkahessay/prd-to-prod/blob/main/AGENTS.md" class="hover:text-accent transition-colors">AGENTS.md</a> ·
-            <a href="https://github.com/samuelkahessay/prd-to-prod/blob/main/LICENSE" class="hover:text-accent transition-colors">MIT License</a>
+        <div class="mt-3 text-xs text-dim">
+            Runs 01–03: git tags are the source of truth — inspect the full commit history at each tag link above.
         </div>
+    </section>
 
+    <!-- Replay -->
+    <section class="mb-16" id="replay-section" aria-labelledby="replay-heading">
+        <div class="text-xs text-dim mb-1 uppercase tracking-widest">// run replay — step through a completed pipeline run</div>
+        <h2 id="replay-heading" class="sr-only">Run Replay</h2>
+        <div class="text-xs text-dim mb-5">Select a run to inspect its timeline event-by-event.</div>
+        <div class="panel p-4">
+            <div class="mb-4">
+                <label class="text-xs text-dim uppercase tracking-widest block mb-2" id="run-selector-label">Select run:</label>
+                <div id="run-selector" class="flex flex-wrap gap-2" role="group" aria-labelledby="run-selector-label">
+                    @foreach (var run in Model.CompletedRuns.OrderByDescending(r => r.Number))
+                    {
+                        <button
+                            class="run-select-btn text-xs px-3 py-1.5 border border-border text-dim hover:text-accent hover:border-accent transition-colors"
+                            style="border-color: var(--border); font-family: var(--mono);"
+                            data-slug="@run.Slug">
+                            @run.Number.ToString("D2") · @run.Name
+                        </button>
+                    }
+                </div>
+            </div>
+
+            <div id="replay-empty" class="text-dim text-xs py-6">No replay selected — choose a run above to begin.</div>
+
+            <div id="replay-pane" class="hidden">
+                <div id="run-meta" class="mb-4 text-xs grid grid-cols-2 sm:grid-cols-4 gap-3" aria-label="Run metadata"></div>
+
+                <div class="flex items-center gap-3 mb-4">
+                    <button id="btn-prev" class="exec-btn text-xs px-4 py-1.5" style="font-size:0.75rem; padding:6px 18px;" disabled aria-label="Previous event">&#8592; Prev</button>
+                    <span id="step-counter" class="text-dim text-xs" aria-live="polite"></span>
+                    <button id="btn-next" class="exec-btn text-xs px-4 py-1.5" style="font-size:0.75rem; padding:6px 18px;" aria-label="Next event">Next &#8594;</button>
+                </div>
+
+                <div id="event-detail" class="panel p-3 mb-4 text-xs hidden" aria-live="polite">
+                    <div class="flex items-start gap-3">
+                        <span id="detail-badge" class="px-2 py-0.5 text-xs font-bold" style="background: rgba(0,170,255,0.1); border: 1px solid var(--border); color: var(--accent); white-space: nowrap;"></span>
+                        <div>
+                            <div id="detail-title" class="text-white font-bold mb-1"></div>
+                            <div id="detail-meta" class="text-dim"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="timeline-list" class="space-y-1 max-h-64 overflow-y-auto pr-1" role="listbox" aria-label="Timeline events"></div>
+            </div>
+
+            <div id="replay-loading" class="hidden text-dim text-xs py-4" role="status">Loading timeline...</div>
+            <div id="replay-error" class="hidden text-red-400 text-xs py-4" role="alert"></div>
+        </div>
+    </section>
+
+    <!-- Provenance -->
+    <section class="mb-14" aria-labelledby="provenance-heading">
+        <div class="text-xs text-dim mb-4 uppercase tracking-widest">// provenance — verify the work is real</div>
+        <h2 id="provenance-heading" class="sr-only">Provenance</h2>
+        <div class="panel p-4 text-xs">
+            <div class="text-dim mb-1">
+                REPO: <a href="https://github.com/samuelkahessay/prd-to-prod" class="text-accent hover:underline">github.com/samuelkahessay/prd-to-prod</a>
+            </div>
+            <div class="text-dim">Every issue, PR, review comment, merge commit, drill report, and live operator surface is part of the evidence. The git history is the source of truth.</div>
+        </div>
+    </section>
+
+    <!-- Get Started -->
+    <section class="mb-14" aria-labelledby="getstarted-heading">
+        <div class="text-xs text-dim mb-4 uppercase tracking-widest">// get started — inspect or run the lane yourself</div>
+        <h2 id="getstarted-heading" class="sr-only">Get Started</h2>
+        <div class="panel p-6 text-xs">
+            <div class="grid sm:grid-cols-2 gap-6">
+                <div>
+                    <div class="text-accent font-bold mb-3">four steps to your first bounded run</div>
+                    <ol class="space-y-3 text-dim leading-relaxed list-none">
+                        <li><span class="text-accent">01 ·</span> fork <a href="https://github.com/samuelkahessay/prd-to-prod" class="text-accent hover:underline">samuelkahessay/prd-to-prod</a> and clone it locally</li>
+                        <li><span class="text-accent">02 ·</span> create <code class="text-white bg-opacity-10 px-1">docs/prd/my-feature.md</code> — describe the work, acceptance criteria, and constraints, then push to <code class="text-white px-1">main</code></li>
+                        <li><span class="text-accent">03 ·</span> open an issue linking your PRD, then comment <code class="text-white px-1">/decompose</code> — the decomposer creates implementation issues automatically</li>
+                        <li><span class="text-accent">04 ·</span> watch <a href="https://github.com/samuelkahessay/prd-to-prod/actions" class="text-accent hover:underline">GitHub Actions</a>, <a href="/operator" class="text-accent hover:underline">/operator</a>, and <a href="/pipeline" class="text-accent hover:underline">/pipeline</a> — the system will either act inside policy or stop and escalate</li>
+                    </ol>
+                </div>
+                <div>
+                    <div class="text-accent font-bold mb-3">useful links</div>
+                    <ul class="space-y-2 text-dim">
+                        <li>→ <a href="https://github.com/samuelkahessay/prd-to-prod" class="text-accent hover:underline">github.com/samuelkahessay/prd-to-prod</a></li>
+                        <li>→ <a href="https://github.com/samuelkahessay/prd-to-prod/blob/main/AGENTS.md" class="text-accent hover:underline">AGENTS.md</a> — coding standards &amp; pipeline conventions</li>
+                        <li>→ <a href="https://github.com/samuelkahessay/prd-to-prod/blob/main/docs/prd/ticket-deflection-prd.md" class="text-accent hover:underline">example PRD</a> — the PRD that built this app</li>
+                        <li>→ <a href="/operator" class="text-accent hover:underline">/operator</a> — queue, blocked actions, recent autonomous decisions</li>
+                        <li>→ <a href="/pipeline" class="text-accent hover:underline">/pipeline</a> — live pipeline view backed by GitHub state</li>
+                        <li>→ <a href="https://github.com/github/gh-aw" class="text-accent hover:underline">gh-aw</a> — the agentic workflow engine powering this pipeline</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Visual boundary: pipeline story ends, specimen begins -->
+    <div class="mb-16" style="border-top: 2px solid var(--border); padding-top: 3rem; position: relative;">
+        <div class="text-xs font-bold mb-1 uppercase tracking-widest" style="color: var(--accent)">// specimen — the proof, not the point</div>
+        <p class="text-dim text-xs max-w-2xl" style="margin-top: 6px;">
+            What follows is the app the pipeline built. It runs. Explore it or ignore it — the pipeline story above is complete either way.
+        </p>
     </div>
 
-    <script>
-        // Load live stats from the metrics API
-        (async function loadStats() {
-            try {
-                const res = await fetch('/api/metrics/overview');
-                if (!res.ok) return;
-                const data = await res.json();
-                const ticketEl = document.getElementById('statTickets');
-                const deflectionEl = document.getElementById('statDeflection');
-                if (ticketEl && data.totalTickets != null) {
-                    ticketEl.textContent = data.totalTickets > 0 ? data.totalTickets : '0';
+    <!-- Specimen stats -->
+    <section class="mb-10" aria-labelledby="specimen-heading">
+        <div class="text-xs text-dim mb-4 uppercase tracking-widest">// ticket deflection service — specimen output</div>
+        <div class="panel p-6">
+            <h2 id="specimen-heading" class="font-sans text-xl font-bold text-white mb-2">Ticket Deflection Service</h2>
+            <p class="text-dim text-xs mb-6 leading-relaxed max-w-xl">
+                A complete C#/.NET application the pipeline built from a single PRD.
+                It is the specimen output. The system above it is the point: a bounded AI delivery loop with explicit operator visibility and stop conditions.
+            </p>
+
+            <div class="grid grid-cols-3 gap-4 mb-6" aria-label="Specimen statistics">
+                <div class="panel panel-top p-4">
+                    <div class="metric-val-hero" id="statTickets" aria-live="polite">25</div>
+                    <div class="metric-lbl">tickets processed</div>
+                </div>
+                <div class="panel panel-top p-4">
+                    <div class="metric-val-hero" id="statDeflection" aria-live="polite">--</div>
+                    <div class="metric-lbl">deflection rate</div>
+                </div>
+                <div class="panel panel-top p-4">
+                    <div class="metric-val-hero">&lt;2s</div>
+                    <div class="metric-lbl">processing time</div>
+                </div>
+            </div>
+
+            <div class="divider mb-4"></div>
+            <div class="text-xs text-dim mb-3">ticket pipeline:</div>
+            <div class="flex flex-wrap items-center gap-2 text-xs">
+                <span class="flow-tag">Intake</span>
+                <span class="text-dim" aria-hidden="true">──▶</span>
+                <span class="flow-tag">Classify</span>
+                <span class="text-dim" aria-hidden="true">──▶</span>
+                <span class="flow-tag">Match</span>
+                <span class="text-dim" aria-hidden="true">──▶</span>
+                <span class="flow-tag flow-tag-green">Resolve/Escalate</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Specimen entry -->
+    <section class="mb-16">
+        <div class="text-xs text-dim mb-5 uppercase tracking-widest">// enter the specimen</div>
+        <div class="panel p-8 text-center">
+            <div class="text-xs text-dim mb-6">The dashboard is the specimen. Submit a ticket and watch the pipeline process it in real time.</div>
+            <a href="/dashboard" class="exec-btn-hero inline-block" style="text-decoration: none;">[ open dashboard ]</a>
+        </div>
+    </section>
+
+</div>
+
+@section Scripts {
+<script>
+(function () {
+    var state = { runs: [], events: [], current: -1 };
+
+    var elEmpty   = document.getElementById('replay-empty');
+    var elPane    = document.getElementById('replay-pane');
+    var elLoading = document.getElementById('replay-loading');
+    var elError   = document.getElementById('replay-error');
+    var elMeta    = document.getElementById('run-meta');
+    var elList    = document.getElementById('timeline-list');
+    var elDetail  = document.getElementById('event-detail');
+    var elBadge   = document.getElementById('detail-badge');
+    var elTitle   = document.getElementById('detail-title');
+    var elMetaD   = document.getElementById('detail-meta');
+    var elPrev    = document.getElementById('btn-prev');
+    var elNext    = document.getElementById('btn-next');
+    var elCounter = document.getElementById('step-counter');
+
+    var eventColors = {
+        issue_created: { bg: 'rgba(245,166,35,0.1)', border: 'rgba(245,166,35,0.3)', color: '#f5a623', label: 'ISSUE' },
+        pr_opened:     { bg: 'rgba(0,170,255,0.08)', border: 'var(--border)',          color: 'var(--accent)', label: 'PR OPEN' },
+        pr_reviewed:   { bg: 'rgba(61,220,132,0.08)', border: 'rgba(61,220,132,0.2)', color: '#3ddc84', label: 'REVIEW' },
+        pr_merged:     { bg: 'rgba(61,220,132,0.15)', border: 'rgba(61,220,132,0.3)', color: '#3ddc84', label: 'MERGED' }
+    };
+
+    function colorFor(ev) {
+        return eventColors[ev] || { bg: 'rgba(74,90,114,0.2)', border: 'var(--border)', color: 'var(--dim)', label: ev.toUpperCase() };
+    }
+
+    function show(el) { el.classList.remove('hidden'); }
+    function hide(el) { el.classList.add('hidden'); }
+
+    function renderMeta(run, stats) {
+        elMeta.innerHTML = [
+            ['NAME', run.name],
+            ['STACK', run.tech_stack],
+            ['ISSUES', stats.issues_created],
+            ['LINES +', stats.lines_added.toLocaleString()]
+        ].map(function(p) {
+            return '<div><div class="text-dim uppercase tracking-widest mb-0.5" style="font-size:0.6rem">' + p[0] + '</div>'
+                 + '<div class="text-accent font-bold">' + p[1] + '</div></div>';
+        }).join('');
+    }
+
+    function renderList(idx) {
+        elList.innerHTML = state.events.map(function(ev, i) {
+            var c = colorFor(ev.event);
+            var active = (i === idx);
+            return '<div class="flex items-start gap-2 px-2 py-1.5 cursor-pointer event-row ' + (active ? 'selected-event' : '') + '" '
+                 + 'style="' + (active ? 'background: rgba(0,170,255,0.07);' : '') + '" '
+                 + 'tabindex="0" role="option" aria-selected="' + active + '" '
+                 + 'data-idx="' + i + '">'
+                 + '<span class="px-1.5 py-0.5 text-xs font-bold flex-shrink-0" style="background:' + c.bg + ';border:1px solid ' + c.border + ';color:' + c.color + ';font-size:0.6rem">' + c.label + '</span>'
+                 + '<div class="min-w-0">'
+                 + '<div class="text-white text-xs truncate">#' + ev.item + ' ' + escapeHtml(ev.title) + '</div>'
+                 + '<div class="text-dim" style="font-size:0.65rem">' + new Date(ev.timestamp).toISOString().slice(0, 10) + '</div>'
+                 + '</div></div>';
+        }).join('');
+        elList.querySelectorAll('.event-row').forEach(function(row) {
+            row.addEventListener('click', function() { goTo(parseInt(row.dataset.idx)); });
+            row.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    goTo(parseInt(row.dataset.idx));
                 }
-                if (deflectionEl) {
-                    deflectionEl.textContent = data.totalTickets > 0
-                        ? (data.resolutionRate * 100).toFixed(1) + '%'
-                        : '--';
-                }
-            } catch (_) {
-                // Non-critical: silently ignore if API unavailable
-            }
-        })();
-    </script>
-</body>
-</html>
+            });
+        });
+    }
+
+    function renderDetail(idx) {
+        var ev = state.events[idx];
+        if (!ev) { hide(elDetail); return; }
+        var c = colorFor(ev.event);
+        elBadge.textContent = c.label;
+        elBadge.style.cssText = 'background:' + c.bg + ';border:1px solid ' + c.border + ';color:' + c.color + ';padding:2px 8px;font-size:0.7rem;white-space:nowrap;';
+        elTitle.textContent = '#' + ev.item + ' ' + ev.title;
+        elMetaD.textContent = new Date(ev.timestamp).toUTCString();
+        show(elDetail);
+    }
+
+    function goTo(idx) {
+        state.current = idx;
+        elPrev.disabled = (idx <= 0);
+        elNext.disabled = (idx >= state.events.length - 1);
+        elCounter.textContent = 'Event ' + (idx + 1) + ' of ' + state.events.length;
+        renderList(idx);
+        renderDetail(idx);
+        var active = elList.querySelector('.selected-event');
+        if (active) active.scrollIntoView({ block: 'nearest' });
+    }
+
+    elPrev.addEventListener('click', function() { if (state.current > 0) goTo(state.current - 1); });
+    elNext.addEventListener('click', function() { if (state.current < state.events.length - 1) goTo(state.current + 1); });
+
+    document.querySelectorAll('.run-select-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var slug = btn.dataset.slug;
+            document.querySelectorAll('.run-select-btn').forEach(function(b) {
+                b.style.borderColor = 'var(--border)'; b.style.color = 'var(--dim)';
+            });
+            btn.style.borderColor = 'var(--accent)'; btn.style.color = 'var(--accent)';
+
+            hide(elEmpty); hide(elPane); hide(elError);
+            show(elLoading);
+
+            fetch('/api/showcase/' + encodeURIComponent(slug) + '/timeline')
+                .then(function(r) {
+                    if (!r.ok) throw new Error('HTTP ' + r.status);
+                    return r.json();
+                })
+                .then(function(data) {
+                    hide(elLoading);
+                    state.events = data.timeline || [];
+                    state.current = -1;
+                    renderMeta(data.run, data.stats);
+                    elList.innerHTML = '';
+                    hide(elDetail);
+                    elCounter.textContent = '';
+                    elPrev.disabled = true;
+                    elNext.disabled = state.events.length === 0;
+                    show(elPane);
+                    if (state.events.length > 0) goTo(0);
+                })
+                .catch(function(err) {
+                    hide(elLoading);
+                    elError.textContent = 'Failed to load timeline: ' + err.message;
+                    show(elError);
+                });
+        });
+    });
+
+    var defaultBtn = document.querySelector('.run-select-btn');
+    if (defaultBtn) defaultBtn.click();
+})();
+</script>
+
+<script>
+(async function loadStats() {
+    try {
+        const res = await fetch('/api/metrics/overview');
+        if (!res.ok) return;
+        const data = await res.json();
+        const ticketEl = document.getElementById('statTickets');
+        const deflectionEl = document.getElementById('statDeflection');
+        if (ticketEl && data.totalTickets != null) {
+            ticketEl.textContent = data.totalTickets > 0 ? data.totalTickets : '0';
+        }
+        if (deflectionEl) {
+            deflectionEl.textContent = data.totalTickets > 0
+                ? (data.resolutionRate * 100).toFixed(1) + '%'
+                : '--';
+        }
+    } catch (_) { }
+})();
+</script>
+}
