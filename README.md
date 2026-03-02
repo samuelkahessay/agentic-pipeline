@@ -12,30 +12,31 @@ conditions, and visible operator controls.
 
 ```mermaid
 flowchart TD
-  subgraph C["Human-Owned Control Plane"]
-    H["Human Intent"]
-    P["Autonomy Policy"]
-  end
+  CP["Control Plane"]:::section
+  H["Human Intent"]
+  P["Autonomy Policy"]
 
-  subgraph E["AI Execution Lane"]
-    D["PRD Decomposer"] --> I["Pipeline Issues"]
-    I --> A["Repo Assist Agent"]
-    A --> PR["Pipeline PR"]
-    PR --> RV["Review Agent"]
-    RV --> R["Review + Merge Gate"]
-  end
+  EL["Execution Lane"]:::section
+  D["PRD Decomposer"] --> I["Pipeline Issues"]
+  I --> A["Repo Assist Agent"]
+  A --> PR["Pipeline PR"]
+  PR --> RV["Review Agent"]
+  RV --> R["Review + Merge Gate"]
 
-  subgraph O["Delivery and Recovery"]
-    M{"Auto-merge or Manual Stop?"}
-    S["Deploy"]
-    F["Failure Detection"]
-    X{"Repair or Escalate?"}
-    HD["Human Decision"]
-  end
+  DR["Delivery and Recovery"]:::section
+  M{"Auto-merge or Manual Stop?"}
+  S["Deploy"]
+  F["Failure Detection"]
+  X{"Repair or Escalate?"}
+  HD["Human Decision"]
 
+  CP --> H
+  CP --> P
   H --> D
   P --> R
+  EL --> D
   R --> M
+  DR --> M
   M -->|Auto| S
   M -->|Stop| HD
   S --> F
@@ -43,8 +44,11 @@ flowchart TD
   X -->|Repair| A
   X -->|Escalate| HD
 
-  L["Decision Ledger /operator /pipeline"] -. observes .-> R
+  L["Decision Ledger /operator /pipeline"]:::observe -. observes .-> R
   L -. observes .-> F
+
+  classDef section fill:#111827,stroke:#9ca3af,color:#f3f4f6,font-weight:bold;
+  classDef observe fill:#0b1220,stroke:#60a5fa,color:#dbeafe;
 ```
 
 ## Human and AI Boundary
