@@ -6,18 +6,18 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>prd-to-prod — autonomous software pipeline</title>
-    <meta name="description" content="Drop a PRD, get a deployed app. Zero human code. An autonomous GitHub pipeline that decomposes requirements, writes code, reviews its own work, and ships." />
+    <meta name="description" content="A policy-bounded AI execution system. You set the intent. The pipeline executes within defined autonomy limits: decompose, implement, review, merge." />
     <!-- OpenGraph -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="prd-to-prod" />
     <meta property="og:url" content="https://prd-to-prod.azurewebsites.net" />
-    <meta property="og:title" content="prd-to-prod — Drop a PRD. Get a deployed app." />
-    <meta property="og:description" content="Autonomous software pipeline: AI decomposes requirements → writes code → reviews PRs → ships to main. Zero human code." />
+    <meta property="og:title" content="prd-to-prod — Policy-bounded AI execution" />
+    <meta property="og:description" content="You set the intent. The pipeline executes within policy: decomposes requirements, writes code, reviews PRs, merges to main. Control-plane changes require human approval." />
     <meta property="og:image" content="https://prd-to-prod.azurewebsites.net/og-image.png" />
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="prd-to-prod — Drop a PRD. Get a deployed app." />
-    <meta name="twitter:description" content="Autonomous software pipeline: AI decomposes requirements → writes code → reviews PRs → ships to main. Zero human code." />
+    <meta name="twitter:title" content="prd-to-prod — Policy-bounded AI execution" />
+    <meta name="twitter:description" content="You set the intent. The pipeline executes within policy: decomposes requirements, writes code, reviews PRs, merges to main. Control-plane changes require human approval." />
     <meta name="twitter:image" content="https://prd-to-prod.azurewebsites.net/og-image.png" />
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -158,17 +158,17 @@
 
         <!-- Hero -->
         <section class="mb-16">
-            <div class="text-xs text-dim mb-5">// autonomous software factory — powered by gh-aw</div>
+            <div class="text-xs text-dim mb-5">// autonomous execution engine — policy-bounded, powered by gh-aw</div>
             <h1 class="font-sans text-5xl sm:text-6xl font-bold text-white mb-4 leading-tight">
                 Drop a PRD.<br />Get a deployed app.
             </h1>
-            <p class="text-dim text-base mb-6">Human sets the intent. AI handles everything else.<span class="cursor-blink ml-1">█</span></p>
+            <p class="text-dim text-base mb-6">Human sets the intent. AI executes within bounds.<span class="cursor-blink ml-1">█</span></p>
             <p class="text-sm leading-relaxed max-w-2xl mb-8" style="color: var(--text)">
-                <a href="https://github.com/samuelkahessay/prd-to-prod" target="_blank" rel="noopener noreferrer" class="text-accent font-bold hover:underline">prd-to-prod</a> is an autonomous software pipeline powered by
+                <a href="https://github.com/samuelkahessay/prd-to-prod" target="_blank" rel="noopener noreferrer" class="text-accent font-bold hover:underline">prd-to-prod</a> is a policy-bounded AI execution system powered by
                 <a href="https://github.com/github/gh-aw" target="_blank" rel="noopener noreferrer" class="text-accent font-bold hover:underline">gh-aw</a> (GitHub Agentic Workflows).
                 It reads a product requirements document, decomposes it into GitHub Issues,
-                writes code for each one, opens Pull Requests, reviews its own work, merges to main —
-                and self-heals when things break. No human writes a single line of code.
+                writes code for each one, opens Pull Requests, reviews its own work, and merges to main —
+                within explicit autonomy limits. Control-plane changes always require human approval.
             </p>
             <a href="https://github.com/samuelkahessay/prd-to-prod" target="_blank" rel="noopener noreferrer" class="exec-btn inline-block" style="text-decoration: none; display: inline-block;">[ View on GitHub ]</a>
         </section>
@@ -235,10 +235,20 @@
                         </div>
                     </div>
 
+                    <div class="divider"></div>
+
+                    <div class="flex gap-4 items-start">
+                        <span class="stage-label" style="background:rgba(245,166,35,0.12);color:var(--amber);border-color:rgba(245,166,35,0.3)">POLICY</span>
+                        <div>
+                            <div class="text-xs mb-1" style="color:var(--amber)">[ autonomy boundary ]</div>
+                            <div class="text-dim text-xs leading-relaxed">Control-plane paths (.github/workflows/, autonomy-policy.yml) require human review — the pipeline will REQUEST_CHANGES and not auto-merge. See <a href="https://github.com/samuelkahessay/prd-to-prod/blob/main/autonomy-policy.yml" target="_blank" rel="noopener noreferrer" class="hover:underline" style="color:var(--amber)">autonomy-policy.yml</a>.</div>
+                        </div>
+                    </div>
+
                 </div>
             </div>
             <div class="mt-3 text-xs text-dim">
-                <span class="text-accent">Self-healing:</span> pipeline-watchdog detects stalls, retries failures, cleans up superseded PRs. No human intervention required.
+                <span class="text-accent">Self-healing:</span> pipeline-watchdog detects stalls, retries failures, cleans up superseded PRs. Bounded to [Pipeline] work only.
             </div>
         </section>
 
@@ -519,7 +529,10 @@
                 <div class="text-dim mb-1">
                     REPO: <a href="https://github.com/samuelkahessay/prd-to-prod" class="text-accent hover:underline">github.com/samuelkahessay/prd-to-prod</a>
                 </div>
-                <div class="text-dim">Every issue, PR, review comment, and merge commit is public. The pipeline's git history is the source of truth.</div>
+                <div class="text-dim mb-1">Every issue, PR, review comment, and merge commit is public. The pipeline's git history is the source of truth.</div>
+                <div class="text-dim">
+                    POLICY: <a href="https://github.com/samuelkahessay/prd-to-prod/blob/main/autonomy-policy.yml" target="_blank" rel="noopener noreferrer" class="text-accent hover:underline">autonomy-policy.yml</a> — defines which actions the pipeline may take autonomously and which require human approval.
+                </div>
             </div>
         </section>
 

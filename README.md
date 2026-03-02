@@ -1,36 +1,65 @@
 # PRD to Prod
 
-Drop a PRD, get a deployed app. Autonomous on the pipeline-generated path.
+A policy-bounded AI execution system that turns product requirements into
+shipped code within explicit autonomy limits.
 
-An autonomous software pipeline that decomposes product requirements into
-GitHub Issues, implements them as Pull Requests, reviews its own code,
-auto-merges approved `[Pipeline]` PRs, and self-heals common pipeline failures.
+You define the intent and the policy. The pipeline executes within those bounds:
+decomposing requirements, writing code, reviewing PRs, and merging — without
+human coding or merge intervention on the pipeline-generated path. Control-plane
+changes and human-authored PRs always require human approval.
+
 Powered by [gh-aw](https://github.com/github/gh-aw) agentic workflows.
 
 ## What It Does
 
 ```
-  PRD ──> Issues ──> Code ──> Review ──> Merge ──> Ship
-                       ↑                              |
-                       +────── loop until done ────────+
+  Human:   PRD ──────────────────────────────────────────────────> Policy
+                                                                       |
+  AI:           Issues ──> Code ──> Review ──> Merge ──> Ship         |
+                    ↑                              |        |          |
+                    +────── loop until done ────────+        |          |
+                                                            v          |
+                                              control-plane PRs: human-required
 ```
 
-You write a product requirements document. The pipeline does everything else:
+You write a product requirements document. The pipeline executes within policy:
 
 - **Decomposes** the PRD into atomic, dependency-ordered issues
 - **Implements** each issue — branching, writing code, running tests, opening PRs
 - **Reviews** every PR with full-context AI code review (no truncation)
 - **Auto-merges** approved `[Pipeline]` PRs via squash merge, closing linked issues
-- **Self-heals** common pipeline failures — stalled pipeline PRs, CI incidents, orphaned issues, and duplicate cleanup
+- **Self-heals** within autonomous scope — stalled PRs, CI incidents, orphaned issues
 - **Tracks progress** on a GitHub Projects v2 board, updated every run
 
-For pipeline-generated work, the default path requires no human coding or merge
-intervention. Human-authored PRs, break-glass changes, and operator
-interventions remain manual by design.
+Where AI stops: `.github/workflows/`, agent configs, and `autonomy-policy.yml`
+are control-plane paths. PRs touching them trigger REQUEST_CHANGES from the
+review agent — those merges require human approval.
+
+## Autonomy Policy
+
+The repo ships a formal [`autonomy-policy.yml`](autonomy-policy.yml) that
+defines the boundary between autonomous and human-required actions.
+
+Key rules:
+- **Fail-closed default** — unknown or unclassified actions require human approval
+- **Merge gate** — PRs touching `.github/workflows/**`, `.github/agents/**`, or
+  `autonomy-policy.yml` always get REQUEST_CHANGES from pr-review-agent
+- **Auto-merge scope** — only `[Pipeline]`-prefixed PRs on approved code changes;
+  never control-plane changes, never human-authored PRs
+- **Healing scope** — watchdog and CI repair operate only on `[Pipeline]` work;
+  human PRs are never modified by the pipeline
+
+**Emergency stop:** Set repository variable `PIPELINE_HEALING_ENABLED=false` to
+pause autonomous healing. Review submission and failure detection still run, but
+auto-dispatch, repair commands, and pipeline auto-merge are skipped until the
+variable is unset or reset to `true`. See [autonomy-policy.yml](autonomy-policy.yml)
+for the full classification.
 
 ## Shipped So Far
 
-Four complete apps built autonomously — zero human implementation code written.
+The autonomous path has produced five runs across different tech stacks.
+Each row is evidence: issue links, PR links, and a tagged commit you can
+`git checkout` and inspect. Zero human implementation code.
 
 | Run | App | Stack | Tag |
 |-----|-----|-------|-----|
@@ -47,6 +76,7 @@ See [`showcase/`](showcase/) for detailed run reports.
 
 Week-one MVP support is currently validated for the `dotnet-azure` profile.
 See [docs/SELF_HEALING_MVP.md](docs/SELF_HEALING_MVP.md) for the operator runbook.
+See [autonomy-policy.yml](autonomy-policy.yml) for the full action classification.
 
 ```bash
 # 1. Clone
@@ -95,7 +125,8 @@ git push
 Set repository variable `PIPELINE_HEALING_ENABLED=false` to pause autonomous
 healing. Review submission and failure detection still run, but auto-dispatch,
 watchdog remediation, repair-command posting, and pipeline auto-merge are
-skipped until the variable is unset or set back to `true`.
+skipped until the variable is unset or set back to `true`. See
+[autonomy-policy.yml](autonomy-policy.yml) for what stays running.
 
 ## Autonomy Boundaries
 

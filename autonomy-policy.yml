@@ -1,0 +1,92 @@
+version: 1
+description: >
+  Autonomy policy for the prd-to-prod pipeline. Defines which actions the
+  pipeline may take autonomously and which require human approval.
+  Fail-closed: unknown actions default to human_required.
+
+defaults:
+  unknown_action: human_required
+
+# Paths that constitute control-plane changes — always require human review
+control_plane_paths:
+  - .github/workflows/**
+  - .github/agents/**
+  - autonomy-policy.yml
+
+actions:
+  - name: decompose_prd
+    classification: autonomous
+    description: >
+      prd-decomposer reads a PRD and creates [Pipeline] issues with acceptance
+      criteria and dependency ordering.
+
+  - name: implement_issue
+    classification: autonomous
+    description: >
+      repo-assist creates a branch from main, writes code, opens a draft PR
+      with Closes #N referencing the source issue.
+
+  - name: review_pr
+    classification: autonomous
+    description: >
+      pr-review-agent reads the full PR diff and linked issue acceptance
+      criteria, then posts a [PIPELINE-VERDICT] comment.
+
+  - name: merge_pipeline_pr
+    classification: autonomous
+    when: "[Pipeline] PR approved by pr-review-agent with passing CI"
+    description: >
+      pr-review-submit enables squash auto-merge for approved [Pipeline] PRs.
+      Human-authored PRs are never auto-merged.
+
+  - name: close_linked_issue
+    classification: autonomous
+    when: "Merged PR body contains Closes #N"
+    description: >
+      close-issues workflow closes the linked issue after PR merge.
+
+  - name: self_heal
+    classification: autonomous
+    description: >
+      pipeline-watchdog retries stalled pipeline PRs, dispatches repo-assist
+      for orphaned issues, and posts CI repair commands for failed builds.
+
+  - name: modify_workflows
+    classification: human_required
+    paths:
+      - .github/workflows/**
+      - .github/agents/**
+    description: >
+      Changes to pipeline workflows or agent configs require human review
+      and approval. The pipeline will REQUEST_CHANGES on any PR touching
+      these paths.
+
+  - name: merge_human_pr
+    classification: human_required
+    description: >
+      Human-authored PRs (no [Pipeline] prefix) are never auto-merged by
+      the pipeline regardless of review outcome.
+
+  - name: delete_production_branch
+    classification: human_required
+    description: >
+      Deletion of main or protected branches requires human authorization.
+
+merge_gate:
+  description: >
+    PRs touching control_plane_paths trigger REQUEST_CHANGES from
+    pr-review-agent unless explicitly authorized.
+  control_plane_paths:
+    - .github/workflows/**
+    - .github/agents/**
+    - autonomy-policy.yml
+  policy: request_changes
+
+healing_pause:
+  env_var: PIPELINE_HEALING_ENABLED
+  default: enabled
+  description: >
+    Set the PIPELINE_HEALING_ENABLED repository variable to false to pause
+    autonomous healing. Review submission and failure detection still run,
+    but auto-dispatch, watchdog remediation, CI repair-command posting, and
+    pipeline auto-merge are skipped until the variable is unset or reset to true.
