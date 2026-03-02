@@ -112,6 +112,38 @@
             border-color: var(--border);
             background: rgba(0, 170, 255, 0.08);
         }
+        .boundary-panel {
+            background: rgba(9, 16, 28, 0.82);
+            border: 1px solid rgba(248, 81, 73, 0.2);
+            border-top: 2px solid var(--red);
+        }
+        .boundary-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 24px;
+        }
+        .boundary-rule {
+            color: var(--red);
+            font-family: var(--sans);
+            font-size: 1.35rem;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+        .boundary-copy {
+            color: var(--text);
+            font-size: 0.92rem;
+            line-height: 1.65;
+        }
+        .boundary-kv {
+            border-top: 1px solid rgba(248, 81, 73, 0.12);
+            padding-top: 10px;
+            margin-top: 10px;
+        }
+        .boundary-kv:first-child {
+            border-top: none;
+            padding-top: 0;
+            margin-top: 0;
+        }
         .code-pill {
             color: var(--accent);
             background: rgba(0, 170, 255, 0.08);
@@ -197,6 +229,63 @@
                 </div>
             </div>
         </div>
+
+        <section class="boundary-panel p-5 mb-8">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <div class="text-xs text-dim uppercase tracking-widest mb-1">hard boundary</div>
+                    <h2 class="font-sans text-2xl font-bold text-white">The system stops before it can widen its own authority.</h2>
+                </div>
+                <span class="badge badge-red">human-owned control plane</span>
+            </div>
+
+            @if (Model.FeaturedBoundaryStop is null)
+            {
+                <div class="empty-state">No control-plane stop has been recorded yet.</div>
+            }
+            else
+            {
+                <div class="boundary-grid">
+                    <div>
+                        <div class="boundary-rule mb-3">
+                            @Model.FeaturedBoundaryStop.Summary
+                        </div>
+                        <div class="boundary-copy">
+                            This is the explicit stop condition for the demo. The AI can implement,
+                            review, merge, and repair inside policy, but it cannot change workflow
+                            rules, secrets, merge scope, or other control-plane surfaces without a
+                            human taking over.
+                        </div>
+                        <div class="evidence-list mt-4">
+                            <span class="badge badge-red">@Model.FeaturedBoundaryStop.Outcome</span>
+                            <span class="code-pill">@Model.FeaturedBoundaryStop.RequestedAction</span>
+                            @foreach (var evidence in Model.FeaturedBoundaryStop.Evidence)
+                            {
+                                <span class="badge badge-blue">@evidence</span>
+                            }
+                        </div>
+                    </div>
+                    <div>
+                        <div class="boundary-kv">
+                            <div class="metric-lbl">target</div>
+                            <div class="summary-line">@(Model.FeaturedBoundaryStop.Target.Display ?? Model.FeaturedBoundaryStop.Target.Path ?? Model.FeaturedBoundaryStop.Target.Type)</div>
+                        </div>
+                        <div class="boundary-kv">
+                            <div class="metric-lbl">policy reason</div>
+                            <div class="summary-line">@(Model.FeaturedBoundaryStop.PolicyResult.Reason ?? "human review required")</div>
+                        </div>
+                        <div class="boundary-kv">
+                            <div class="metric-lbl">human owner</div>
+                            <div class="summary-line">@(Model.FeaturedBoundaryStop.HumanOwner ?? "unassigned")</div>
+                        </div>
+                        <div class="boundary-kv">
+                            <div class="metric-lbl">source workflow</div>
+                            <div class="summary-line">@Model.FeaturedBoundaryStop.Workflow</div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </section>
 
         <div class="grid lg:grid-cols-[1.25fr_1fr] gap-6 mb-8">
             <section class="panel panel-red p-5">

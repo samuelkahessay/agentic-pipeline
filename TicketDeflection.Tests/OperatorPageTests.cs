@@ -95,6 +95,7 @@ public class OperatorPageTests : IDisposable
         Assert.Contains("Human-required refusals", html);
         Assert.Contains("Waiting on an operator", html);
         Assert.Contains("Recent autonomous actions", html);
+        Assert.Contains("The system stops before it can widen its own authority.", html);
     }
 
     [Fact]
@@ -108,6 +109,8 @@ public class OperatorPageTests : IDisposable
         Assert.Contains("Auto-merge armed after approval on PR #284.", html);
         Assert.Contains(".github/workflows/auto-dispatch.yml", html);
         Assert.Contains("GH_AW_GITHUB_TOKEN", html);
+        Assert.Contains("human-owned control plane", html);
+        Assert.Contains("Workflow changes alter the control plane and can widen blast radius across the repo.", html);
     }
 
     public void Dispose()
