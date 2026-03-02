@@ -78,7 +78,10 @@ jobs:
       - name: Checkout workflow helpers
         uses: actions/checkout@v4
         with:
-          sparse-checkout: scripts/healing-control.sh
+          sparse-checkout: |
+            scripts/healing-control.sh
+            scripts/check-autonomy-policy.sh
+            autonomy-policy.yml
           sparse-checkout-cone-mode: false
 
       - name: Check healing pause switch
@@ -217,8 +220,75 @@ jobs:
             echo "PR #${PR_NUMBER} is already ready for review."
           fi
 
+      - name: Evaluate autonomy policy for autonomous merge (APPROVE only)
+        if: steps.idempotency.outputs.skip != 'true' && steps.review.outputs.verdict == 'APPROVE'
+        id: policy
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.issue.number }}
+          PR_TITLE: ${{ steps.review.outputs.pr_title }}
+          REPO: ${{ github.repository }}
+        run: |
+          if [ -z "${PR_TITLE:-}" ]; then
+            PR_TITLE=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json title --jq '.title')
+          fi
+
+          echo "blocked=false" >> "$GITHUB_OUTPUT"
+          echo "blocked_action=" >> "$GITHUB_OUTPUT"
+          echo "blocked_file=" >> "$GITHUB_OUTPUT"
+          echo "blocked_reason=" >> "$GITHUB_OUTPUT"
+
+          if [[ "$PR_TITLE" != "[Pipeline]"* ]]; then
+            echo "pipeline_pr=false" >> "$GITHUB_OUTPUT"
+            echo "auto_merge_allowed=false" >> "$GITHUB_OUTPUT"
+            echo "auto_follow_up_allowed=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "pipeline_pr=true" >> "$GITHUB_OUTPUT"
+
+          mapfile -t CHANGED_FILES < <(gh api "/repos/${REPO}/pulls/${PR_NUMBER}/files?per_page=100" --paginate --jq '.[].filename')
+
+          for FILE in "${CHANGED_FILES[@]}"; do
+            [ -n "$FILE" ] || continue
+
+            for ACTION in policy_artifact_change workflow_file_change; do
+              MATCH_JSON=$(bash scripts/check-autonomy-policy.sh match "$ACTION" "$FILE" autonomy-policy.yml)
+              MATCHED=$(printf '%s' "$MATCH_JSON" | jq -r '.matched')
+              MODE=$(printf '%s' "$MATCH_JSON" | jq -r '.mode')
+
+              if [ "$MATCHED" = "true" ] && [ "$MODE" = "human_required" ]; then
+                BLOCKED_REASON=$(printf '%s' "$MATCH_JSON" | jq -r '.requires_human_reason')
+                echo "blocked=true" >> "$GITHUB_OUTPUT"
+                echo "blocked_action=${ACTION}" >> "$GITHUB_OUTPUT"
+                echo "blocked_file=${FILE}" >> "$GITHUB_OUTPUT"
+                echo "blocked_reason=${BLOCKED_REASON}" >> "$GITHUB_OUTPUT"
+                echo "auto_merge_allowed=false" >> "$GITHUB_OUTPUT"
+                echo "auto_follow_up_allowed=false" >> "$GITHUB_OUTPUT"
+                echo "Autonomous merge blocked by ${ACTION} on ${FILE}"
+                exit 0
+              fi
+            done
+          done
+
+          echo "auto_merge_allowed=true" >> "$GITHUB_OUTPUT"
+          echo "auto_follow_up_allowed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Comment autonomy policy block on PR
+        if: steps.policy.outputs.blocked == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.issue.number }}
+          REPO: ${{ github.repository }}
+          BLOCKED_ACTION: ${{ steps.policy.outputs.blocked_action }}
+          BLOCKED_FILE: ${{ steps.policy.outputs.blocked_file }}
+          BLOCKED_REASON: ${{ steps.policy.outputs.blocked_reason }}
+        run: |
+          gh pr comment "$PR_NUMBER" --repo "$REPO" --body \
+            "Autonomous merge blocked by autonomy policy. File \`${BLOCKED_FILE}\` matched \`${BLOCKED_ACTION}\`. ${BLOCKED_REASON} Human review and manual merge are required for this PR."
+
       - name: Enable auto-merge (APPROVE only)
-        if: steps.idempotency.outputs.skip != 'true' && steps.review.outputs.verdict == 'APPROVE' && steps.healing.outputs.enabled == 'true'
+        if: steps.idempotency.outputs.skip != 'true' && steps.review.outputs.verdict == 'APPROVE' && steps.healing.outputs.enabled == 'true' && steps.policy.outputs.auto_merge_allowed == 'true'
         env:
           MERGE_TOKEN: ${{ secrets.GH_AW_GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.issue.number }}
@@ -237,7 +307,7 @@ jobs:
           fi
 
       - name: Record auto-merge evidence (APPROVE only)
-        if: steps.idempotency.outputs.skip != 'true' && steps.review.outputs.verdict == 'APPROVE' && steps.healing.outputs.enabled == 'true'
+        if: steps.idempotency.outputs.skip != 'true' && steps.review.outputs.verdict == 'APPROVE' && steps.healing.outputs.enabled == 'true' && steps.policy.outputs.auto_merge_allowed == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HEAD_SHA: ${{ steps.idempotency.outputs.head_sha }}
@@ -265,8 +335,15 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.issue.number }}
           ISSUE_NUMBER: ${{ steps.review.outputs.issue_number }}
+          PIPELINE_PR: ${{ steps.policy.outputs.pipeline_pr }}
+          POLICY_BLOCKED: ${{ steps.policy.outputs.blocked }}
           REPO: ${{ github.repository }}
         run: |
+          if [ "$PIPELINE_PR" = "true" ] && [ "$POLICY_BLOCKED" = "true" ]; then
+            echo "Pipeline PR is policy-blocked and was not auto-merged. Skipping merge observation."
+            exit 0
+          fi
+
           # Poll for merge completion and close linked issues as a deterministic
           # backstop. The merge itself uses GH_AW_GITHUB_TOKEN so downstream
           # push/merge workflows can still fire normally.
@@ -313,8 +390,15 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.issue.number }}
           ISSUE_NUMBER: ${{ steps.review.outputs.issue_number }}
+          PIPELINE_PR: ${{ steps.policy.outputs.pipeline_pr }}
+          POLICY_BLOCKED: ${{ steps.policy.outputs.blocked }}
           REPO: ${{ github.repository }}
         run: |
+          if [ "$PIPELINE_PR" = "true" ] && [ "$POLICY_BLOCKED" = "true" ]; then
+            echo "Pipeline PR is policy-blocked and was not auto-merged. Skipping superseded PR cleanup."
+            exit 0
+          fi
+
           if [ -z "${ISSUE_NUMBER:-}" ]; then
             echo "No linked issue — skipping superseded PR check"
             exit 0
@@ -356,6 +440,9 @@ jobs:
           REVIEW_SUMMARY: ${{ steps.review.outputs.summary }}
           PR_NUMBER: ${{ github.event.issue.number }}
           ISSUE_NUMBER: ${{ steps.review.outputs.issue_number }}
+          PIPELINE_PR: ${{ steps.policy.outputs.pipeline_pr }}
+          POLICY_BLOCKED: ${{ steps.policy.outputs.blocked }}
+          AUTO_FOLLOW_UP_ALLOWED: ${{ steps.policy.outputs.auto_follow_up_allowed }}
           REPO: ${{ github.repository }}
         run: |
           VERDICT="$REVIEW_VERDICT"
@@ -377,6 +464,11 @@ jobs:
           echo "Review verdict: $VERDICT. Found $TOTAL open pipeline items."
 
           if [ "$VERDICT" = "APPROVE" ]; then
+            if [ "$PIPELINE_PR" = "true" ] && [ "$POLICY_BLOCKED" = "true" ] && [ "$AUTO_FOLLOW_UP_ALLOWED" != "true" ]; then
+              echo "Pipeline PR is policy-blocked. Skipping autonomous follow-up dispatch."
+              exit 0
+            fi
+
             # APPROVE path: dispatch repo-assist in scheduled mode for next issue
             gh workflow run repo-assist.lock.yml --repo "$REPO" || \
               echo "::warning::Could not dispatch repo-assist"
@@ -412,7 +504,10 @@ jobs:
       - name: Checkout workflow helpers
         uses: actions/checkout@v4
         with:
-          sparse-checkout: scripts/healing-control.sh
+          sparse-checkout: |
+            scripts/healing-control.sh
+            scripts/check-autonomy-policy.sh
+            autonomy-policy.yml
           sparse-checkout-cone-mode: false
 
       - name: Check healing pause switch
@@ -528,8 +623,75 @@ jobs:
             echo "PR #${PR_NUMBER} is already ready for review."
           fi
 
+      - name: Evaluate autonomy policy for autonomous merge (APPROVE only)
+        if: always() && github.event.inputs.verdict == 'APPROVE'
+        id: policy
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.inputs.pr_number }}
+          PR_TITLE: ${{ steps.review.outputs.pr_title }}
+          REPO: ${{ github.repository }}
+        run: |
+          if [ -z "${PR_TITLE:-}" ]; then
+            PR_TITLE=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json title --jq '.title')
+          fi
+
+          echo "blocked=false" >> "$GITHUB_OUTPUT"
+          echo "blocked_action=" >> "$GITHUB_OUTPUT"
+          echo "blocked_file=" >> "$GITHUB_OUTPUT"
+          echo "blocked_reason=" >> "$GITHUB_OUTPUT"
+
+          if [[ "$PR_TITLE" != "[Pipeline]"* ]]; then
+            echo "pipeline_pr=false" >> "$GITHUB_OUTPUT"
+            echo "auto_merge_allowed=false" >> "$GITHUB_OUTPUT"
+            echo "auto_follow_up_allowed=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "pipeline_pr=true" >> "$GITHUB_OUTPUT"
+
+          mapfile -t CHANGED_FILES < <(gh api "/repos/${REPO}/pulls/${PR_NUMBER}/files?per_page=100" --paginate --jq '.[].filename')
+
+          for FILE in "${CHANGED_FILES[@]}"; do
+            [ -n "$FILE" ] || continue
+
+            for ACTION in policy_artifact_change workflow_file_change; do
+              MATCH_JSON=$(bash scripts/check-autonomy-policy.sh match "$ACTION" "$FILE" autonomy-policy.yml)
+              MATCHED=$(printf '%s' "$MATCH_JSON" | jq -r '.matched')
+              MODE=$(printf '%s' "$MATCH_JSON" | jq -r '.mode')
+
+              if [ "$MATCHED" = "true" ] && [ "$MODE" = "human_required" ]; then
+                BLOCKED_REASON=$(printf '%s' "$MATCH_JSON" | jq -r '.requires_human_reason')
+                echo "blocked=true" >> "$GITHUB_OUTPUT"
+                echo "blocked_action=${ACTION}" >> "$GITHUB_OUTPUT"
+                echo "blocked_file=${FILE}" >> "$GITHUB_OUTPUT"
+                echo "blocked_reason=${BLOCKED_REASON}" >> "$GITHUB_OUTPUT"
+                echo "auto_merge_allowed=false" >> "$GITHUB_OUTPUT"
+                echo "auto_follow_up_allowed=false" >> "$GITHUB_OUTPUT"
+                echo "Autonomous merge blocked by ${ACTION} on ${FILE}"
+                exit 0
+              fi
+            done
+          done
+
+          echo "auto_merge_allowed=true" >> "$GITHUB_OUTPUT"
+          echo "auto_follow_up_allowed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Comment autonomy policy block on PR
+        if: steps.policy.outputs.blocked == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.inputs.pr_number }}
+          REPO: ${{ github.repository }}
+          BLOCKED_ACTION: ${{ steps.policy.outputs.blocked_action }}
+          BLOCKED_FILE: ${{ steps.policy.outputs.blocked_file }}
+          BLOCKED_REASON: ${{ steps.policy.outputs.blocked_reason }}
+        run: |
+          gh pr comment "$PR_NUMBER" --repo "$REPO" --body \
+            "Autonomous merge blocked by autonomy policy. File \`${BLOCKED_FILE}\` matched \`${BLOCKED_ACTION}\`. ${BLOCKED_REASON} Human review and manual merge are required for this PR."
+
       - name: Enable auto-merge (APPROVE only)
-        if: always() && github.event.inputs.verdict == 'APPROVE' && steps.healing.outputs.enabled == 'true'
+        if: always() && github.event.inputs.verdict == 'APPROVE' && steps.healing.outputs.enabled == 'true' && steps.policy.outputs.auto_merge_allowed == 'true'
         env:
           MERGE_TOKEN: ${{ secrets.GH_AW_GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.inputs.pr_number }}
@@ -549,7 +711,7 @@ jobs:
           fi
 
       - name: Record auto-merge evidence (APPROVE only)
-        if: always() && github.event.inputs.verdict == 'APPROVE' && steps.healing.outputs.enabled == 'true'
+        if: always() && github.event.inputs.verdict == 'APPROVE' && steps.healing.outputs.enabled == 'true' && steps.policy.outputs.auto_merge_allowed == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HEAD_SHA: ${{ steps.idempotency.outputs.head_sha }}
@@ -557,6 +719,10 @@ jobs:
           PR_TITLE: ${{ steps.review.outputs.pr_title }}
           REPO: ${{ github.repository }}
         run: |
+          if [ -z "${PR_TITLE:-}" ]; then
+            PR_TITLE=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json title --jq '.title')
+          fi
+
           if [[ "$PR_TITLE" != "[Pipeline]"* ]]; then
             echo "Non-pipeline PR — skipping auto-merge evidence status."
             exit 0
@@ -577,8 +743,15 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.inputs.pr_number }}
           ISSUE_NUMBER: ${{ steps.review.outputs.issue_number }}
+          PIPELINE_PR: ${{ steps.policy.outputs.pipeline_pr }}
+          POLICY_BLOCKED: ${{ steps.policy.outputs.blocked }}
           REPO: ${{ github.repository }}
         run: |
+          if [ "$PIPELINE_PR" = "true" ] && [ "$POLICY_BLOCKED" = "true" ]; then
+            echo "Pipeline PR is policy-blocked and was not auto-merged. Skipping merge observation."
+            exit 0
+          fi
+
           MERGED=false
           for i in $(seq 1 24); do
             sleep 5
@@ -633,8 +806,15 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.inputs.pr_number }}
           ISSUE_NUMBER: ${{ steps.review.outputs.issue_number }}
+          PIPELINE_PR: ${{ steps.policy.outputs.pipeline_pr }}
+          POLICY_BLOCKED: ${{ steps.policy.outputs.blocked }}
           REPO: ${{ github.repository }}
         run: |
+          if [ "$PIPELINE_PR" = "true" ] && [ "$POLICY_BLOCKED" = "true" ]; then
+            echo "Pipeline PR is policy-blocked and was not auto-merged. Skipping superseded PR cleanup."
+            exit 0
+          fi
+
           TARGET="${ISSUE_NUMBER:-}"
           if [ -z "$TARGET" ]; then
             TARGET=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json body \
@@ -681,6 +861,9 @@ jobs:
           REVIEW_SUMMARY: ${{ github.event.inputs.summary }}
           PR_NUMBER: ${{ github.event.inputs.pr_number }}
           ISSUE_NUMBER: ${{ steps.review.outputs.issue_number }}
+          PIPELINE_PR: ${{ steps.policy.outputs.pipeline_pr }}
+          POLICY_BLOCKED: ${{ steps.policy.outputs.blocked }}
+          AUTO_FOLLOW_UP_ALLOWED: ${{ steps.policy.outputs.auto_follow_up_allowed }}
           REPO: ${{ github.repository }}
         run: |
           VERDICT="${REVIEW_VERDICT:-$INPUT_VERDICT}"
@@ -702,6 +885,11 @@ jobs:
           echo "Review verdict: $VERDICT. Found $TOTAL open pipeline items."
 
           if [ "$VERDICT" = "APPROVE" ]; then
+            if [ "$PIPELINE_PR" = "true" ] && [ "$POLICY_BLOCKED" = "true" ] && [ "$AUTO_FOLLOW_UP_ALLOWED" != "true" ]; then
+              echo "Pipeline PR is policy-blocked. Skipping autonomous follow-up dispatch."
+              exit 0
+            fi
+
             gh workflow run repo-assist.lock.yml --repo "$REPO" || \
               echo "::warning::Could not dispatch repo-assist"
           else

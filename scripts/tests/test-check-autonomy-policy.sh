@@ -19,6 +19,15 @@ printf '%s' "$UNKNOWN_JSON" | jq -e '.found == false' >/dev/null
 printf '%s' "$UNKNOWN_JSON" | jq -e '.mode == "human_required"' >/dev/null
 printf '%s' "$UNKNOWN_JSON" | jq -e '.fail_closed == true' >/dev/null
 
+WORKFLOW_MATCH_JSON=$(bash "$SCRIPT" match workflow_file_change ".github/workflows/auto-dispatch.yml" "$POLICY")
+printf '%s' "$WORKFLOW_MATCH_JSON" | jq -e '.found == true' >/dev/null
+printf '%s' "$WORKFLOW_MATCH_JSON" | jq -e '.matched == true' >/dev/null
+printf '%s' "$WORKFLOW_MATCH_JSON" | jq -e '.mode == "human_required"' >/dev/null
+
+APP_MATCH_JSON=$(bash "$SCRIPT" match app_code_change "TicketDeflection/Program.cs" "$POLICY")
+printf '%s' "$APP_MATCH_JSON" | jq -e '.matched == true' >/dev/null
+printf '%s' "$APP_MATCH_JSON" | jq -e '.mode == "autonomous"' >/dev/null
+
 TMPDIR=$(mktemp -d)
 trap 'rm -rf "$TMPDIR"' EXIT
 

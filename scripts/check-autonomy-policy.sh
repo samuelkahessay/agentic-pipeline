@@ -6,6 +6,7 @@ usage() {
 Usage:
   check-autonomy-policy.sh validate [policy-path]
   check-autonomy-policy.sh resolve <action> [policy-path]
+  check-autonomy-policy.sh match <action> <target-path> [policy-path]
 USAGE
   exit 2
 }
@@ -24,12 +25,18 @@ case "$COMMAND" in
     ACTION_NAME="$1"
     POLICY_PATH="${2:-autonomy-policy.yml}"
     ;;
+  match)
+    [ "$#" -ge 2 ] || usage
+    ACTION_NAME="$1"
+    TARGET_PATH="$2"
+    POLICY_PATH="${3:-autonomy-policy.yml}"
+    ;;
   *)
     usage
     ;;
 esac
 
-ruby - "$COMMAND" "$POLICY_PATH" "${ACTION_NAME:-}" <<'RUBY'
+ruby - "$COMMAND" "$POLICY_PATH" "${ACTION_NAME:-}" "${TARGET_PATH:-}" <<'RUBY'
 require "date"
 require "json"
 require "yaml"
@@ -37,6 +44,7 @@ require "yaml"
 command = ARGV[0]
 policy_path = ARGV[1]
 action_name = ARGV[2]
+target_path = ARGV[3]
 
 def emit(payload, ok:)
   puts JSON.pretty_generate(payload)
@@ -146,6 +154,15 @@ def validate_policy(policy, path)
   errors
 end
 
+def target_matches?(pattern, target)
+  if pattern.end_with?("/**")
+    prefix = pattern.sub(%r{/\*\*$}, "/")
+    return target.start_with?(prefix)
+  end
+
+  File.fnmatch?(pattern, target, File::FNM_PATHNAME | File::FNM_DOTMATCH | File::FNM_EXTGLOB)
+end
+
 policy = load_policy(policy_path)
 errors = validate_policy(policy, policy_path)
 
@@ -172,6 +189,24 @@ defaults = policy.fetch("defaults")
 action = policy.fetch("actions").find { |entry| entry["action"] == action_name }
 
 if action
+  if command == "match"
+    matched_target = action["allowed_targets"].find { |pattern| target_matches?(pattern, target_path) }
+
+    emit({
+      ok: true,
+      path: policy_path,
+      found: true,
+      matched: !matched_target.nil?,
+      matched_target: matched_target,
+      target_path: target_path,
+      action: action["action"],
+      mode: action["default_mode"],
+      requires_human_reason: action["requires_human_reason"],
+      allowed_targets: action["allowed_targets"],
+      evidence_required: action["evidence_required"]
+    }, ok: true)
+  end
+
   emit({
     ok: true,
     path: policy_path,
@@ -181,6 +216,23 @@ if action
     requires_human_reason: action["requires_human_reason"],
     allowed_targets: action["allowed_targets"],
     evidence_required: action["evidence_required"]
+  }, ok: true)
+end
+
+if command == "match"
+  emit({
+    ok: true,
+    path: policy_path,
+    found: false,
+    matched: false,
+    matched_target: nil,
+    target_path: target_path,
+    action: action_name,
+    mode: defaults["unknown_action"],
+    requires_human_reason: "No explicit policy entry matched this action. Failing closed per defaults.",
+    allowed_targets: [],
+    evidence_required: [defaults["escalation_rule"]],
+    fail_closed: defaults["fail_closed"]
   }, ok: true)
 end
 
