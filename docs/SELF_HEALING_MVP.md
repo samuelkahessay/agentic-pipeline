@@ -1,28 +1,39 @@
 # Self-Healing MVP Runbook
 
-## Supported MVP Scope
+## What This Runbook Covers
 
-Week-one MVP support is currently validated for the `dotnet-azure` profile in
-[.deploy-profile](../.deploy-profile).
+This document covers the bounded self-healing sub-loop inside `prd-to-prod`.
+It does not describe the entire system. It documents the repair path for the
+current `.NET + Azure App Service` lane and the controls around it.
 
-This repository still contains profile-aware CI and deploy routing for Node and
-Docker, but the reproducible MVP claim in this runbook applies only to the
-current `.NET + Azure App Service` path.
+Week-one MVP support is currently validated only for the `dotnet-azure` profile
+in [`.deploy-profile`](../.deploy-profile). The repository still contains
+profile-aware CI and deploy routing for Node and Docker, but the reproducible
+MVP claim in this runbook applies only to the current `.NET + Azure` path.
 
 ## Autonomy Boundary
 
-This MVP is autonomous only on the pipeline-generated path:
+This runbook applies only to the pipeline-generated path.
 
 - Approved `[Pipeline]` PRs can be auto-merged by `pr-review-submit`.
-- Human-authored PRs still run through review and CI, but they remain
-  manually merged by default.
-- "Self-healing" in this runbook means retry, redispatch, repair, escalation,
-  and cleanup of pipeline incidents. It does not mean rollback automation or
-  automatic merge of arbitrary approved PRs.
+- Human-authored PRs still run through review and CI, but remain manual by
+  default.
+- Self-healing means retry, redispatch, repair, escalation, and cleanup of
+  bounded pipeline incidents.
+- Self-healing does not mean rollback automation, broad infrastructure mutation,
+  or automatic merge of arbitrary approved PRs.
+
+The control plane remains human-owned:
+
+- workflow definitions
+- `autonomy-policy.yml`
+- secrets and kill switches
+- branch protection and required checks
+- deploy policy and target changes
 
 ## Required Secrets
 
-Configure these repository secrets before using the autonomous loop:
+Configure these repository secrets before using the autonomous lane:
 
 - `COPILOT_GITHUB_TOKEN`
 - `GH_AW_GITHUB_TOKEN`
@@ -36,26 +47,26 @@ Configure these repository secrets before using the autonomous loop:
 Bootstrap configures some of these automatically, but the live repo must end up
 with all of them in place:
 
-- Auto-merge enabled
-- Delete branch on merge enabled
-- Squash merges allowed
-- Active `Protect main` ruleset on `main`
+- auto-merge enabled
+- delete branch on merge enabled
+- squash merges allowed
+- active `Protect main` ruleset on `main`
 - `Protect main` requires 1 approving review
 - `Protect main` requires the `review` status check
 - `Protect main` remains squash-only with admin bypass enabled
 
 ## Healing Pause Switch
 
-Use repository variable `PIPELINE_HEALING_ENABLED` for the stop-the-bleeding
+Use repository variable `PIPELINE_HEALING_ENABLED` as the stop-the-bleeding
 control:
 
 - unset or `true`: autonomous healing stays enabled
 - `false`: review submission and failure detection still run, but autonomous
   remediation and pipeline auto-merge are paused
 
-When paused, the workflows still record incident state and escalation evidence.
-They do not auto-dispatch `repo-assist`, repost repair commands, or arm
-pipeline PR auto-merge.
+When paused, workflows still record incident state and escalation evidence. They
+do not auto-dispatch `repo-assist`, repost repair commands, or arm pipeline PR
+auto-merge.
 
 ## Bootstrap Steps
 
@@ -76,7 +87,7 @@ The fastest local MVP check is:
 bash scripts/verify-mvp.sh --skip-audit
 ```
 
-That command runs the shell decision-logic tests plus:
+That command runs shell decision-logic tests plus:
 
 ```bash
 dotnet test TicketDeflection.sln
@@ -99,31 +110,32 @@ bash scripts/self-healing-drill.sh audit ff2f18746416dfb8ae8bfe1e414e031983a5fb7
 
 ## Live Drill Command
 
-Run a real canary failure only from a clean local `main` with push access:
+Run a real canary failure only from a clean local `main` with push access and a
+clear reason to mutate the live branch:
 
 ```bash
 bash scripts/self-healing-drill.sh run main_build_syntax
 ```
 
-This intentionally pushes a broken commit to `main` and relies on the pipeline
-to heal it.
+This intentionally pushes a broken commit to `main` and relies on the bounded
+repair loop to recover it.
 
 ## Observable Evidence
 
 For a passing audit or live drill, confirm all of the following evidence exists:
 
-- A failing CI or deploy run URL
-- A linked `[Pipeline] CI Build Failure` issue or `[CI Incident]` escalation
-- An auto-dispatch or requeue run URL
-- A repair PR URL
-- A green CI run URL on the repair PR
-- A merged commit on `main`
-- A successful main recovery run URL
-- A final drill JSON report under `drills/reports/`
+- a failing CI or deploy run URL
+- a linked `[Pipeline] CI Build Failure` issue or `[CI Incident]` escalation
+- an auto-dispatch or requeue run URL
+- a repair PR URL
+- a green CI run URL on the repair PR
+- a merged commit on `main`
+- a successful main recovery run URL
+- a final drill JSON report under `drills/reports/`
 
 For an approved `[Pipeline]` PR, you may also see an `auto-merge-armed` status
-evidence marker before the merge completes. Human-authored PRs will not emit
-that status because they are not auto-merged by default.
+marker before merge completes. Human-authored PRs do not emit that marker,
+because they are not auto-merged by default.
 
 ## Known Limitations
 
@@ -132,7 +144,8 @@ that status because they are not auto-merged by default.
 - Week-one MVP support is not claimed for profiles other than `dotnet-azure`.
 - Watchdog and requeue behavior are mostly redispatch logic, not root-cause
   diagnosis.
-- Human-authored PRs are not auto-merged by the autonomous loop.
+- `repo-assist` remains single-slot throughput.
+- Human-authored PRs are not auto-merged by the autonomous lane.
 
 ## Troubleshooting
 
@@ -175,8 +188,8 @@ Symptoms:
 
 What it means:
 
-- The self-healing loop can redispatch and escalate, but it does not yet
-  implement an automatic rebase or PR recreation strategy.
+- The repair loop can redispatch and escalate, but it does not implement
+  automatic rebase or PR recreation.
 
 ### Watchdog JSON parsing errors
 
@@ -193,7 +206,7 @@ What changed:
   object as a single line and avoiding shell word-splitting.
 
 If you still see these parsing errors, you are likely running an older commit
-without the hardened watchdog fix; update your branch to the latest `main`
+without the hardened watchdog fix. Update your branch to the latest `main`
 before debugging further.
 
 ### Deferred dispatch vs direct dispatch
@@ -205,9 +218,9 @@ Symptoms:
 
 Interpretation:
 
-- `direct`: auto-dispatch ran immediately.
-- `deferred`: repo-assist was already active, so dispatch was postponed.
-- `deferred->requeued`: the requeue workflow picked it up later.
+- `direct`: auto-dispatch ran immediately
+- `deferred`: `repo-assist` was already active, so dispatch was postponed
+- `deferred->requeued`: the requeue workflow picked it up later
 
 ### Approved PR did not auto-merge
 
@@ -219,20 +232,22 @@ Symptoms:
 
 Interpretation:
 
-- Only `[Pipeline]` PRs are auto-merged by the autonomous loop.
-- Human-authored PRs can use the same review workflows and status checks, but
-  they stay manual unless you intentionally change the merge policy.
+- only `[Pipeline]` PRs are auto-merged by the autonomous lane
+- human-authored PRs can use the same review workflows and status checks, but
+  they stay manual unless you intentionally change the merge policy
+- policy-blocked or sensitive-path changes remain stopped until a human clears
+  them
 
 ### Local tests pass but GitHub audit fails
 
 Symptoms:
 
-- `dotnet test TicketDeflection.sln` passes locally.
-- `bash scripts/self-healing-drill.sh audit <sha>` fails.
+- `dotnet test TicketDeflection.sln` passes locally
+- `bash scripts/self-healing-drill.sh audit <sha>` fails
 
 Typical causes:
 
-- Required secrets or labels are missing in the GitHub repo.
-- Repo settings differ from the documented `Protect main` ruleset.
-- The audited commit predates the current self-healing workflow behavior.
-- The repair path completed manually instead of via autonomous dispatch.
+- required secrets or labels are missing in the GitHub repo
+- repo settings differ from the documented `Protect main` ruleset
+- the audited commit predates the current self-healing workflow behavior
+- the repair path completed manually instead of via autonomous dispatch

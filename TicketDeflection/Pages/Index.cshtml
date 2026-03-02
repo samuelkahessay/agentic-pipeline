@@ -5,19 +5,19 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>prd-to-prod — autonomous software pipeline</title>
-    <meta name="description" content="Drop a PRD, get a deployed app. Zero human code. An autonomous GitHub pipeline that decomposes requirements, writes code, reviews its own work, and ships." />
+    <title>prd-to-prod — policy-bounded AI execution system</title>
+    <meta name="description" content="An AI-native delivery loop for software delivery. Humans own intent, policy, and escalation. AI executes decomposition, implementation, review, merge preparation, and first-line repair inside a bounded lane." />
     <!-- OpenGraph -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="prd-to-prod" />
     <meta property="og:url" content="https://prd-to-prod.azurewebsites.net" />
-    <meta property="og:title" content="prd-to-prod — Drop a PRD. Get a deployed app." />
-    <meta property="og:description" content="Autonomous software pipeline: AI decomposes requirements → writes code → reviews PRs → ships to main. Zero human code." />
+    <meta property="og:title" content="prd-to-prod — policy-bounded AI execution system" />
+    <meta property="og:description" content="A bounded AI-native delivery loop: humans own policy and escalation, AI executes decomposition, implementation, review, merge preparation, and first-line repair." />
     <meta property="og:image" content="https://prd-to-prod.azurewebsites.net/og-image.png" />
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="prd-to-prod — Drop a PRD. Get a deployed app." />
-    <meta name="twitter:description" content="Autonomous software pipeline: AI decomposes requirements → writes code → reviews PRs → ships to main. Zero human code." />
+    <meta name="twitter:title" content="prd-to-prod — policy-bounded AI execution system" />
+    <meta name="twitter:description" content="A bounded AI-native delivery loop: humans own policy and escalation, AI executes inside the lane." />
     <meta name="twitter:image" content="https://prd-to-prod.azurewebsites.net/og-image.png" />
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -148,9 +148,13 @@
             <span class="text-dim">//</span>
             <span class="text-dim"><a href="https://github.com/samuelkahessay/prd-to-prod" target="_blank" rel="noopener noreferrer" class="text-dim hover:text-accent transition-colors">samuelkahessay/prd-to-prod</a></span>
         </div>
-        <div class="flex items-center gap-2">
-            <span class="w-2 h-2 rounded-full bg-[var(--green)] inline-block"></span>
-            <span class="text-dim">pipeline: active</span>
+        <div class="flex items-center gap-4">
+            <a href="/operator" class="text-dim hover:text-accent transition-colors">/operator</a>
+            <a href="/pipeline" class="text-dim hover:text-accent transition-colors">/pipeline</a>
+            <span class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-[var(--green)] inline-block"></span>
+                <span class="text-dim">bounded lane: active</span>
+            </span>
         </div>
     </div>
 
@@ -158,32 +162,37 @@
 
         <!-- Hero -->
         <section class="mb-16">
-            <div class="text-xs text-dim mb-5">// autonomous software factory — powered by gh-aw</div>
+            <div class="text-xs text-dim mb-5">// policy-bounded AI delivery loop — software delivery as the proving ground</div>
             <h1 class="font-sans text-5xl sm:text-6xl font-bold text-white mb-4 leading-tight">
-                Drop a PRD.<br />Get a deployed app.
+                Rebuild software delivery<br />as a bounded AI execution system.
             </h1>
-            <p class="text-dim text-base mb-6">Human sets the intent. AI handles everything else.<span class="cursor-blink ml-1">█</span></p>
+            <p class="text-dim text-base mb-6">Humans own intent, policy, and escalation. AI executes inside the lane.<span class="cursor-blink ml-1">█</span></p>
             <p class="text-sm leading-relaxed max-w-2xl mb-8" style="color: var(--text)">
-                <a href="https://github.com/samuelkahessay/prd-to-prod" target="_blank" rel="noopener noreferrer" class="text-accent font-bold hover:underline">prd-to-prod</a> is an autonomous software pipeline powered by
+                <a href="https://github.com/samuelkahessay/prd-to-prod" target="_blank" rel="noopener noreferrer" class="text-accent font-bold hover:underline">prd-to-prod</a> is a policy-bounded AI execution system powered by
                 <a href="https://github.com/github/gh-aw" target="_blank" rel="noopener noreferrer" class="text-accent font-bold hover:underline">gh-aw</a> (GitHub Agentic Workflows).
-                It reads a product requirements document, decomposes it into GitHub Issues,
-                writes code for each one, opens Pull Requests, reviews its own work, merges to main —
-                and self-heals when things break. No human writes a single line of code.
+                It turns intent into a bounded delivery loop: decompose work, implement scoped changes,
+                review against acceptance criteria, enforce a merge gate, ship, and route common failures
+                back into repair or escalation. The interesting part is not code generation alone. It is
+                the full operating loop and the explicit place where the system stops.
             </p>
-            <a href="https://github.com/samuelkahessay/prd-to-prod" target="_blank" rel="noopener noreferrer" class="exec-btn inline-block" style="text-decoration: none; display: inline-block;">[ View on GitHub ]</a>
+            <div class="flex flex-wrap gap-3">
+                <a href="https://github.com/samuelkahessay/prd-to-prod" target="_blank" rel="noopener noreferrer" class="exec-btn inline-block" style="text-decoration: none; display: inline-block;">[ View on GitHub ]</a>
+                <a href="/operator" class="exec-btn inline-block" style="text-decoration: none; display: inline-block;">[ Open /operator ]</a>
+                <a href="/pipeline" class="exec-btn inline-block" style="text-decoration: none; display: inline-block;">[ Open /pipeline ]</a>
+            </div>
         </section>
 
         <!-- Pipeline schematic -->
         <section class="mb-16">
-            <div class="text-xs text-dim mb-5 uppercase tracking-widest">// system schematic — prd-to-prod pipeline</div>
+            <div class="text-xs text-dim mb-5 uppercase tracking-widest">// system schematic — bounded execution loop</div>
             <div class="panel p-6">
                 <div class="flex flex-col gap-5">
 
                     <div class="flex gap-4 items-start">
                         <span class="stage-label">INPUT</span>
                         <div>
-                            <div class="text-accent text-xs mb-1">[ product-requirements.md ]</div>
-                            <div class="text-dim text-xs leading-relaxed">"Build a ticket deflection service with classification, KB matching, and a live dashboard..."</div>
+                            <div class="text-accent text-xs mb-1">[ human intent + acceptance criteria ]</div>
+                            <div class="text-dim text-xs leading-relaxed">A human defines the work, the boundary, and the escalation rules.</div>
                         </div>
                     </div>
 
@@ -192,36 +201,36 @@
                     <div class="flex gap-4 items-start">
                         <span class="stage-label">STAGE 1</span>
                         <div>
-                            <div class="text-white font-bold text-sm mb-1">prd-decomposer</div>
-                            <div class="text-dim text-xs">Reads PRD → creates GitHub Issues with acceptance criteria and dependency graph</div>
-                            <div class="text-green text-xs mt-1">&gt; 13 issues created</div>
+                            <div class="text-white font-bold text-sm mb-1">policy + ingress</div>
+                            <div class="text-dim text-xs">The autonomy policy defines what is allowed. `prd-decomposer` and `auto-dispatch` translate intent into actionable pipeline work.</div>
+                            <div class="text-green text-xs mt-1">&gt; explicit lane entry</div>
                         </div>
                     </div>
 
                     <div class="flex gap-4 items-start">
                         <span class="stage-label">STAGE 2</span>
                         <div>
-                            <div class="text-white font-bold text-sm mb-1">repo-assist</div>
-                            <div class="text-dim text-xs">Picks up each issue in dependency order, writes code, opens one draft Pull Request per issue</div>
-                            <div class="text-green text-xs mt-1">&gt; 13 PRs opened</div>
+                            <div class="text-white font-bold text-sm mb-1">bounded execution</div>
+                            <div class="text-dim text-xs">`repo-assist` implements scoped issues, updates existing PRs, and handles bounded repair work on the same branch.</div>
+                            <div class="text-green text-xs mt-1">&gt; implementation inside policy</div>
                         </div>
                     </div>
 
                     <div class="flex gap-4 items-start">
                         <span class="stage-label">STAGE 3</span>
                         <div>
-                            <div class="text-white font-bold text-sm mb-1">pr-review-agent</div>
-                            <div class="text-dim text-xs">Reads full codebase and PR diff, posts verdict — APPROVE or REQUEST_CHANGES with remediation steps</div>
-                            <div class="text-green text-xs mt-1">&gt; 13 reviews submitted</div>
+                            <div class="text-white font-bold text-sm mb-1">review + merge gate</div>
+                            <div class="text-dim text-xs">`pr-review-agent` evaluates the full diff. `pr-review-submit` enforces policy, blocks human-required changes, and only arms auto-merge inside the lane.</div>
+                            <div class="text-green text-xs mt-1">&gt; control plane stays human-owned</div>
                         </div>
                     </div>
 
                     <div class="flex gap-4 items-start">
                         <span class="stage-label">STAGE 4</span>
                         <div>
-                            <div class="text-white font-bold text-sm mb-1">pr-review-submit + auto-merge</div>
-                            <div class="text-dim text-xs">On APPROVE: enables auto-merge → PR merges to main → linked issue closes automatically</div>
-                            <div class="text-green text-xs mt-1">&gt; 13 PRs merged to main</div>
+                            <div class="text-white font-bold text-sm mb-1">ship + recover + observe</div>
+                            <div class="text-dim text-xs">CI, deploy, failure routing, and the watchdog repair common failures. The decision ledger, `/operator`, and `/pipeline` expose what the system did and what it refused to do.</div>
+                            <div class="text-green text-xs mt-1">&gt; bounded autonomy with operator visibility</div>
                         </div>
                     </div>
 
@@ -230,22 +239,22 @@
                     <div class="flex gap-4 items-start">
                         <span class="stage-label">OUTPUT</span>
                         <div>
-                            <div class="text-accent text-xs mb-1">[ production-ready application ]</div>
-                            <div class="text-dim text-xs">C#/.NET 10 · ASP.NET Core · Razor Pages · EF Core · xUnit · Dockerfile</div>
+                            <div class="text-accent text-xs mb-1">[ shipped code + visible control boundary ]</div>
+                            <div class="text-dim text-xs">A running application is part of the proof. The stronger proof is that the authority boundary, repair loop, and operator surfaces are explicit.</div>
                         </div>
                     </div>
 
                 </div>
             </div>
             <div class="mt-3 text-xs text-dim">
-                <span class="text-accent">Self-healing:</span> pipeline-watchdog detects stalls, retries failures, cleans up superseded PRs. No human intervention required.
+                <span class="text-accent">Bounded repair:</span> watchdog and CI-failure routing handle common stalls and failures, but control-plane changes, deploy policy, and authority expansion remain human-owned.
             </div>
         </section>
 
         <!-- Run History -->
         <section class="mb-16">
             <div class="text-xs text-dim mb-1 uppercase tracking-widest">// build manifest — pipeline run history</div>
-            <div class="text-xs font-bold mb-5 text-accent">@Model.TotalRuns runs · @Model.TotalIssues+ issues · @Model.TotalPrs+ PRs · zero human code</div>
+            <div class="text-xs font-bold mb-5 text-accent">@Model.TotalRuns runs · @Model.TotalIssues+ issues · @Model.TotalPrs+ PRs · evidence of bounded autonomy</div>
             <div class="panel overflow-hidden">
                 <!-- Column headers (desktop) -->
                 <div class="hidden sm:grid px-4 py-2 text-xs" style="grid-template-columns: 44px 1fr 1fr 60px 60px 72px; border-bottom: 1px solid var(--border); color: var(--dim);">
@@ -519,22 +528,22 @@
                 <div class="text-dim mb-1">
                     REPO: <a href="https://github.com/samuelkahessay/prd-to-prod" class="text-accent hover:underline">github.com/samuelkahessay/prd-to-prod</a>
                 </div>
-                <div class="text-dim">Every issue, PR, review comment, and merge commit is public. The pipeline's git history is the source of truth.</div>
+                <div class="text-dim">Every issue, PR, review comment, merge commit, drill report, and live operator surface is part of the evidence. The git history is the source of truth.</div>
             </div>
         </section>
 
         <!-- Get Started -->
         <section class="mb-14">
-            <div class="text-xs text-dim mb-4 uppercase tracking-widest">// get started — run the pipeline yourself</div>
+            <div class="text-xs text-dim mb-4 uppercase tracking-widest">// get started — inspect or run the lane yourself</div>
             <div class="panel p-6 text-xs">
                 <div class="grid sm:grid-cols-2 gap-6">
                     <div>
-                        <div class="text-accent font-bold mb-3">four steps to your first autonomous run</div>
+                        <div class="text-accent font-bold mb-3">four steps to your first bounded run</div>
                         <ol class="space-y-3 text-dim leading-relaxed list-none">
                             <li><span class="text-accent">01 ·</span> fork <a href="https://github.com/samuelkahessay/prd-to-prod" class="text-accent hover:underline">samuelkahessay/prd-to-prod</a> and clone it locally</li>
-                            <li><span class="text-accent">02 ·</span> create <code class="text-white bg-opacity-10 px-1">docs/prd/my-feature.md</code> — describe what you want built, push to <code class="text-white px-1">main</code></li>
+                            <li><span class="text-accent">02 ·</span> create <code class="text-white bg-opacity-10 px-1">docs/prd/my-feature.md</code> — describe the work, acceptance criteria, and constraints, then push to <code class="text-white px-1">main</code></li>
                             <li><span class="text-accent">03 ·</span> open an issue linking your PRD, then comment <code class="text-white px-1">/decompose</code> — the decomposer creates implementation issues automatically</li>
-                            <li><span class="text-accent">04 ·</span> watch <a href="https://github.com/samuelkahessay/prd-to-prod/actions" class="text-accent hover:underline">GitHub Actions</a> — repo-assist implements issues as PRs, pr-review-agent reviews and merges them</li>
+                            <li><span class="text-accent">04 ·</span> watch <a href="https://github.com/samuelkahessay/prd-to-prod/actions" class="text-accent hover:underline">GitHub Actions</a>, <a href="/operator" class="text-accent hover:underline">/operator</a>, and <a href="/pipeline" class="text-accent hover:underline">/pipeline</a> — the system will either act inside policy or stop and escalate</li>
                         </ol>
                     </div>
                     <div>
@@ -543,6 +552,8 @@
                             <li>→ <a href="https://github.com/samuelkahessay/prd-to-prod" class="text-accent hover:underline">github.com/samuelkahessay/prd-to-prod</a></li>
                             <li>→ <a href="https://github.com/samuelkahessay/prd-to-prod/blob/main/AGENTS.md" class="text-accent hover:underline">AGENTS.md</a> — coding standards &amp; pipeline conventions</li>
                             <li>→ <a href="https://github.com/samuelkahessay/prd-to-prod/blob/main/docs/prd/ticket-deflection-prd.md" class="text-accent hover:underline">example PRD</a> — the PRD that built this app</li>
+                            <li>→ <a href="/operator" class="text-accent hover:underline">/operator</a> — queue, blocked actions, recent autonomous decisions</li>
+                            <li>→ <a href="/pipeline" class="text-accent hover:underline">/pipeline</a> — live pipeline view backed by GitHub state</li>
                             <li>→ <a href="https://github.com/github/gh-aw" class="text-accent hover:underline">gh-aw</a> — the agentic workflow engine powering this pipeline</li>
                         </ul>
                     </div>
@@ -565,7 +576,7 @@
                 <h2 class="font-sans text-xl font-bold text-white mb-2">Ticket Deflection Service</h2>
                 <p class="text-dim text-xs mb-6 leading-relaxed max-w-xl">
                     A complete C#/.NET application the pipeline built from a single PRD.
-                    Classifies, matches, and resolves support tickets through a multi-stage pipeline.
+                    It is the specimen output. The system above it is the point: a bounded AI delivery loop with explicit operator visibility and stop conditions.
                 </p>
 
                 <!-- Stats as instrument panels -->
@@ -609,7 +620,7 @@
         </section>
 
         <div class="text-center text-dim text-xs mt-12 pb-4">
-            Built end-to-end by an autonomous AI pipeline ·
+            Built and operated through a policy-bounded AI delivery loop ·
             <a href="https://github.com/samuelkahessay/prd-to-prod" class="hover:text-accent transition-colors">prd-to-prod</a> ·
             <a href="https://github.com/github/gh-aw" class="hover:text-accent transition-colors">gh-aw</a> ·
             <a href="https://github.com/samuelkahessay/prd-to-prod/blob/main/AGENTS.md" class="hover:text-accent transition-colors">AGENTS.md</a> ·

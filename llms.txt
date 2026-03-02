@@ -1,24 +1,28 @@
 # prd-to-prod
 
-> Autonomous software pipeline powered by gh-aw (GitHub Agentic Workflows).
-> Issues labeled `pipeline` are implemented by AI agents. No human writes implementation code.
+> Policy-bounded AI execution system for software delivery.
+> Humans own intent, policy, escalation, and authority expansion. AI operates only inside the pipeline lane.
 
-## Agent Instructions
-- [AGENTS.md](AGENTS.md) — Coding standards, build commands, PR requirements
-- [autonomy-policy.yml](autonomy-policy.yml) — What agents can and cannot do autonomously
+## Core Artifacts
+- [AGENTS.md](AGENTS.md) — coding standards, PR rules, and repository conventions
+- [autonomy-policy.yml](autonomy-policy.yml) — machine-readable authority boundary
+- [docs/decision-ledger/README.md](docs/decision-ledger/README.md) — decision event schema
 
-## Architecture
-- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — System architecture
+## Workflow Groups
+- Ingress and routing — `auto-dispatch`, `auto-dispatch-requeue`, `prd-decomposer`
+- Execution lane — `repo-assist`, `pr-review-agent`, `pr-review-submit`
+- Delivery and recovery — CI, deploy, failure routing, watchdog, issue cleanup
+- Auxiliary governance — status reporting, diagnostics, simplification, duplication, security/compliance
 
-## Key Workflows
-- .github/workflows/auto-dispatch.yml — Dispatches repo-assist for pipeline issues
-- .github/workflows/ci-failure-issue.yml — Routes CI failures to repair
-- .github/workflows/pr-review-submit.yml — Submits reviews and arms auto-merge
+## Operator Surfaces
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — grouped architecture and boundary model
+- [docs/SELF_HEALING_MVP.md](docs/SELF_HEALING_MVP.md) — bounded self-healing runbook
+- `/operator` — queue, blocked actions, recent autonomous actions, metrics
+- `/pipeline` — live GitHub-backed pipeline visualization
 
-## Operations
-- [docs/SELF_HEALING_MVP.md](docs/SELF_HEALING_MVP.md) — Self-healing MVP runbook
-- [docs/decision-ledger/README.md](docs/decision-ledger/README.md) — Decision ledger format and usage
-
-## Configuration
-- .deploy-profile — Active deployment profile
-- .github/deploy-profiles/ — Stack-specific build/test/deploy commands
+## Human-Owned Control Plane
+- workflow files
+- policy changes
+- secrets and tokens
+- deploy policy
+- branch protection and merge-scope expansion

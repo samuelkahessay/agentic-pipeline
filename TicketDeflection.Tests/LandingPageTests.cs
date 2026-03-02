@@ -77,6 +77,24 @@ public class LandingPageTests : IClassFixture<WebApplicationFactory<Program>>
     }
 
     [Fact]
+    public async Task LandingPage_ContainsBoundedAutonomyNarrative()
+    {
+        var client = _factory.CreateClient();
+        var html = await client.GetStringAsync("/");
+        Assert.Contains("policy-bounded AI execution system", html);
+        Assert.Contains("Humans own intent, policy, and escalation", html);
+    }
+
+    [Fact]
+    public async Task LandingPage_ContainsOperatorAndPipelineLinks()
+    {
+        var client = _factory.CreateClient();
+        var html = await client.GetStringAsync("/");
+        Assert.Contains("href=\"/operator\"", html);
+        Assert.Contains("href=\"/pipeline\"", html);
+    }
+
+    [Fact]
     public async Task LandingPage_ContainsFooterWithGhAwLink()
     {
         var client = _factory.CreateClient();

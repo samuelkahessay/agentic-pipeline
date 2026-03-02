@@ -1,135 +1,144 @@
 # PRD to Prod
 
-A policy-bounded AI execution engine. Humans set intent and policy. AI executes within bounds.
+`prd-to-prod` is a policy-bounded AI execution system for software delivery.
+Humans define intent, policy, and escalation. AI executes decomposition,
+implementation, review, merge preparation, and first-line repair inside that
+boundary.
 
-An autonomous software pipeline that decomposes product requirements into
-GitHub Issues, implements them as Pull Requests, reviews its own code,
-auto-merges approved `[Pipeline]` PRs, and self-heals common pipeline failures --
-all within a formal autonomy policy that defines where AI authority starts and
-where it stops. Powered by [gh-aw](https://github.com/github/gh-aw) agentic
-workflows.
+Software delivery is the proving ground, not the whole point. This repository
+rebuilds a legacy workflow around modern AI: not as a suggestion layer on top of
+old CI/CD, but as an operating loop with explicit authority limits, real failure
+conditions, and visible operator controls.
 
-```
-  PRD ---------> Issues ---------> Code ----------> Review --------> Merge --> Ship
-  prd-decomposer  |   repo-assist    |   pr-review-agent  pr-review-submit
-                   |                  |       [policy gate]           |
-                   |                  |                               |
-                   +------------- loop until done -------------------+
-                                     |
-                              CI / Deploy
-                                     |
-              +----------------------+----------------------+
-              |                      |                      |
-        ci-failure-issue        ci-doctor           pipeline-watchdog
-        (repair loop)        (diagnostics)          (stall rescue)
-
-  ---- auxiliary (scheduled / manual) ----
-  code-simplifier        daily    simplify recently changed code
-  duplicate-code-detector daily    detect duplication patterns
-  security-compliance    manual   scan vulnerabilities before audit
-  pipeline-status        on-demand  project board sync
+```mermaid
+flowchart LR
+  H["Human Intent"] --> D["PRD Decomposer"]
+  P["Autonomy Policy"] --> R["Review + Merge Gate"]
+  D --> I["Pipeline Issues"]
+  I --> A["Repo Assist"]
+  A --> PR["Pipeline PR"]
+  PR --> RV["Review Agent"]
+  RV --> R
+  R --> M["Auto-merge or Manual Stop"]
+  M --> S["Deploy"]
+  S --> F["Failure Detection"]
+  F --> X["Repair or Escalate"]
+  X --> A
+  L["Decision Ledger + /operator + /pipeline"] --- R
+  L --- F
 ```
 
-**Who decides:** Human (policy owner, PRD author, break-glass operator)
-**What AI does:** Executes within policy -- decomposes, implements, reviews, merges, repairs
-**Where AI stops:** Control-plane changes, policy changes, secret rotation, deploy policy, branch protection
+## Human and AI Boundary
 
-## Autonomy Policy
+| Responsibility | Owner | Why |
+|---|---|---|
+| Product intent and acceptance criteria | Human | Defines the work and the success conditions |
+| Policy and authority boundary | Human | The system cannot redefine its own scope |
+| Decomposition, implementation, review, merge preparation, first-line repair | AI | This is the bounded execution lane |
+| Workflow changes, secrets, deploy policy, merge-scope expansion, branch protection | Human | Blast-radius expansion must stay human-owned |
 
-The system ships a machine-readable policy artifact
-([`autonomy-policy.yml`](autonomy-policy.yml)) that classifies every action the
-pipeline can take. The policy is human-owned and cannot be modified by the
-pipeline itself.
+The policy artifact is explicit and machine-readable in
+[`autonomy-policy.yml`](autonomy-policy.yml). Unknown actions fail closed to
+`human_required`.
 
-**Core defaults:**
+## Why This Exists
 
-| Default | Value | Effect |
-|---------|-------|--------|
-| `unknown_action` | `human_required` | Any action not listed in the policy requires human approval |
-| `fail_closed` | `true` | On ambiguity, the system stops and escalates |
-| `policy_owner` | `human` | Only humans can modify the policy file |
+Most software delivery loops were designed before modern AI could take on real
+cognitive work. The manual burden is no longer just writing code. It is
+triaging intent, decomposing work, moving state between tools, reviewing against
+requirements, merging safely, recovering from failures, and deciding when the
+system must stop.
 
-**Action classification:**
+This repo rebuilds that loop as an AI-native operating system with a
+human-owned control plane.
 
-| Action | Mode | Scope |
-|--------|------|-------|
-| Issue decomposition | `autonomous` | Convert PRDs into dependency-ordered issues |
-| App code change | `autonomous` | Implement or refine application and test code |
-| Documentation change | `autonomous` | Update docs that explain implemented behavior |
-| CI repair (existing PR) | `autonomous` | Fix failing pipeline PRs without scope expansion |
-| Auto-merge pipeline PR | `autonomous` | Arm auto-merge for approved `[Pipeline]` PRs |
-| Policy artifact change | `human_required` | Modify `autonomy-policy.yml` or authority definitions |
-| Workflow file change | `human_required` | Modify `.github/workflows/` or agent instructions |
-| Secret or token change | `human_required` | Create, rotate, or expose credentials or kill-switch variables |
-| Deploy policy change | `human_required` | Change deployment destinations or environment routing |
-| Merge scope expansion | `human_required` | Expand which PRs may be auto-merged |
-| Branch protection change | `human_required` | Modify rulesets, required checks, or push permissions |
+## System Loop
 
-**Merge-gate enforcement:** The PR review agent checks every PR against the
-autonomy policy before issuing a verdict. PRs that contain `human_required`
-actions without human approval are rejected at the merge gate.
+1. A human expresses intent as a PRD or issue with acceptance criteria.
+2. `prd-decomposer` turns that into dependency-ordered pipeline issues.
+3. `repo-assist` implements bounded work as `[Pipeline]` PRs.
+4. `pr-review-agent` evaluates the full diff against requirements and policy.
+5. `pr-review-submit` enforces the merge gate, arms auto-merge only inside
+   policy, and stops when work crosses the human boundary.
+6. CI, deploy, failure routing, and watchdog loops either repair bounded
+   failures or escalate to a human.
 
-## How the Pipeline Works
+The loop is visible rather than implicit. The repo now exposes both a decision
+ledger and operator-facing surfaces for live inspection.
 
-1. **Write a PRD** -- paste it in a GitHub Issue
-2. **`/decompose`** -- AI breaks it into issues with acceptance criteria and dependency ordering
-3. **`repo-assist`** -- AI implements each issue as a PR (branch, code, test, open)
-4. **`pr-review-agent`** -- AI reviews the full diff against acceptance criteria and autonomy policy
-5. **`pr-review-submit`** -- formal review + auto-merge for approved `[Pipeline]`
-   PRs + re-dispatch for the next issue
-6. **Self-healing** -- watchdog catches stalls, CI failures feed the repair loop,
-   and unresolved incidents escalate
+## Operator Surfaces
 
-The autonomous loop runs until every issue from the PRD is shipped. Human PRs
-can still use the same review workflows, but they remain outside the auto-merge
-path.
+- [`autonomy-policy.yml`](autonomy-policy.yml) — explicit authority boundary
+- [`docs/decision-ledger/README.md`](docs/decision-ledger/README.md) — event
+  schema for autonomous, blocked, and escalated decisions
+- [`/operator`](https://prd-to-prod.azurewebsites.net/operator) — current queue,
+  blocked actions, and metrics
+- [`/pipeline`](https://prd-to-prod.azurewebsites.net/pipeline) — live GitHub
+  pipeline visualization
+- [`drills/reports/`](drills/reports/) — historical self-healing evidence
 
-## Shipped So Far
+## Failure Modes and Limits
 
-Four complete apps built within policy bounds -- zero human implementation code written.
+What breaks first at scale is not raw code generation. It is the control plane.
+
+- External platform dependency: GitHub, Copilot, and Azure remain critical
+  dependencies.
+- Single-slot implementation throughput: `repo-assist` is still serialized.
+- Ambiguous failure signals: repair routing is only as good as the logs and
+  signatures it can extract.
+- No rollback automation: the system can repair and escalate, but it does not
+  automatically roll back bad deploys.
+- Human-owned control plane: workflow rules, secrets, deploy policy, and
+  authority expansion remain intentionally manual.
+
+## Evidence
+
+The proof is not a slogan about autonomy. It is observable behavior.
+
+### Completed Runs
 
 | Run | App | Stack | Tag |
-|-----|-----|-------|-----|
+|---|---|---|---|
 | 01 | [Code Snippet Manager](showcase/01-code-snippet-manager/) | Express + TypeScript | [`v1.0.0`](https://github.com/samuelkahessay/prd-to-prod/tree/v1.0.0) |
 | 02 | [Pipeline Observatory](showcase/02-pipeline-observatory/) | Next.js 14 + TypeScript | [`v2.0.0`](https://github.com/samuelkahessay/prd-to-prod/tree/v2.0.0) |
 | 03 | [DevCard](showcase/03-devcard/) | Next.js 14 + TypeScript + Framer Motion | [`v3.0.0`](https://github.com/samuelkahessay/prd-to-prod/tree/v3.0.0) |
 | 04 | [Ticket Deflection Service](https://prd-to-prod.azurewebsites.net/) | ASP.NET Core + C# | [`v4.0.0`](https://github.com/samuelkahessay/prd-to-prod/tree/v4.0.0) |
 
-Each run produces a different app with a different tech stack -- the pipeline is stack-agnostic.
+See [`showcase/`](showcase/) for run manifests, PR lists, and timelines.
 
-See [`showcase/`](showcase/) for detailed run reports.
+### Operational Proof
+
+- Historical drill audits in [`drills/reports/`](drills/reports/)
+- Live operator surface at
+  [`/operator`](https://prd-to-prod.azurewebsites.net/operator)
+- Live pipeline surface at
+  [`/pipeline`](https://prd-to-prod.azurewebsites.net/pipeline)
+- Public Git history, PRs, reviews, and workflow runs
 
 ## Quick Start
 
-Week-one MVP support is currently validated for the `dotnet-azure` profile.
-See [docs/SELF_HEALING_MVP.md](docs/SELF_HEALING_MVP.md) for the operator runbook.
+This is the shortest path to running or inspecting the bounded execution lane.
 
 ```bash
-# 1. Clone
 git clone https://github.com/samuelkahessay/prd-to-prod.git
 cd prd-to-prod
 
-# 2. Install gh-aw
 gh extension install github/gh-aw
-
-# 3. Bootstrap (creates labels, compiles workflows, seeds memory)
 bash scripts/bootstrap.sh
-
-# 4. Configure secrets
 gh aw secrets bootstrap
 
-# 5. Verify repo settings
-#    - auto-merge enabled
-#    - delete branch on merge enabled
-#    - active Protect main ruleset
+# Verify repo settings before relying on autonomous merge or repair:
+# - auto-merge enabled
+# - delete branch on merge enabled
+# - active Protect main ruleset on main
 
-# 6. Push
 git push
-
-# 7. Create an issue with your PRD, then comment: /decompose
 ```
 
-**Requirements:** GitHub account with Copilot subscription, GitHub CLI (`gh`) v2.0+, `gh-aw` extension.
+Then create an issue with your PRD and comment `/decompose`.
+
+For the current `.NET + Azure` path, see the operator runbook in
+[docs/SELF_HEALING_MVP.md](docs/SELF_HEALING_MVP.md).
 
 ### Required Secrets
 
@@ -149,19 +158,19 @@ git push
 ### Emergency Controls
 
 Set repository variable `PIPELINE_HEALING_ENABLED=false` to pause autonomous
-healing. Review submission and failure detection still run, but auto-dispatch,
-watchdog remediation, repair-command posting, and pipeline auto-merge are
-skipped until the variable is unset or set back to `true`.
-
-The healing pause switch is classified as a `secret_or_token_change` action in
-the autonomy policy -- human-owned, not modifiable by the pipeline.
+healing. Detection, review, and incident recording still run. Dispatch,
+repair-command reposts, watchdog remediation, and pipeline auto-merge stop until
+the variable is restored.
 
 ## Further Reading
 
-- [**Autonomy Policy**](autonomy-policy.yml) -- the machine-readable policy artifact
-- [**Architecture**](docs/ARCHITECTURE.md) -- workflow details, design decisions, self-healing mechanics
-- [**Self-Healing MVP**](docs/SELF_HEALING_MVP.md) -- setup, verification steps, drill commands
-- [**Why gh-aw**](docs/why-gh-aw.md) -- rationale for the gh-aw + GitHub Actions split
+- [**Autonomy Policy**](autonomy-policy.yml) — the human-owned boundary artifact
+- [**Architecture**](docs/ARCHITECTURE.md) — workflow grouping, operator
+  surfaces, and design decisions
+- [**Self-Healing MVP**](docs/SELF_HEALING_MVP.md) — setup, verification, and
+  drill runbook
+- [**Why gh-aw**](docs/why-gh-aw.md) — why deterministic workflows remain the
+  authority layer
 
 ## License
 

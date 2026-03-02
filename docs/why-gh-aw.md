@@ -1,24 +1,32 @@
 # Why gh-aw: Agentic Workflows vs. Standard GitHub Actions
 
-gh-aw (GitHub Agentic Workflows) entered [technical preview on February 13, 2026](https://github.blog/changelog/2026-02-13-github-agentic-workflows-are-now-in-technical-preview/). This document captures the rationale for using it alongside standard GitHub Actions in this pipeline, while the design decisions are still fresh.
+gh-aw (GitHub Agentic Workflows) entered
+[technical preview on February 13, 2026](https://github.blog/changelog/2026-02-13-github-agentic-workflows-are-now-in-technical-preview/).
+This document explains why `prd-to-prod` uses it alongside standard GitHub
+Actions instead of treating either tool as the whole system.
 
 ## What gh-aw actually is
 
-gh-aw is an open-source CLI extension (`gh extension install github/gh-aw`) built primarily in Go. It was created as a collaboration between GitHub Next, Microsoft Research, and Azure Core Upstream, and is [MIT-licensed](https://github.com/github/gh-aw).
+gh-aw is an open-source CLI extension (`gh extension install github/gh-aw`)
+built primarily in Go. It was created as a collaboration between GitHub Next,
+Microsoft Research, and Azure Core Upstream, and is
+[MIT-licensed](https://github.com/github/gh-aw).
 
-The core idea: you write a **Markdown file** (`.github/workflows/<name>.md`) with YAML frontmatter for triggers and permissions, and a natural language body describing what the agent should do. Then `gh aw compile` generates a hardened GitHub Actions YAML file (`.lock.yml`) that runs an AI coding agent in a containerized environment.
+The core idea is simple: you write a Markdown workflow with YAML frontmatter and
+a natural-language body. `gh aw compile` turns that into a hardened GitHub
+Actions workflow that runs an AI coding agent in a containerized environment.
 
 ```
-.github/workflows/repo-assist.md      ← you write this (natural language)
+.github/workflows/repo-assist.md       ← human-authored workflow spec
         │
-        │  gh aw compile
+        │ gh aw compile
         ▼
-.github/workflows/repo-assist.lock.yml ← gh-aw generates this (Actions YAML)
+.github/workflows/repo-assist.lock.yml ← generated Actions workflow
 ```
 
-### Supported agents
+## Supported agents
 
-gh-aw is not tied to a single model. It supports three engines:
+gh-aw is not tied to one model provider.
 
 | Engine | Secret required |
 |---|---|
@@ -26,140 +34,150 @@ gh-aw is not tied to a single model. It supports three engines:
 | Claude (Anthropic) | `ANTHROPIC_API_KEY` |
 | Codex (OpenAI) | `OPENAI_API_KEY` |
 
-This repo uses Copilot (gpt-5) for all four agentic workflows.
+This repo currently uses gh-aw for decomposition, implementation, review,
+status reporting, diagnostics, code simplification, duplicate detection, and
+security/compliance scans.
 
-### Security model
+## Security model
 
-gh-aw takes a defense-in-depth approach — this is one of its strongest design choices compared to running agents directly in Actions YAML with broad permissions:
+gh-aw takes a defense-in-depth approach, which is one of its strongest design
+choices compared to running an LLM directly inside handwritten YAML with broad
+permissions:
 
-- **Read-only by default** — workflows cannot write unless explicitly granted
-- **Safe outputs** — write operations (comments, issues, PRs) go through sanitized, validated channels rather than raw API calls
-- **Sandboxed execution** — tool allowlisting restricts what the agent can invoke
-- **Network isolation** — agents cannot make arbitrary network calls
-- **SHA-pinned dependencies** — supply chain security baked into the compiled output
-- **Compile-time validation** — `gh aw compile` catches configuration errors before runtime
-- **Human approval gates** — critical operations can require human sign-off
-
-### Cost
-
-When using Copilot as the engine, each workflow run typically costs ~2 premium requests — one for the agent work, one for guardrail validation.
+- read-only by default
+- sanitized write channels for issues, comments, and PRs
+- sandboxed execution and tool allowlisting
+- network isolation
+- SHA-pinned dependencies in compiled output
+- compile-time validation
+- support for human approval gates where needed
 
 ## The core distinction
 
-GitHub Actions is a **deterministic CI/CD system**. You define YAML workflows that run predefined steps — build, test, deploy. Every run follows the same path. This works well when you know exactly what needs to happen.
-
-gh-aw is an **agentic execution engine**. Instead of fixed steps, an LLM agent receives a prompt, reads context (issues, diffs, the codebase), reasons about what to do, and takes action. The path through the workflow is decided at runtime by the agent.
+GitHub Actions is a deterministic control plane. You define explicit steps and
+state transitions. gh-aw is an agentic execution engine. It is useful when the
+job requires reading context, choosing an approach, and generating work rather
+than following a fixed script.
 
 ```
-GitHub Actions:    trigger → step 1 → step 2 → step 3 → done
-gh-aw:             trigger → agent reads context → agent reasons → agent acts → verifies → done
+GitHub Actions: trigger → route → validate → enforce → deploy
+gh-aw:          trigger → read context → reason → act → verify
 ```
 
-The moment a workflow requires **judgment** — interpreting a natural language spec, deciding which files to change, choosing an implementation approach — Actions becomes awkward. You end up encoding decision-making into a system designed for deterministic execution. gh-aw is built for exactly that gap.
+The moment a workflow requires judgment, standard Actions becomes awkward. The
+moment a workflow becomes a safety boundary, an unconstrained agent becomes the
+wrong tool. This repo uses both because they solve different problems.
 
-GitHub frames this as **"Continuous AI"** — a complement to traditional CI/CD, not a replacement. The [six use case categories](https://github.blog/ai-and-ml/automate-repository-tasks-with-github-agentic-workflows/) they identify are: continuous triage, continuous documentation, continuous code simplification, continuous test improvement, continuous quality hygiene, and continuous reporting.
+## How this repo splits the work
 
-## How this pipeline splits the work
+The rule is:
 
-This repo uses both. The split follows a simple rule: **deterministic logic stays in Actions, judgment goes to gh-aw.**
+**deterministic workflows own authority; gh-aw owns bounded execution.**
 
-### Standard GitHub Actions (deterministic)
+### Standard GitHub Actions
+
+These workflows are routing, guard logic, deploy, and state transitions.
 
 | Workflow | Purpose |
 |---|---|
-| `dotnet-ci.yml` | Build and test on every PR |
-| `deploy-azure.yml` | Build, publish, deploy to Azure on merge |
-| `copilot-setup-steps.yml` | Environment setup (install .NET SDK, gh-aw) |
-| `close-issues.yml` | Parse PR body for `Closes #N`, close linked issues |
-| `auto-dispatch.yml` | Ingress guard — accept any `pipeline` issue, classify actionability, debounce, then dispatch |
-| `pr-review-submit.yml` | Parse `[PIPELINE-VERDICT]` comment, submit formal GH review, enable auto-merge for approved `[Pipeline]` PRs, dispatch next cycle |
-| `ci-failure-issue.yml` | Extract failure logs, post `/repo-assist` repair command to linked issue |
-| `ci-failure-resolve.yml` | Update incident comment to "resolved" when CI passes after a failure |
-| `pipeline-watchdog.yml` | Cron stall detector — retry stuck repairs, escalate orphaned issues |
+| `auto-dispatch.yml` | Ingress guard: accepts `pipeline` issues, classifies actionability, debounces, dispatches |
+| `auto-dispatch-requeue.yml` | Picks up the next deferred issue |
+| `pr-review-submit.yml` | Parses verdicts, enforces the merge gate, arms auto-merge only inside policy |
+| `dotnet-ci.yml`, `ci-node.yml`, `ci-docker.yml` | Deterministic CI |
+| `deploy-router.yml`, `deploy-azure.yml`, `deploy-vercel.yml`, `deploy-docker.yml` | Deterministic deploy path |
+| `ci-failure-issue.yml` | Converts failed CI or deploy runs into repair commands or escalations |
+| `ci-failure-resolve.yml` | Marks repair incidents resolved |
+| `pipeline-watchdog.yml` | Stall detection, retry, redispatch, and escalation |
+| `close-issues.yml` | Deterministic issue cleanup on merge |
 
-These workflows are routing, guard logic, state transitions, and deployment. They follow fixed rules: if X then Y. No ambiguity, no judgment needed.
+These workflows are where policy becomes real. They are the authority layer.
 
-This repo also keeps an explicit autonomy boundary: the autonomous merge path is
-restricted to pipeline-generated PRs whose titles start with `[Pipeline]`.
-Human-authored PRs can reuse the same CI and review workflows, but they are
-manually merged by default.
+### gh-aw workflows
 
-### gh-aw agentic workflows (LLM-powered)
+These workflows do the work that actually requires interpretation and judgment.
 
-| Workflow | Source | Purpose |
-|---|---|---|
-| `repo-assist.lock.yml` | `repo-assist.md` | Read pipeline issues, explore codebase, write code, open draft PRs, fix CI failures |
-| `pr-review-agent.lock.yml` | `pr-review-agent.md` | Read full PR diff + linked issue acceptance criteria, produce structured APPROVE/REQUEST_CHANGES verdict |
-| `prd-decomposer.lock.yml` | `prd-decomposer.md` | Break a PRD into atomic implementation issues with acceptance criteria and dependency ordering |
-| `pipeline-status.lock.yml` | `pipeline-status.md` | Generate daily rolling status report across all pipeline work |
+| Workflow | Purpose |
+|---|---|
+| `prd-decomposer.lock.yml` | Turns a PRD into dependency-ordered issues with acceptance criteria |
+| `repo-assist.lock.yml` | Implements issues, maintains PRs, handles review feedback, repairs bounded failures |
+| `pr-review-agent.lock.yml` | Reviews the full diff against requirements and policy |
+| `pipeline-status.lock.yml` | Produces the rolling status issue |
+| `ci-doctor.lock.yml` | Diagnoses CI failure patterns |
+| `code-simplifier.lock.yml` | Proposes simplifications in recently changed code |
+| `duplicate-code-detector.lock.yml` | Finds duplication patterns |
+| `security-compliance.lock.yml` | Runs targeted security and compliance analysis |
 
-These workflows require reading, reasoning, and generating. An issue says "add rate limiting to the API" — the agent has to figure out which files exist, what patterns the codebase uses, and how to implement it. No amount of YAML conditionals can do that.
-
-### The naming convention
-
-The `.md` → `.lock.yml` pair is fundamental to gh-aw. You author in Markdown, `gh aw compile` produces the lock file. The `.lock.yml` is what GitHub Actions actually runs. Standard workflows use plain `.yml` with no Markdown source. The distinction is visible at a glance in the file listing.
+These workflows operate inside the human-owned control plane. They do not get to
+redefine it.
 
 ## Why gh-aw makes sense here
 
-### 1. It closes the "last mile" gap
+### 1. It closes the judgment gap
 
-The industry has automated building, testing, and deploying for years. But writing code remained manual. gh-aw puts an agent in that gap — a design brief (GitHub issue) goes in, a working PR comes out. This pipeline chains that capability into a loop: decompose → implement → review → auto-merge approved pipeline PRs → repeat.
+CI/CD has long automated build, test, and deploy. It did not automate turning a
+natural-language spec into a scoped implementation plan and a concrete PR. gh-aw
+fills that gap.
 
-### 2. Natural language becomes the interface
+### 2. Natural language becomes an operational interface
 
-In this repo, humans write issues as product specs (problem, solution, acceptance criteria). The pipeline handles implementation. The "programming language" is English with verifiable acceptance criteria. This is a genuine shift in abstraction level — the human role moves from writing code to writing design briefs.
+In this repo, humans write product intent and acceptance criteria. The AI lane
+handles decomposition, implementation, review, and first-line repair inside
+policy. That is a meaningful shift in responsibility, not just a faster code
+assistant.
 
-### 3. Agents compose into a pipeline
+### 3. Multiple agents can cooperate without owning the control plane
 
-This isn't a single agent chat session. Multiple agents with different roles form a pipeline with checkpoints:
+This is not one chat agent doing everything. Decomposition, implementation,
+review, reporting, and diagnostics are split into separate agents with explicit
+contracts, while GitHub Actions keeps the routing and safety boundaries
+deterministic.
 
-- `prd-decomposer` breaks down the spec
-- `repo-assist` implements each piece
-- `pr-review-agent` reviews against acceptance criteria
-- `pr-review-submit` (Actions) enforces the merge gate
+### 4. Deterministic scaffolding is the point
 
-Each stage has a defined contract. The review agent doesn't trust the implementation agent — it independently verifies against the original spec. This is more robust than a single agent doing everything.
+The surrounding Actions layer provides:
 
-### 4. The deterministic scaffolding matters
+- ingress control
+- policy enforcement
+- identity separation
+- deploy routing
+- incident state
+- stall recovery
 
-The agentic workflows don't operate in a vacuum. They're surrounded by deterministic Actions that provide:
+That scaffolding is what turns agentic work into a bounded system instead of a
+demo.
 
-- **Guard rails** — `auto-dispatch` prevents flooding, `pr-review-submit` defaults to REQUEST_CHANGES on unparseable verdicts
-- **Self-healing** — `ci-failure-issue` turns build failures into repair tasks, `pipeline-watchdog` catches stalls every 30 minutes
-- **Identity separation** — the Copilot agent can't approve its own PRs; `github-actions[bot]` submits the formal review
-
-This is the key architectural insight: **Actions form the nervous system, gh-aw agents are the brain.** Neither replaces the other.
-
-## When gh-aw makes more sense than standard Actions
+## When gh-aw fits better than standard Actions
 
 | Scenario | Standard Actions | gh-aw |
 |---|---|---|
 | Run tests on every PR | Great fit | Overkill |
-| Deploy to staging on merge | Great fit | Overkill |
-| Implement a feature from a natural language spec | Cannot do this | Built for this |
-| Fix a bug described in an issue | Cannot do this | Built for this |
-| Review a PR against acceptance criteria | Cannot do this | Natural fit |
-| Decompose a PRD into ordered tasks | Cannot do this | Natural fit |
-| Adaptive error recovery (read logs, reason, fix) | Rigid retry logic | Agent reasons about the failure |
-| Triage and label incoming issues | Fragile heuristics | Natural fit |
-| Generate status reports from live repo state | Template-based at best | Natural fit |
-| Route events and enforce state machines | Great fit | Overkill |
+| Deploy on merge | Great fit | Overkill |
+| Decompose a PRD into ordered tasks | Poor fit | Natural fit |
+| Implement a feature from a natural-language issue | Poor fit | Natural fit |
+| Review a PR against acceptance criteria | Poor fit | Natural fit |
+| Diagnose a CI failure pattern | Limited | Natural fit |
+| Enforce a merge boundary or ruleset | Great fit | Wrong authority layer |
 
 ## When gh-aw does not make sense
 
-- **Deterministic, well-defined tasks** — if you know the exact steps, Actions is simpler, cheaper, and more predictable
-- **High-frequency, low-latency jobs** — agent reasoning adds latency and cost (~2 premium requests per run)
-- **Security-critical deployment gates** — an agent making autonomous decisions about production deploys is a risk most teams would not accept today
-- **Strict auditability requirements** — deterministic workflows produce predictable audit trails; agentic ones are harder to trace
+- deterministic, well-defined tasks
+- high-frequency, low-latency jobs
+- control-plane changes such as rulesets, secrets, or deploy policy
+- any step where widening authority would be more dangerous than waiting for a
+  human
 
 ## The bottom line
 
-gh-aw does not replace GitHub Actions. It fills a role that Actions was never designed for: turning intent into implementation. The two work best together — Actions handling the predictable machinery of CI/CD, gh-aw handling the tasks that require understanding and judgment.
+gh-aw is not a replacement for GitHub Actions. In this repo it is the bounded
+execution layer inside a human-owned control plane. Actions keep the authority,
+state transitions, and merge boundary deterministic. gh-aw handles the work that
+requires reading, reasoning, and generating.
+
+That split is why the system is useful.
 
 ## References
 
-- [gh-aw repository](https://github.com/github/gh-aw) (MIT license)
-- [Technical preview announcement](https://github.blog/changelog/2026-02-13-github-agentic-workflows-are-now-in-technical-preview/) (Feb 13, 2026)
-- [Blog: Automate repository tasks with GitHub Agentic Workflows](https://github.blog/ai-and-ml/automate-repository-tasks-with-github-agentic-workflows/)
+- [gh-aw repository](https://github.com/github/gh-aw)
+- [Technical preview announcement](https://github.blog/changelog/2026-02-13-github-agentic-workflows-are-now-in-technical-preview/)
+- [Automate repository tasks with GitHub Agentic Workflows](https://github.blog/ai-and-ml/automate-repository-tasks-with-github-agentic-workflows/)
 - [Official documentation](https://github.github.com/gh-aw/)
-- [Sample workflow pack](https://github.com/githubnext/agentics) (50+ examples)
