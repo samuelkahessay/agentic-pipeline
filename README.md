@@ -12,31 +12,30 @@ conditions, and visible operator controls.
 
 ```mermaid
 flowchart TD
-  CP["Control Plane"]:::section
-  H["Human Intent"]
-  P["Autonomy Policy"]
+  subgraph C["Human-Owned Control Plane<br/><br/>"]
+    H["Human Intent"]
+    P["Autonomy Policy"]
+  end
 
-  EL["Execution Lane"]:::section
-  D["PRD Decomposer"] --> I["Pipeline Issues"]
-  I --> A["Repo Assist Agent"]
-  A --> PR["Pipeline PR"]
-  PR --> RV["Review Agent"]
-  RV --> R["Review + Merge Gate"]
+  subgraph E["AI Execution Lane<br/>"]
+    D["PRD Decomposer"] --> I["Pipeline Issues"]
+    I --> A["Repo Assist Agent"]
+    A --> PR["Pipeline PR"]
+    PR --> RV["Review Agent"]
+    RV --> R["Review + Merge Gate"]
+  end
 
-  DR["Delivery and Recovery"]:::section
-  M{"Auto-merge or Manual Stop?"}
-  S["Deploy"]
-  F["Failure Detection"]
-  X{"Repair or Escalate?"}
-  HD["Human Decision"]
+  subgraph O["Delivery and Recovery<br/>"]
+    M{"Auto-merge or Manual Stop?"}
+    S["Deploy"]
+    F["Failure Detection"]
+    X{"Repair or Escalate?"}
+    HD["Human Decision"]
+  end
 
-  CP --> H
-  CP --> P
   H --> D
   P --> R
-  EL --> D
   R --> M
-  DR --> M
   M -->|Auto| S
   M -->|Stop| HD
   S --> F
@@ -47,7 +46,6 @@ flowchart TD
   L["Decision Ledger /operator /pipeline"]:::observe -. observes .-> R
   L -. observes .-> F
 
-  classDef section fill:#111827,stroke:#9ca3af,color:#f3f4f6,font-weight:bold;
   classDef observe fill:#0b1220,stroke:#60a5fa,color:#dbeafe;
 ```
 
