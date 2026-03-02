@@ -39,6 +39,7 @@ done
 CHECKS=(
   "bash scripts/tests/test-ci-failure-context.sh"
   "bash scripts/tests/test-classify-pipeline-issue.sh"
+  "bash scripts/tests/test-pipeline-watchdog.sh"
   "bash scripts/tests/test-render-ci-repair-command.sh"
   "bash scripts/tests/test-run-lifecycle-lib.sh"
   "bash scripts/tests/test-self-healing-drill-dispatch-substate.sh"

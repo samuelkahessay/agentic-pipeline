@@ -1,0 +1,487 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+REPO="${REPO:?REPO environment variable is required}"
+STATE_MARKER='<!-- ci-repair-state:v1'
+STALE_THRESHOLD=1800
+ESCALATE_THRESHOLD=7200
+MAX_REPAIR_ATTEMPTS=2
+NOW=$(date -u +%s)
+NOW_ISO=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+ACTIONS_TAKEN=0
+LABEL_NAMES=$(gh label list --repo "$REPO" --limit 200 | awk '{print $1}')
+
+cd "$ROOT_DIR"
+
+has_label() {
+  local label=$1
+  printf '%s\n' "$LABEL_NAMES" | grep -qx "$label"
+}
+
+add_pr_label() {
+  local pr_number=$1
+  local label=$2
+  if has_label "$label"; then
+    gh pr edit "$pr_number" --repo "$REPO" --add-label "$label" >/dev/null 2>&1 || \
+      echo "::warning::Could not add label '$label' to PR #${pr_number}"
+  fi
+}
+
+remove_pr_label() {
+  local pr_number=$1
+  local label=$2
+  if has_label "$label"; then
+    gh pr edit "$pr_number" --repo "$REPO" --remove-label "$label" >/dev/null 2>&1 || true
+  fi
+}
+
+read_marker_field() {
+  local body=$1
+  local field=$2
+  printf '%s\n' "$body" | sed -n "s/^${field}=//p" | head -1
+}
+
+find_marker_comment() {
+  local item_number=$1
+  local marker=$2
+  local comments_json
+  comments_json=$(gh api "/repos/${REPO}/issues/${item_number}/comments?per_page=100" 2>/dev/null || echo '[]')
+  printf '%s' "$comments_json" | jq -c --arg marker "$marker" '[.[] | select(.body | contains($marker))] | last // {}'
+}
+
+upsert_comment() {
+  local item_number=$1
+  local comment_id=$2
+  local body=$3
+  local payload
+  payload=$(mktemp)
+  jq -n --arg body "$body" '{body: $body}' > "$payload"
+  if [ -n "$comment_id" ]; then
+    gh api --method PATCH "/repos/${REPO}/issues/comments/${comment_id}" --input "$payload" >/dev/null
+  else
+    gh api --method POST "/repos/${REPO}/issues/${item_number}/comments" --input "$payload" >/dev/null
+  fi
+  rm -f "$payload"
+}
+
+render_state_body() {
+  local pr_number=$1
+  local status=$2
+  local linked_issue=$3
+  local head_sha=$4
+  local head_branch=$5
+  local failure_run_id=$6
+  local failure_run_url=$7
+  local failure_type=$8
+  local failure_signature=$9
+  local attempt_count=${10}
+  local failure_summary=${11}
+  local failure_excerpt=${12}
+  printf '%s\n' \
+    "${STATE_MARKER}" \
+    "status=${status}" \
+    "pr_number=${pr_number}" \
+    "linked_issue=${linked_issue}" \
+    "head_sha=${head_sha}" \
+    "head_branch=${head_branch}" \
+    "failure_run_id=${failure_run_id}" \
+    "failure_run_url=${failure_run_url}" \
+    "failure_type=${failure_type}" \
+    "failure_signature=${failure_signature}" \
+    "attempt_count=${attempt_count}" \
+    "updated_at=${NOW_ISO}" \
+    "-->" \
+    "## CI Repair Incident" \
+    "" \
+    "- **Status**: ${status}" \
+    "- **Linked Issue**: #${linked_issue}" \
+    "- **Run**: ${failure_run_url}" \
+    "- **Branch**: \`${head_branch}\`" \
+    "- **Head SHA**: \`${head_sha}\`" \
+    "- **Failure Type**: ${failure_type}" \
+    "- **Failure Signature**: \`${failure_signature}\`" \
+    "- **Failure Summary**: ${failure_summary}" \
+    "- **Attempt Count**: ${attempt_count}" \
+    "- **Last Updated**: ${NOW_ISO}" \
+    "" \
+    "### Failure Excerpt" \
+    '```text' \
+    "${failure_excerpt}" \
+    '```'
+}
+
+render_incident_body() {
+  local pr_number=$1
+  local pr_url=$2
+  local head_branch=$3
+  local head_sha=$4
+  local linked_issue=$5
+  local failure_type=$6
+  local failure_signature=$7
+  local failure_summary=$8
+  local failure_excerpt=$9
+  local reason=${10}
+  printf '%s\n' \
+    "## CI Incident Escalation" \
+    "" \
+    "- **PR**: #${pr_number} (${pr_url})" \
+    "- **Branch**: \`${head_branch}\`" \
+    "- **Commit**: \`${head_sha}\`" \
+    "- **Linked Issue**: #${linked_issue}" \
+    "- **Reason**: ${reason}" \
+    "- **Failure Type**: ${failure_type}" \
+    "- **Failure Signature**: \`${failure_signature}\`" \
+    "" \
+    "### Failure Summary" \
+    "${failure_summary}" \
+    "" \
+    "### Failed-Step Excerpt" \
+    '```text' \
+    "${failure_excerpt}" \
+    '```' \
+    "" \
+    "> This escalation was created automatically by the Pipeline Watchdog workflow."
+}
+
+create_or_update_incident_issue() {
+  local title=$1
+  local body=$2
+  local existing_issue
+  local issue_args=()
+  existing_issue=$(gh issue list --repo "$REPO" --state open --limit 200 --json number,title \
+    | jq -r --arg title "$title" '.[] | select(.title == $title) | .number' | head -1)
+
+  if [ -n "$existing_issue" ]; then
+    gh issue comment "$existing_issue" --repo "$REPO" --body "$body" >/dev/null || \
+      echo "::warning::Could not update existing incident issue #${existing_issue}"
+    return
+  fi
+
+  for label in automation bug ci-failure; do
+    if has_label "$label"; then
+      issue_args+=(--label "$label")
+    fi
+  done
+
+  gh issue create --repo "$REPO" --title "$title" --body "$body" "${issue_args[@]}" >/dev/null
+}
+
+to_epoch() {
+  local iso_value=$1
+  date -u -d "$iso_value" +%s 2>/dev/null || date -u -j -f "%Y-%m-%dT%H:%M:%SZ" "$iso_value" +%s 2>/dev/null || echo 0
+}
+
+echo "=== Pipeline Watchdog — $(date -u) ==="
+
+RUNNING=$(gh run list --repo "$REPO" --workflow repo-assist.lock.yml --status in_progress --json databaseId --jq 'length' 2>/dev/null || echo "0")
+QUEUED=$(gh run list --repo "$REPO" --workflow repo-assist.lock.yml --status queued --json databaseId --jq 'length' 2>/dev/null || echo "0")
+ACTIVE=$((RUNNING + QUEUED))
+if [ "$ACTIVE" -gt 0 ]; then
+  echo "repo-assist is already running ($ACTIVE active runs). Skipping watchdog actions."
+  exit 0
+fi
+
+PIPELINE_PRS=$(gh pr list --repo "$REPO" --state open --json number,title,updatedAt \
+  --jq '[.[] | select(.title | startswith("[Pipeline]"))]')
+
+echo ""
+echo "=== Checking CI repair incidents ==="
+while IFS= read -r PR_ROW; do
+  [ -z "$PR_ROW" ] && continue
+  PR_NUM=$(printf '%s' "$PR_ROW" | jq -r '.number')
+  PR_DETAILS=$(gh pr view "$PR_NUM" --repo "$REPO" --json labels,headRefOid,headRefName,url)
+  HAS_CI_LABEL=$(printf '%s' "$PR_DETAILS" | jq -r '[.labels[].name] | index("ci-failure") != null')
+  if [ "$HAS_CI_LABEL" != "true" ]; then
+    continue
+  fi
+
+  CURRENT_HEAD_SHA=$(printf '%s' "$PR_DETAILS" | jq -r '.headRefOid')
+  CURRENT_HEAD_BRANCH=$(printf '%s' "$PR_DETAILS" | jq -r '.headRefName')
+  PR_URL=$(printf '%s' "$PR_DETAILS" | jq -r '.url')
+
+  STATE_JSON=$(find_marker_comment "$PR_NUM" "$STATE_MARKER")
+  STATE_COMMENT_ID=$(printf '%s' "$STATE_JSON" | jq -r '.id // empty')
+  STATE_BODY=$(printf '%s' "$STATE_JSON" | jq -r '.body // empty')
+  if [ -z "$STATE_COMMENT_ID" ]; then
+    echo "PR #${PR_NUM}: ci-failure label present but no incident comment found."
+    continue
+  fi
+
+  STATUS=$(read_marker_field "$STATE_BODY" status)
+  LINKED_ISSUE=$(read_marker_field "$STATE_BODY" linked_issue)
+  MARKER_HEAD_SHA=$(read_marker_field "$STATE_BODY" head_sha)
+  FAILURE_RUN_ID=$(read_marker_field "$STATE_BODY" failure_run_id)
+  FAILURE_RUN_URL=$(read_marker_field "$STATE_BODY" failure_run_url)
+  FAILURE_TYPE=$(read_marker_field "$STATE_BODY" failure_type)
+  FAILURE_SIGNATURE=$(read_marker_field "$STATE_BODY" failure_signature)
+  ATTEMPT_COUNT=$(read_marker_field "$STATE_BODY" attempt_count)
+  UPDATED_AT=$(read_marker_field "$STATE_BODY" updated_at)
+  ATTEMPT_COUNT=${ATTEMPT_COUNT:-1}
+
+  if [ "$STATUS" = "resolved" ] || [ "$STATUS" = "superseded" ] || [ "$STATUS" = "escalated" ]; then
+    echo "PR #${PR_NUM}: incident status is ${STATUS}. Skipping retry logic."
+    continue
+  fi
+
+  if [ "$MARKER_HEAD_SHA" != "$CURRENT_HEAD_SHA" ]; then
+    echo "PR #${PR_NUM}: incident tracks ${MARKER_HEAD_SHA}, current head is ${CURRENT_HEAD_SHA}. Skipping stale incident."
+    continue
+  fi
+
+  UPDATED_EPOCH=$(to_epoch "$UPDATED_AT")
+  AGE=$((NOW - UPDATED_EPOCH))
+  if [ "$AGE" -lt "$STALE_THRESHOLD" ]; then
+    echo "PR #${PR_NUM}: incident updated ${AGE}s ago. Skipping retry/escalation."
+    continue
+  fi
+
+  FAILURE_RAW_LOGS=$(gh run view "$FAILURE_RUN_ID" --repo "$REPO" --log-failed 2>&1 || true)
+  if [ -z "$FAILURE_RAW_LOGS" ]; then
+    FAILURE_RAW_LOGS="$FAILURE_SIGNATURE"
+  fi
+  FAILURE_JSON=$(printf '%s' "$FAILURE_RAW_LOGS" | "$SCRIPT_DIR/extract-failure-context.sh")
+  FAILURE_SUMMARY=$(printf '%s' "$FAILURE_JSON" | jq -r '.summary')
+  FAILURE_EXCERPT=$(printf '%s' "$FAILURE_JSON" | jq -r '.excerpt')
+
+  if [ "$ATTEMPT_COUNT" -ge "$MAX_REPAIR_ATTEMPTS" ] || [ "$AGE" -ge "$ESCALATE_THRESHOLD" ]; then
+    echo "PR #${PR_NUM}: escalating unresolved CI incident."
+    ESCALATED_STATE=$(render_state_body "$PR_NUM" escalated "$LINKED_ISSUE" "$CURRENT_HEAD_SHA" "$CURRENT_HEAD_BRANCH" "$FAILURE_RUN_ID" "$FAILURE_RUN_URL" "${FAILURE_TYPE:-unknown}" "${FAILURE_SIGNATURE:-unknown-failure}" "$ATTEMPT_COUNT" "$FAILURE_SUMMARY" "$FAILURE_EXCERPT")
+    upsert_comment "$PR_NUM" "$STATE_COMMENT_ID" "$ESCALATED_STATE"
+    remove_pr_label "$PR_NUM" "repair-in-progress"
+    add_pr_label "$PR_NUM" "repair-escalated"
+    TITLE="[CI Incident] Escalation: PR #${PR_NUM} repeated .NET CI failure"
+    BODY=$(render_incident_body "$PR_NUM" "$PR_URL" "$CURRENT_HEAD_BRANCH" "$CURRENT_HEAD_SHA" "$LINKED_ISSUE" "${FAILURE_TYPE:-unknown}" "${FAILURE_SIGNATURE:-unknown-failure}" "$FAILURE_SUMMARY" "$FAILURE_EXCERPT" "The automated repair loop exhausted its retry budget or remained unresolved for more than two hours.")
+    create_or_update_incident_issue "$TITLE" "$BODY"
+    ACTIONS_TAKEN=$((ACTIONS_TAKEN + 1))
+    break
+  fi
+
+  if [ -z "${GH_AW_GITHUB_TOKEN:-}" ]; then
+    echo "PR #${PR_NUM}: GH_AW_GITHUB_TOKEN unavailable. Escalating."
+    ESCALATED_STATE=$(render_state_body "$PR_NUM" escalated "$LINKED_ISSUE" "$CURRENT_HEAD_SHA" "$CURRENT_HEAD_BRANCH" "$FAILURE_RUN_ID" "$FAILURE_RUN_URL" "${FAILURE_TYPE:-unknown}" "${FAILURE_SIGNATURE:-unknown-failure}" "$ATTEMPT_COUNT" "$FAILURE_SUMMARY" "$FAILURE_EXCERPT")
+    upsert_comment "$PR_NUM" "$STATE_COMMENT_ID" "$ESCALATED_STATE"
+    remove_pr_label "$PR_NUM" "repair-in-progress"
+    add_pr_label "$PR_NUM" "repair-escalated"
+    TITLE="[CI Incident] Escalation: PR #${PR_NUM} repeated .NET CI failure"
+    BODY=$(render_incident_body "$PR_NUM" "$PR_URL" "$CURRENT_HEAD_BRANCH" "$CURRENT_HEAD_SHA" "$LINKED_ISSUE" "${FAILURE_TYPE:-unknown}" "${FAILURE_SIGNATURE:-unknown-failure}" "$FAILURE_SUMMARY" "$FAILURE_EXCERPT" "GH_AW_GITHUB_TOKEN is unavailable, so the watchdog cannot repost the repair command.")
+    create_or_update_incident_issue "$TITLE" "$BODY"
+    ACTIONS_TAKEN=$((ACTIONS_TAKEN + 1))
+    break
+  fi
+
+  NEXT_ATTEMPT=$((ATTEMPT_COUNT + 1))
+  COMMAND_BODY=$("$SCRIPT_DIR/render-ci-repair-command.sh" \
+    --pr-number "$PR_NUM" \
+    --linked-issue "$LINKED_ISSUE" \
+    --head-sha "$CURRENT_HEAD_SHA" \
+    --head-branch "$CURRENT_HEAD_BRANCH" \
+    --failure-run-id "$FAILURE_RUN_ID" \
+    --failure-run-url "$FAILURE_RUN_URL" \
+    --failure-type "${FAILURE_TYPE:-unknown}" \
+    --failure-signature "${FAILURE_SIGNATURE:-unknown-failure}" \
+    --attempt-count "$NEXT_ATTEMPT" \
+    --failure-summary "$FAILURE_SUMMARY" \
+    --failure-excerpt "$FAILURE_EXCERPT")
+
+  if ! GH_TOKEN="$GH_AW_GITHUB_TOKEN" gh issue comment "$LINKED_ISSUE" --repo "$REPO" --body "$COMMAND_BODY" >/dev/null; then
+    echo "PR #${PR_NUM}: retry dispatch failed. Escalating."
+    ESCALATED_STATE=$(render_state_body "$PR_NUM" escalated "$LINKED_ISSUE" "$CURRENT_HEAD_SHA" "$CURRENT_HEAD_BRANCH" "$FAILURE_RUN_ID" "$FAILURE_RUN_URL" "${FAILURE_TYPE:-unknown}" "${FAILURE_SIGNATURE:-unknown-failure}" "$NEXT_ATTEMPT" "$FAILURE_SUMMARY" "$FAILURE_EXCERPT")
+    upsert_comment "$PR_NUM" "$STATE_COMMENT_ID" "$ESCALATED_STATE"
+    remove_pr_label "$PR_NUM" "repair-in-progress"
+    add_pr_label "$PR_NUM" "repair-escalated"
+    TITLE="[CI Incident] Escalation: PR #${PR_NUM} repeated .NET CI failure"
+    BODY=$(render_incident_body "$PR_NUM" "$PR_URL" "$CURRENT_HEAD_BRANCH" "$CURRENT_HEAD_SHA" "$LINKED_ISSUE" "${FAILURE_TYPE:-unknown}" "${FAILURE_SIGNATURE:-unknown-failure}" "$FAILURE_SUMMARY" "$FAILURE_EXCERPT" "The watchdog could not repost the repair command after the incident went stale.")
+    create_or_update_incident_issue "$TITLE" "$BODY"
+    ACTIONS_TAKEN=$((ACTIONS_TAKEN + 1))
+    break
+  fi
+
+  RETRIED_STATE=$(render_state_body "$PR_NUM" dispatched "$LINKED_ISSUE" "$CURRENT_HEAD_SHA" "$CURRENT_HEAD_BRANCH" "$FAILURE_RUN_ID" "$FAILURE_RUN_URL" "${FAILURE_TYPE:-unknown}" "${FAILURE_SIGNATURE:-unknown-failure}" "$NEXT_ATTEMPT" "$FAILURE_SUMMARY" "$FAILURE_EXCERPT")
+  upsert_comment "$PR_NUM" "$STATE_COMMENT_ID" "$RETRIED_STATE"
+  add_pr_label "$PR_NUM" "repair-in-progress"
+  remove_pr_label "$PR_NUM" "repair-escalated"
+  echo "PR #${PR_NUM}: reposted CI repair command (attempt ${NEXT_ATTEMPT})."
+  ACTIONS_TAKEN=$((ACTIONS_TAKEN + 1))
+  break
+done < <(printf '%s' "$PIPELINE_PRS" | jq -c '.[]')
+
+echo ""
+echo "=== Checking for stalled PRs ==="
+printf '%s' "$PIPELINE_PRS" | jq -r '.[] | "PR #\(.number): \(.title) (updated: \(.updatedAt))"'
+
+while IFS= read -r PR_ROW; do
+  [ -z "$PR_ROW" ] && continue
+  PR_NUM=$(printf '%s' "$PR_ROW" | jq -r '.number')
+  PR_UPDATED=$(printf '%s' "$PR_ROW" | jq -r '.updatedAt')
+  PR_DETAILS=$(gh pr view "$PR_NUM" --repo "$REPO" --json labels)
+  HAS_CI_LABEL=$(printf '%s' "$PR_DETAILS" | jq -r '[.labels[].name] | index("ci-failure") != null')
+  INCIDENT_COMMENT=$(find_marker_comment "$PR_NUM" "$STATE_MARKER")
+  INCIDENT_COMMENT_ID=$(printf '%s' "$INCIDENT_COMMENT" | jq -r '.id // empty')
+  INCIDENT_STATUS=""
+  if [ -n "$INCIDENT_COMMENT_ID" ]; then
+    INCIDENT_STATUS=$(read_marker_field "$(printf '%s' "$INCIDENT_COMMENT" | jq -r '.body // empty')" status)
+  fi
+
+  if [ "$HAS_CI_LABEL" = "true" ] || { [ -n "$INCIDENT_COMMENT_ID" ] && [ "$INCIDENT_STATUS" != "resolved" ] && [ "$INCIDENT_STATUS" != "superseded" ]; }; then
+    echo "PR #${PR_NUM}: active CI incident detected. Skipping stalled-PR handling."
+    continue
+  fi
+
+  PR_EPOCH=$(to_epoch "$PR_UPDATED")
+  AGE=$((NOW - PR_EPOCH))
+  if [ "$AGE" -lt "$STALE_THRESHOLD" ]; then
+    echo "PR #${PR_NUM}: active (${AGE}s ago). Skipping."
+    continue
+  fi
+
+  LATEST_REVIEW=$(gh api "/repos/${REPO}/pulls/${PR_NUM}/reviews" \
+    --jq '[.[] | select(.state == "CHANGES_REQUESTED")] | last | .state' 2>/dev/null || echo "")
+  if [ "$LATEST_REVIEW" != "CHANGES_REQUESTED" ]; then
+    echo "PR #${PR_NUM}: no CHANGES_REQUESTED review. Skipping."
+    continue
+  fi
+
+  ISSUE_NUM=$(gh pr view "$PR_NUM" --repo "$REPO" --json body \
+    --jq '[.body | scan("(?i)(?:close[ds]?|fix(?:e[ds])?|resolve[ds]?)\\s+#(\\d+)")] | first | .[]? // empty' | head -1 || true)
+  if [ -z "$ISSUE_NUM" ]; then
+    echo "::warning::PR #${PR_NUM} has no linked issue — cannot dispatch fix"
+    continue
+  fi
+
+  echo "Posting /repo-assist on issue #${ISSUE_NUM} for stalled PR #${PR_NUM}"
+  gh issue comment "$ISSUE_NUM" --repo "$REPO" \
+    --body "/repo-assist Fix review feedback on PR #${PR_NUM}. The PR has CHANGES_REQUESTED and has been stalled for $((AGE / 60)) minutes. Read the review comments on PR #${PR_NUM}, implement all requested changes, push fixes to the PR branch, and comment what you changed." || \
+    echo "::warning::Could not post /repo-assist on issue #${ISSUE_NUM}"
+  ACTIONS_TAKEN=$((ACTIONS_TAKEN + 1))
+  break
+done < <(printf '%s' "$PIPELINE_PRS" | jq -c '.[]')
+
+echo ""
+echo "=== Checking for orphaned issues ==="
+PIPELINE_ISSUES=$(gh issue list --repo "$REPO" --label pipeline --state open --json number,title,updatedAt,labels)
+LINKED_ISSUES=$(printf '%s' "$PIPELINE_PRS" | jq -r '.[].number' | while read -r PR_N; do
+  [ -z "$PR_N" ] && continue
+  gh pr view "$PR_N" --repo "$REPO" --json body \
+    --jq '[.body | scan("(?i)(?:close[ds]?|fix(?:e[ds])?|resolve[ds]?)\\s+#(\\d+)")] | .[][]' 2>/dev/null || true
+done | sort -u)
+
+while IFS= read -r ISSUE_ROW; do
+  [ -z "$ISSUE_ROW" ] && continue
+  ISSUE_NUM=$(printf '%s' "$ISSUE_ROW" | jq -r '.number')
+  ISSUE_CLASSIFICATION=$(printf '%s' "$ISSUE_ROW" | "$SCRIPT_DIR/classify-pipeline-issue.sh")
+  ISSUE_ACTIONABLE=$(printf '%s' "$ISSUE_CLASSIFICATION" | jq -r '.actionable')
+  if [ "$ISSUE_ACTIONABLE" != "true" ]; then
+    ISSUE_REASON=$(printf '%s' "$ISSUE_CLASSIFICATION" | jq -r '.reason')
+    echo "Issue #${ISSUE_NUM}: skipping non-actionable issue (${ISSUE_REASON})."
+    continue
+  fi
+  ISSUE_UPDATED=$(printf '%s' "$ISSUE_ROW" | jq -r '.updatedAt')
+  ISSUE_EPOCH=$(to_epoch "$ISSUE_UPDATED")
+  AGE=$((NOW - ISSUE_EPOCH))
+  if [ "$AGE" -lt "$STALE_THRESHOLD" ]; then
+    echo "Issue #${ISSUE_NUM}: active (${AGE}s ago). Skipping."
+    continue
+  fi
+
+  if printf '%s\n' "$LINKED_ISSUES" | grep -q "^${ISSUE_NUM}$"; then
+    echo "Issue #${ISSUE_NUM}: has linked open PR. Skipping."
+    continue
+  fi
+
+  if [ "$ACTIONS_TAKEN" -gt 0 ]; then
+    echo "Already dispatched this cycle. Will handle orphaned issue on next run."
+    break
+  fi
+
+  echo "Dispatching repo-assist for orphaned issue #${ISSUE_NUM}"
+  gh workflow run repo-assist.lock.yml --repo "$REPO" || \
+    echo "::warning::Could not dispatch repo-assist"
+  ACTIONS_TAKEN=$((ACTIONS_TAKEN + 1))
+  break
+done < <(printf '%s' "$PIPELINE_ISSUES" | jq -c '.[]')
+
+echo ""
+echo "=== Checking for superseded PRs ==="
+while IFS= read -r PR_ROW; do
+  [ -z "$PR_ROW" ] && continue
+  PR_NUM=$(printf '%s' "$PR_ROW" | jq -r '.number')
+  LINKED_ISSUE=$(gh pr view "$PR_NUM" --repo "$REPO" --json body \
+    --jq '[.body | scan("(?i)(?:close[ds]?|fix(?:e[ds])?|resolve[ds]?)\\s+#(\\d+)")] | first | .[]? // empty' | head -1 || true)
+  if [ -z "$LINKED_ISSUE" ]; then
+    echo "PR #${PR_NUM}: no linked issue. Skipping."
+    continue
+  fi
+
+  ISSUE_STATE=$(gh issue view "$LINKED_ISSUE" --repo "$REPO" --json state --jq '.state' 2>/dev/null || echo "UNKNOWN")
+  if [ "$ISSUE_STATE" != "CLOSED" ]; then
+    echo "PR #${PR_NUM}: issue #${LINKED_ISSUE} is ${ISSUE_STATE}. Skipping."
+    continue
+  fi
+
+  MERGED_PR=$(gh pr list --repo "$REPO" --state merged --json number,title,body \
+    --jq "[.[] | select(.number != ${PR_NUM} and (.title | startswith(\"[Pipeline]\")) and (.body | test(\"(?i)(close[ds]?|fix(?:e[ds])?|resolve[ds]?)\\\\s+#${LINKED_ISSUE}\\\\b\")))] | first | .number // empty" | head -1 || true)
+  if [ -z "$MERGED_PR" ]; then
+    echo "PR #${PR_NUM}: issue #${LINKED_ISSUE} closed but no merged [Pipeline] PR found. Skipping."
+    continue
+  fi
+
+  echo "PR #${PR_NUM}: SUPERSEDED (issue #${LINKED_ISSUE} closed by merged PR #${MERGED_PR})"
+  gh pr close "$PR_NUM" --repo "$REPO" --delete-branch \
+    -c "Superseded: issue #${LINKED_ISSUE} was already closed by PR #${MERGED_PR}. Closed by Pipeline Watchdog." || \
+    echo "::warning::Could not close PR #${PR_NUM}"
+  ACTIONS_TAKEN=$((ACTIONS_TAKEN + 1))
+done < <(printf '%s' "$PIPELINE_PRS" | jq -c '.[]')
+
+echo ""
+echo "=== Checking for stale [aw] workflow failure issues ==="
+AW_ISSUES=$(gh issue list --repo "$REPO" --label agentic-workflows --state open --json number,title,updatedAt 2>/dev/null || echo '[]')
+
+while IFS= read -r AW_ROW; do
+  [ -z "$AW_ROW" ] && continue
+  AW_NUM=$(printf '%s' "$AW_ROW" | jq -r '.number')
+  AW_TITLE=$(printf '%s' "$AW_ROW" | jq -r '.title')
+  AW_UPDATED=$(printf '%s' "$AW_ROW" | jq -r '.updatedAt')
+  AW_EPOCH=$(to_epoch "$AW_UPDATED")
+  AGE=$((NOW - AW_EPOCH))
+
+  if [ "$AGE" -lt "$STALE_THRESHOLD" ]; then
+    echo "[aw] Issue #${AW_NUM}: recently updated (${AGE}s ago). Skipping."
+    continue
+  fi
+
+  if [ "$ACTIONS_TAKEN" -gt 0 ]; then
+    echo "Already dispatched this cycle. Will handle [aw] issue #${AW_NUM} on next run."
+    break
+  fi
+
+  echo "[aw] Issue #${AW_NUM}: stale workflow failure (${AW_TITLE}). Dispatching repo-assist and closing."
+  gh workflow run repo-assist.lock.yml --repo "$REPO" || \
+    echo "::warning::Could not dispatch repo-assist for [aw] issue #${AW_NUM}"
+  gh issue close "$AW_NUM" --repo "$REPO" \
+    -c "Watchdog: dispatched a fresh repo-assist run to retry the interrupted work. Closing this workflow failure notification." || \
+    echo "::warning::Could not close [aw] issue #${AW_NUM}"
+  ACTIONS_TAKEN=$((ACTIONS_TAKEN + 1))
+  break
+done < <(printf '%s' "$AW_ISSUES" | jq -c '.[]')
+
+echo ""
+echo "=== Completion check ==="
+TOTAL_OPEN_ISSUES=$(printf '%s' "$PIPELINE_ISSUES" | jq 'length')
+TOTAL_OPEN_PRS=$(printf '%s' "$PIPELINE_PRS" | jq 'length')
+TOTAL=$((TOTAL_OPEN_ISSUES + TOTAL_OPEN_PRS))
+
+if [ "$TOTAL" -eq 0 ]; then
+  echo "All pipeline items resolved! Posting completion notice."
+  STATUS_ISSUE=$(gh issue list --repo "$REPO" --label pipeline --state open --json number,title \
+    --jq '[.[] | select(.title | contains("Status"))] | first | .number' 2>/dev/null || echo "")
+  if [ -n "$STATUS_ISSUE" ] && [ "$STATUS_ISSUE" != "null" ]; then
+    gh issue comment "$STATUS_ISSUE" --repo "$REPO" \
+      --body "Pipeline complete! All issues closed, all PRs merged. Watchdog signing off." || true
+  fi
+else
+  echo "Pipeline active: ${TOTAL_OPEN_ISSUES} open issues, ${TOTAL_OPEN_PRS} open PRs."
+  echo "Actions taken this cycle: ${ACTIONS_TAKEN}"
+fi
