@@ -1,10 +1,28 @@
 # Architecture
 
+## System Model
+
+prd-to-prod is a policy-bounded AI execution system. Four layers define how it
+works and where AI authority stops:
+
+```
+  Layer 1 — Intent      Human writes the PRD and sets the autonomy policy
+  Layer 2 — Execution   AI implements: decomposes, codes, reviews, merges
+  Layer 3 — Policy      autonomy-policy.yml classifies actions as autonomous
+                        or human_required; fail-closed for unknowns
+  Layer 4 — Oversight   Merge gate blocks control-plane PRs; healing pause
+                        switch halts autonomous actions instantly
+```
+
+The pipeline operates entirely within Layer 2 unless constrained by Layers 3
+and 4. Human intervention is required for the PRD (Layer 1) and for any
+control-plane change (Layers 3/4).
+
 ## Pipeline Overview
 
-The agentic pipeline turns Product Requirements Documents (PRDs) into shipped code
-with minimal human intervention on the pipeline-generated path. Ten workflows
-cooperate in a loop:
+The agentic pipeline turns Product Requirements Documents (PRDs) into shipped
+code within the bounds set by the autonomy policy. Ten workflows cooperate
+in a loop:
 
 ```
  You write a PRD
@@ -50,6 +68,8 @@ cooperate in a loop:
 
 ## Workflows
 
+Each workflow is classified by its autonomy-policy action type.
+
 ### prd-decomposer
 
 | | |
@@ -58,6 +78,7 @@ cooperate in a loop:
 | **Engine** | Copilot (gpt-5) |
 | **Trigger** | `/decompose` command on an issue |
 | **Output** | Up to 20 atomic GitHub Issues with `[Pipeline]` prefix, acceptance criteria, and dependency ordering |
+| **Autonomy policy** | `decompose_prd` — **autonomous** |
 
 Reads a PRD from the issue body, decomposes it into implementable issues labeled
 `pipeline` + a type label (`feature`, `infra`, `test`, `docs`, `bug`). Issues
@@ -72,6 +93,7 @@ all issues, dispatches `repo-assist` once.
 | **Engine** | Copilot (gpt-5) |
 | **Trigger** | Dispatch from prd-decomposer or pr-review-submit, daily schedule, `/repo-assist` command |
 | **Output** | Up to 4 PRs per run |
+| **Autonomy policy** | `implement_issue` — **autonomous** (code changes); `modify_workflows` — **human_required** (control-plane paths blocked) |
 
 Runs a 5-task cycle each invocation:
 
@@ -96,6 +118,7 @@ The PR reviewer is split into two workflows to preserve **identity separation**:
 | **Engine** | Copilot (gpt-5) — full 64K-128K+ context window |
 | **Trigger** | Automatic on PR opened/updated/ready; `workflow_dispatch` |
 | **Output** | Verdict comment on the PR (starting with `[PIPELINE-VERDICT]`) |
+| **Autonomy policy** | `review_pr` — **autonomous**; issues REQUEST_CHANGES for control-plane path changes |
 
 Agentic workflow that runs as the Copilot app identity. Reads the **full PR diff**
 (no truncation), linked issue acceptance criteria, CI status, and AGENTS.md. Posts
@@ -127,6 +150,7 @@ Decision rules:
 | **Engine** | Standard GitHub Actions (`github-actions[bot]`) |
 | **Trigger** | `issue_comment: created` — fires when pr-review-agent posts its verdict |
 | **Output** | Formal APPROVE or REQUEST_CHANGES GitHub review; auto-merge for approved `[Pipeline]` PRs; repo-assist dispatch |
+| **Autonomy policy** | `merge_pipeline_pr` — **autonomous** for `[Pipeline]` PRs; `merge_human_pr` — **human_required** |
 
 Standard workflow that runs as `github-actions[bot]`. Watches for comments containing
 `[PIPELINE-VERDICT]` on PRs, parses the verdict, and submits the formal GitHub
@@ -171,6 +195,7 @@ issue with a summary table.
 | **Engine** | Standard GitHub Actions |
 | **Trigger** | `pull_request: closed` (merged only) |
 | **Output** | Closes linked issues via `gh issue close` |
+| **Autonomy policy** | `close_linked_issue` — **autonomous** |
 
 Dedicated workflow for closing issues referenced by `Closes #N` (and variants) in
 merged PR bodies. Isolated from pr-review-submit with its own concurrency group
@@ -188,6 +213,7 @@ to avoid script injection vulnerabilities.
 | **Engine** | Standard GitHub Actions |
 | **Trigger** | Cron (every 30 minutes), manual dispatch |
 | **Output** | `/repo-assist` comments, repo-assist dispatches, and escalation/cleanup actions |
+| **Autonomy policy** | `self_heal` — **autonomous** (scoped to `[Pipeline]` work only) |
 
 Cron-based stall detector that replaces the human supervisor. The current
 implementation scans four classes of problems each cycle:
@@ -334,6 +360,44 @@ pr-review-agent (Copilot identity) posts only a verdict comment; pr-review-submi
 **Re-dispatch loop** — After each merge, pr-review-submit checks for remaining open
 issues and re-dispatches repo-assist. This creates a continuous loop that runs
 until all issues from the PRD are implemented.
+
+## Policy Enforcement
+
+The autonomy policy ([`autonomy-policy.yml`](../autonomy-policy.yml)) governs
+what the pipeline can do without human approval.
+
+### Merge Gate
+
+PRs touching `.github/workflows/**`, `.github/agents/**`, or
+`autonomy-policy.yml` are classified as control-plane changes. pr-review-agent
+issues REQUEST_CHANGES for any such PR, requiring human review before merge.
+This prevents the pipeline from modifying its own decision-making authority.
+
+### Intake Classification
+
+Each action the pipeline takes is classified at intake:
+- **autonomous** — pr-review-submit can approve and auto-merge `[Pipeline]` PRs
+- **human_required** — the action requires a human review before proceeding
+- **unknown** — defaults to `human_required` (fail-closed)
+
+### Fail-Closed Defaults
+
+If an action is not explicitly listed in `autonomy-policy.yml`, it defaults to
+`human_required`. This prevents unknown capabilities from being silently
+exercised as the pipeline evolves.
+
+### Self-Healing Loops
+
+The pipeline's self-healing scope (`self_heal` action) is explicitly bounded to
+`[Pipeline]`-prefixed work. The watchdog will not modify human-authored PRs,
+close human issues, or dispatch repairs outside the pipeline's own backlog.
+
+### Healing Pause Switch
+
+Set `PIPELINE_HEALING_ENABLED=false` in repository variables to halt all
+autonomous healing instantly. Review submission and CI failure detection
+continue running, but no autonomous actions are triggered until the variable
+is unset or reset to `true`.
 
 ## Secrets
 
