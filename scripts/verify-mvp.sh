@@ -37,6 +37,7 @@ while [ "$#" -gt 0 ]; do
 done
 
 CHECKS=(
+  "bash scripts/tests/test-auto-dispatch.sh"
   "bash scripts/tests/test-check-autonomy-policy.sh"
   "bash scripts/tests/test-ci-failure-context.sh"
   "bash scripts/tests/test-classify-pipeline-issue.sh"

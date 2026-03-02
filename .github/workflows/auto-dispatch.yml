@@ -18,19 +18,13 @@ jobs:
   dispatch:
     # Security model: external reporters cannot self-assign labels on free-form
     # issues, but GitHub issue forms apply labels server-side. The `pipeline`
-    # label is therefore the trusted dispatch gate for template-filed bugs.
+    # label is therefore the trusted ingress gate. Actionability is decided
+    # inside the workflow via classify-pipeline-issue.sh.
     if: |
       !startsWith(github.event.issue.title, '[CI Incident]') &&
       github.event.issue.title != '[Pipeline] Status' &&
       !contains(github.event.issue.labels.*.name, 'report') &&
-      contains(github.event.issue.labels.*.name, 'pipeline') &&
-      (
-        contains(github.event.issue.labels.*.name, 'bug') ||
-        contains(github.event.issue.labels.*.name, 'docs') ||
-        contains(github.event.issue.labels.*.name, 'feature') ||
-        contains(github.event.issue.labels.*.name, 'infra') ||
-        contains(github.event.issue.labels.*.name, 'test')
-      )
+      contains(github.event.issue.labels.*.name, 'pipeline')
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
@@ -39,7 +33,9 @@ jobs:
       - name: Checkout workflow helpers
         uses: actions/checkout@v4
         with:
-          sparse-checkout: scripts/healing-control.sh
+          sparse-checkout: |
+            scripts/healing-control.sh
+            scripts/classify-pipeline-issue.sh
           sparse-checkout-cone-mode: false
 
       - name: Check healing pause switch
@@ -55,12 +51,30 @@ jobs:
             echo "Autonomous healing is paused via PIPELINE_HEALING_ENABLED."
           fi
 
-      - name: Debounce (let issue burst settle)
+      - name: Classify pipeline issue
         if: steps.healing.outputs.skip != 'true'
+        id: classify
+        env:
+          ISSUE_JSON: ${{ toJson(github.event.issue) }}
+        run: |
+          CLASSIFICATION=$(printf '%s' "$ISSUE_JSON" | scripts/classify-pipeline-issue.sh)
+          ACTIONABLE=$(printf '%s' "$CLASSIFICATION" | jq -r '.actionable')
+          REASON=$(printf '%s' "$CLASSIFICATION" | jq -r '.reason')
+          echo "actionable=${ACTIONABLE}" >> "$GITHUB_OUTPUT"
+          echo "reason=${REASON}" >> "$GITHUB_OUTPUT"
+          echo "Issue classification: actionable=${ACTIONABLE} reason=${REASON}"
+
+      - name: Skip non-actionable issue
+        if: steps.healing.outputs.skip != 'true' && steps.classify.outputs.actionable != 'true'
+        run: |
+          echo "Issue is in the pipeline lane but is not actionable: ${{ steps.classify.outputs.reason }}"
+
+      - name: Debounce (let issue burst settle)
+        if: steps.healing.outputs.skip != 'true' && steps.classify.outputs.actionable == 'true'
         run: sleep 15
 
       - name: Skip when repo-assist already active
-        if: steps.healing.outputs.skip != 'true'
+        if: steps.healing.outputs.skip != 'true' && steps.classify.outputs.actionable == 'true'
         id: guard
         env:
           GH_TOKEN: ${{ secrets.GH_AW_GITHUB_TOKEN }}
@@ -84,7 +98,7 @@ jobs:
           fi
 
       - name: Record deferred dispatch marker
-        if: steps.healing.outputs.skip != 'true' && steps.guard.outputs.skip == 'true'
+        if: steps.healing.outputs.skip != 'true' && steps.classify.outputs.actionable == 'true' && steps.guard.outputs.skip == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
@@ -109,7 +123,7 @@ jobs:
             echo "::warning::Could not record deferred dispatch marker on issue #${ISSUE_NUMBER}"
 
       - name: Dispatch repo-assist scheduled mode
-        if: steps.healing.outputs.skip != 'true' && steps.guard.outputs.skip != 'true'
+        if: steps.healing.outputs.skip != 'true' && steps.classify.outputs.actionable == 'true' && steps.guard.outputs.skip != 'true'
         id: dispatch_repo_assist
         env:
           GH_TOKEN: ${{ secrets.GH_AW_GITHUB_TOKEN }}
@@ -141,7 +155,7 @@ jobs:
           echo "repo_assist_run_url=${REPO_ASSIST_RUN_URL}" >> "$GITHUB_OUTPUT"
 
       - name: Record dispatch marker
-        if: steps.healing.outputs.skip != 'true' && steps.guard.outputs.skip != 'true'
+        if: steps.healing.outputs.skip != 'true' && steps.classify.outputs.actionable == 'true' && steps.guard.outputs.skip != 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}

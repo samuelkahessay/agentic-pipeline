@@ -71,7 +71,7 @@ This repo uses both. The split follows a simple rule: **deterministic logic stay
 | `deploy-azure.yml` | Build, publish, deploy to Azure on merge |
 | `copilot-setup-steps.yml` | Environment setup (install .NET SDK, gh-aw) |
 | `close-issues.yml` | Parse PR body for `Closes #N`, close linked issues |
-| `auto-dispatch.yml` | Debounce guard — check if repo-assist is already running, then dispatch |
+| `auto-dispatch.yml` | Ingress guard — accept any `pipeline` issue, classify actionability, debounce, then dispatch |
 | `pr-review-submit.yml` | Parse `[PIPELINE-VERDICT]` comment, submit formal GH review, enable auto-merge for approved `[Pipeline]` PRs, dispatch next cycle |
 | `ci-failure-issue.yml` | Extract failure logs, post `/repo-assist` repair command to linked issue |
 | `ci-failure-resolve.yml` | Update incident comment to "resolved" when CI passes after a failure |
