@@ -62,7 +62,10 @@ public class GitHubPipelineSnapshotServiceTests
                           "sha": "abc123"
                         },
                         "auto_merge": {
-                          "enabled_by": true
+                          "enabled_by": {
+                            "login": "samuelkahessay"
+                          },
+                          "merge_method": "squash"
                         }
                       }
                     ]

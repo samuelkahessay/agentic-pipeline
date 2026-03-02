@@ -500,7 +500,11 @@ public sealed partial class GitHubPipelineSnapshotService : IGitHubPipelineSnaps
 
     private sealed record GitHubHead(string Ref, string Sha);
 
-    private sealed record GitHubAutoMerge(bool EnabledBy);
+    private sealed record GitHubAutoMerge(
+        GitHubUser? EnabledBy,
+        string? MergeMethod = null,
+        string? CommitTitle = null,
+        string? CommitMessage = null);
 
     private sealed record GitHubUser(string Login);
 }

@@ -252,7 +252,7 @@ jobs:
           for FILE in "${CHANGED_FILES[@]}"; do
             [ -n "$FILE" ] || continue
 
-            for ACTION in policy_artifact_change workflow_file_change sensitive_app_change; do
+            for ACTION in policy_artifact_change workflow_file_change deploy_policy_change sensitive_app_change; do
               MATCH_JSON=$(bash scripts/check-autonomy-policy.sh match "$ACTION" "$FILE" autonomy-policy.yml)
               MATCHED=$(printf '%s' "$MATCH_JSON" | jq -r '.matched')
               MODE=$(printf '%s' "$MATCH_JSON" | jq -r '.mode')
@@ -473,12 +473,14 @@ jobs:
           SUMMARY="$REVIEW_SUMMARY"
 
           OPEN_ISSUES=$(gh issue list --repo "$REPO" \
-            --label pipeline --label feature --state open --json number --jq 'length')
-          OPEN_INFRA=$(gh issue list --repo "$REPO" \
-            --label pipeline --label infra --state open --json number --jq 'length')
+            --label pipeline --state open --json number,title,labels \
+            --jq '[.[] | select(
+              .title != "[Pipeline] Status" and
+              ([.labels[]?.name] | any(. == "feature" or . == "infra" or . == "bug" or . == "docs" or . == "test"))
+            )] | length')
           OPEN_PRS=$(gh pr list --repo "$REPO" \
             --state open --json number,title --jq '[.[] | select(.title // "" | startswith("[Pipeline]"))] | length')
-          TOTAL=$((OPEN_ISSUES + OPEN_INFRA + OPEN_PRS))
+          TOTAL=$((OPEN_ISSUES + OPEN_PRS))
 
           if [ "$TOTAL" -eq 0 ]; then
             echo "No open pipeline issues or PRs remaining. Pipeline complete!"
@@ -679,7 +681,7 @@ jobs:
           for FILE in "${CHANGED_FILES[@]}"; do
             [ -n "$FILE" ] || continue
 
-            for ACTION in policy_artifact_change workflow_file_change sensitive_app_change; do
+            for ACTION in policy_artifact_change workflow_file_change deploy_policy_change sensitive_app_change; do
               MATCH_JSON=$(bash scripts/check-autonomy-policy.sh match "$ACTION" "$FILE" autonomy-policy.yml)
               MATCHED=$(printf '%s' "$MATCH_JSON" | jq -r '.matched')
               MODE=$(printf '%s' "$MATCH_JSON" | jq -r '.mode')
@@ -918,12 +920,14 @@ jobs:
           SUMMARY="$REVIEW_SUMMARY"
 
           OPEN_ISSUES=$(gh issue list --repo "$REPO" \
-            --label pipeline --label feature --state open --json number --jq 'length')
-          OPEN_INFRA=$(gh issue list --repo "$REPO" \
-            --label pipeline --label infra --state open --json number --jq 'length')
+            --label pipeline --state open --json number,title,labels \
+            --jq '[.[] | select(
+              .title != "[Pipeline] Status" and
+              ([.labels[]?.name] | any(. == "feature" or . == "infra" or . == "bug" or . == "docs" or . == "test"))
+            )] | length')
           OPEN_PRS=$(gh pr list --repo "$REPO" \
             --state open --json number,title --jq '[.[] | select(.title // "" | startswith("[Pipeline]"))] | length')
-          TOTAL=$((OPEN_ISSUES + OPEN_INFRA + OPEN_PRS))
+          TOTAL=$((OPEN_ISSUES + OPEN_PRS))
 
           if [ "$TOTAL" -eq 0 ]; then
             echo "No open pipeline issues or PRs remaining. Pipeline complete!"
@@ -976,6 +980,14 @@ jobs:
       cancel-in-progress: false
 
     steps:
+      - name: Checkout workflow helpers
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            scripts/check-autonomy-policy.sh
+            autonomy-policy.yml
+          sparse-checkout-cone-mode: false
+
       - name: Approve sensitive path change
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -983,6 +995,51 @@ jobs:
           PR_NUMBER: ${{ github.event.issue.number }}
           REPO: ${{ github.repository }}
         run: |
+          mapfile -t CHANGED_FILES < <(gh api "/repos/${REPO}/pulls/${PR_NUMBER}/files?per_page=100" --paginate --jq '.[].filename')
+          if [ "${#CHANGED_FILES[@]}" -eq 0 ]; then
+            gh pr comment "$PR_NUMBER" --repo "$REPO" --body \
+              "Cannot process \`/approve-sensitive\`: no changed files were found for this PR. Failing closed."
+            exit 0
+          fi
+
+          SENSITIVE_MATCH=false
+          BLOCKING_ACTION=""
+          BLOCKING_FILE=""
+          BLOCKING_REASON=""
+
+          for FILE in "${CHANGED_FILES[@]}"; do
+            [ -n "$FILE" ] || continue
+
+            for ACTION in policy_artifact_change workflow_file_change deploy_policy_change sensitive_app_change; do
+              MATCH_JSON=$(bash scripts/check-autonomy-policy.sh match "$ACTION" "$FILE" autonomy-policy.yml)
+              MATCHED=$(printf '%s' "$MATCH_JSON" | jq -r '.matched')
+              MODE=$(printf '%s' "$MATCH_JSON" | jq -r '.mode')
+
+              if [ "$MATCHED" = "true" ] && [ "$MODE" = "human_required" ]; then
+                if [ "$ACTION" = "sensitive_app_change" ]; then
+                  SENSITIVE_MATCH=true
+                else
+                  BLOCKING_ACTION="$ACTION"
+                  BLOCKING_FILE="$FILE"
+                  BLOCKING_REASON=$(printf '%s' "$MATCH_JSON" | jq -r '.requires_human_reason')
+                  break 2
+                fi
+              fi
+            done
+          done
+
+          if [ -n "$BLOCKING_ACTION" ]; then
+            gh pr comment "$PR_NUMBER" --repo "$REPO" --body \
+              "Cannot use \`/approve-sensitive\` here. This PR is blocked by \`${BLOCKING_ACTION}\` on \`${BLOCKING_FILE}\`. ${BLOCKING_REASON} Manual human review and merge are still required."
+            exit 0
+          fi
+
+          if [ "$SENSITIVE_MATCH" != "true" ]; then
+            gh pr comment "$PR_NUMBER" --repo "$REPO" --body \
+              "Cannot use \`/approve-sensitive\` here because no active \`sensitive_app_change\` policy match was found on this PR."
+            exit 0
+          fi
+
           HEAD_SHA=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json headRefOid --jq '.headRefOid')
 
           # Set sensitive-review status to success
