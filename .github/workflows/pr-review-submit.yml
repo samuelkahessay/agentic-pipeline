@@ -252,7 +252,7 @@ jobs:
           for FILE in "${CHANGED_FILES[@]}"; do
             [ -n "$FILE" ] || continue
 
-            for ACTION in policy_artifact_change workflow_file_change; do
+            for ACTION in policy_artifact_change workflow_file_change sensitive_app_change; do
               MATCH_JSON=$(bash scripts/check-autonomy-policy.sh match "$ACTION" "$FILE" autonomy-policy.yml)
               MATCHED=$(printf '%s' "$MATCH_JSON" | jq -r '.matched')
               MODE=$(printf '%s' "$MATCH_JSON" | jq -r '.mode')
@@ -284,8 +284,32 @@ jobs:
           BLOCKED_FILE: ${{ steps.policy.outputs.blocked_file }}
           BLOCKED_REASON: ${{ steps.policy.outputs.blocked_reason }}
         run: |
-          gh pr comment "$PR_NUMBER" --repo "$REPO" --body \
-            "Autonomous merge blocked by autonomy policy. File \`${BLOCKED_FILE}\` matched \`${BLOCKED_ACTION}\`. ${BLOCKED_REASON} Human review and manual merge are required for this PR."
+          if [ "$BLOCKED_ACTION" = "sensitive_app_change" ]; then
+            BODY="## Sensitive Path Gate"
+            BODY="${BODY}"$'\n\n'"Autonomous merge blocked. This PR modifies a sensitive path:"
+            BODY="${BODY}"$'\n\n'"- **File**: \`${BLOCKED_FILE}\`"
+            BODY="${BODY}"$'\n'"- **Policy**: \`${BLOCKED_ACTION}\`"
+            BODY="${BODY}"$'\n'"- **Reason**: ${BLOCKED_REASON}"
+            BODY="${BODY}"$'\n\n'"To approve, the repository owner must comment \`/approve-sensitive\` on this PR."
+            gh pr comment "$PR_NUMBER" --repo "$REPO" --body "$BODY"
+          else
+            gh pr comment "$PR_NUMBER" --repo "$REPO" --body \
+              "Autonomous merge blocked by autonomy policy. File \`${BLOCKED_FILE}\` matched \`${BLOCKED_ACTION}\`. ${BLOCKED_REASON} Human review and manual merge are required for this PR."
+          fi
+
+      - name: Set sensitive-review pending status
+        if: steps.policy.outputs.blocked == 'true' && steps.policy.outputs.blocked_action == 'sensitive_app_change'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HEAD_SHA: ${{ steps.idempotency.outputs.head_sha }}
+          PR_NUMBER: ${{ github.event.issue.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh api --method POST "/repos/${REPO}/statuses/${HEAD_SHA}" \
+            -f state="pending" \
+            -f context="sensitive-review" \
+            -f description="Sensitive path change — awaiting /approve-sensitive from repo owner"
+          echo "Set sensitive-review pending status on ${HEAD_SHA}"
 
       - name: Enable auto-merge (APPROVE only)
         if: steps.idempotency.outputs.skip != 'true' && steps.review.outputs.verdict == 'APPROVE' && steps.healing.outputs.enabled == 'true' && steps.policy.outputs.auto_merge_allowed == 'true'
@@ -655,7 +679,7 @@ jobs:
           for FILE in "${CHANGED_FILES[@]}"; do
             [ -n "$FILE" ] || continue
 
-            for ACTION in policy_artifact_change workflow_file_change; do
+            for ACTION in policy_artifact_change workflow_file_change sensitive_app_change; do
               MATCH_JSON=$(bash scripts/check-autonomy-policy.sh match "$ACTION" "$FILE" autonomy-policy.yml)
               MATCHED=$(printf '%s' "$MATCH_JSON" | jq -r '.matched')
               MODE=$(printf '%s' "$MATCH_JSON" | jq -r '.mode')
@@ -687,8 +711,32 @@ jobs:
           BLOCKED_FILE: ${{ steps.policy.outputs.blocked_file }}
           BLOCKED_REASON: ${{ steps.policy.outputs.blocked_reason }}
         run: |
-          gh pr comment "$PR_NUMBER" --repo "$REPO" --body \
-            "Autonomous merge blocked by autonomy policy. File \`${BLOCKED_FILE}\` matched \`${BLOCKED_ACTION}\`. ${BLOCKED_REASON} Human review and manual merge are required for this PR."
+          if [ "$BLOCKED_ACTION" = "sensitive_app_change" ]; then
+            BODY="## Sensitive Path Gate"
+            BODY="${BODY}"$'\n\n'"Autonomous merge blocked. This PR modifies a sensitive path:"
+            BODY="${BODY}"$'\n\n'"- **File**: \`${BLOCKED_FILE}\`"
+            BODY="${BODY}"$'\n'"- **Policy**: \`${BLOCKED_ACTION}\`"
+            BODY="${BODY}"$'\n'"- **Reason**: ${BLOCKED_REASON}"
+            BODY="${BODY}"$'\n\n'"To approve, the repository owner must comment \`/approve-sensitive\` on this PR."
+            gh pr comment "$PR_NUMBER" --repo "$REPO" --body "$BODY"
+          else
+            gh pr comment "$PR_NUMBER" --repo "$REPO" --body \
+              "Autonomous merge blocked by autonomy policy. File \`${BLOCKED_FILE}\` matched \`${BLOCKED_ACTION}\`. ${BLOCKED_REASON} Human review and manual merge are required for this PR."
+          fi
+
+      - name: Set sensitive-review pending status
+        if: steps.policy.outputs.blocked == 'true' && steps.policy.outputs.blocked_action == 'sensitive_app_change'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HEAD_SHA: ${{ steps.idempotency.outputs.head_sha }}
+          PR_NUMBER: ${{ github.event.inputs.pr_number }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh api --method POST "/repos/${REPO}/statuses/${HEAD_SHA}" \
+            -f state="pending" \
+            -f context="sensitive-review" \
+            -f description="Sensitive path change — awaiting /approve-sensitive from repo owner"
+          echo "Set sensitive-review pending status on ${HEAD_SHA}"
 
       - name: Enable auto-merge (APPROVE only)
         if: always() && github.event.inputs.verdict == 'APPROVE' && steps.healing.outputs.enabled == 'true' && steps.policy.outputs.auto_merge_allowed == 'true'
@@ -910,3 +958,47 @@ jobs:
       - name: Log paused autonomous follow-up skip
         if: always() && steps.idempotency.outputs.skip != 'true' && steps.review.outputs.verdict != '' && steps.healing.outputs.enabled != 'true'
         run: echo "Review completed, but autonomous follow-up is paused via PIPELINE_HEALING_ENABLED."
+
+  # ---------------------------------------------------------------------------
+  # Job 3: /approve-sensitive comment handler
+  # ---------------------------------------------------------------------------
+  approve-sensitive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: |
+      github.event_name == 'issue_comment' &&
+      github.event.issue.pull_request != null &&
+      startsWith(github.event.comment.body, '/approve-sensitive') &&
+      github.event.comment.user.login == github.repository_owner
+
+    concurrency:
+      group: "pr-review-submit-${{ github.event.issue.number }}"
+      cancel-in-progress: false
+
+    steps:
+      - name: Approve sensitive path change
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MERGE_TOKEN: ${{ secrets.GH_AW_GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.issue.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          HEAD_SHA=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json headRefOid --jq '.headRefOid')
+
+          # Set sensitive-review status to success
+          gh api --method POST "/repos/${REPO}/statuses/${HEAD_SHA}" \
+            -f state="success" \
+            -f context="sensitive-review" \
+            -f description="Sensitive path approved by @${{ github.event.comment.user.login }}"
+
+          # Re-enable auto-merge
+          PR_TITLE=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json title --jq '.title')
+          if [[ "$PR_TITLE" == "[Pipeline]"* ]] && [ -n "$MERGE_TOKEN" ]; then
+            GH_TOKEN="$MERGE_TOKEN" gh pr merge "$PR_NUMBER" --repo "$REPO" --auto --squash || \
+              echo "::warning::Could not enable auto-merge"
+          fi
+
+          # Post confirmation
+          gh pr comment "$PR_NUMBER" --repo "$REPO" --body \
+            "Sensitive path change approved by @${{ github.event.comment.user.login }}. Auto-merge re-enabled."
+          echo "Sensitive path approved for PR #${PR_NUMBER}"
