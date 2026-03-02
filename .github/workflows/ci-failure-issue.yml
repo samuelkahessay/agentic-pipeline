@@ -267,11 +267,24 @@ jobs:
             RAW_LOGS="(no failed-step logs found — see run logs)"
           fi
 
-          FAILURE_JSON=$(printf '%s' "$RAW_LOGS" | scripts/extract-failure-context.sh)
+          # Get changed files for hypothesis generation (PR-only)
+          PR_NUMBER=$(printf '%s' "$PULL_REQUESTS_JSON" | jq -r '.[0].number // empty')
+          CHANGED_FILE_LIST=""
+          if [ -n "$PR_NUMBER" ]; then
+            CHANGED_FILE_LIST=$(gh pr diff "$PR_NUMBER" --repo "$REPO" --name-only 2>/dev/null || true)
+          fi
+
+          if [ -n "$CHANGED_FILE_LIST" ]; then
+            FAILURE_JSON=$(printf '%s' "$RAW_LOGS" | scripts/extract-failure-context.sh --changed-files "$CHANGED_FILE_LIST")
+          else
+            FAILURE_JSON=$(printf '%s' "$RAW_LOGS" | scripts/extract-failure-context.sh)
+          fi
           FAILURE_TYPE=$(printf '%s' "$FAILURE_JSON" | jq -r '.failure_type')
           FAILURE_SIGNATURE=$(printf '%s' "$FAILURE_JSON" | jq -r '.failure_signature')
           FAILURE_SUMMARY=$(printf '%s' "$FAILURE_JSON" | jq -r '.summary')
           FAILURE_EXCERPT=$(printf '%s' "$FAILURE_JSON" | jq -r '.excerpt')
+          HYPOTHESIS=$(printf '%s' "$FAILURE_JSON" | jq -r '.hypothesis // empty')
+          CORRELATED_FILES_JSON=$(printf '%s' "$FAILURE_JSON" | jq -r 'if .correlated_files then (.correlated_files | join(", ")) else empty end')
           SHORT_SUMMARY=$(printf '%.80s' "$FAILURE_SUMMARY")
 
           PR_NUMBER=$(printf '%s' "$PULL_REQUESTS_JSON" | jq -r '.[0].number // empty')
@@ -438,19 +451,27 @@ jobs:
             exit 0
           fi
 
-          COMMAND_BODY=$(scripts/render-ci-repair-command.sh \
-            --pr-number "$PR_NUMBER" \
-            --linked-issue "$LINKED_ISSUE" \
-            --head-sha "$HEAD_SHA" \
-            --head-branch "$HEAD_BRANCH" \
-            --failure-run-id "$RUN_ID" \
-            --failure-run-url "$RUN_URL" \
-            --failure-type "$FAILURE_TYPE" \
-            --failure-signature "$FAILURE_SIGNATURE" \
-            --attempt-count 1 \
-            --failure-summary "$FAILURE_SUMMARY" \
-            --failure-excerpt "$FAILURE_EXCERPT" \
-            --pr-diff "$PR_DIFF")
+          COMMAND_ARGS=(
+            --pr-number "$PR_NUMBER"
+            --linked-issue "$LINKED_ISSUE"
+            --head-sha "$HEAD_SHA"
+            --head-branch "$HEAD_BRANCH"
+            --failure-run-id "$RUN_ID"
+            --failure-run-url "$RUN_URL"
+            --failure-type "$FAILURE_TYPE"
+            --failure-signature "$FAILURE_SIGNATURE"
+            --attempt-count 1
+            --failure-summary "$FAILURE_SUMMARY"
+            --failure-excerpt "$FAILURE_EXCERPT"
+            --pr-diff "$PR_DIFF"
+          )
+          if [ -n "${HYPOTHESIS:-}" ]; then
+            COMMAND_ARGS+=(--hypothesis "$HYPOTHESIS")
+          fi
+          if [ -n "${CORRELATED_FILES_JSON:-}" ]; then
+            COMMAND_ARGS+=(--correlated-files "$CORRELATED_FILES_JSON")
+          fi
+          COMMAND_BODY=$(scripts/render-ci-repair-command.sh "${COMMAND_ARGS[@]}")
 
           if ! GH_TOKEN="$GH_AW_GITHUB_TOKEN" gh issue comment "$LINKED_ISSUE" --repo "$REPO" --body "$COMMAND_BODY" >/dev/null; then
             echo "::warning::Repair command dispatch failed for issue #${LINKED_ISSUE}"
