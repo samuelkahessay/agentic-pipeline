@@ -18,6 +18,8 @@ Options:
   --failure-summary TEXT
   --failure-excerpt TEXT
   --pr-diff TEXT
+  --hypothesis TEXT
+  --correlated-files TEXT
 USAGE
   exit 1
 }
@@ -36,6 +38,8 @@ while [ "$#" -gt 0 ]; do
     --failure-summary) FAILURE_SUMMARY="$2"; shift 2 ;;
     --failure-excerpt) FAILURE_EXCERPT="$2"; shift 2 ;;
     --pr-diff) PR_DIFF="$2"; shift 2 ;;
+    --hypothesis) HYPOTHESIS="$2"; shift 2 ;;
+    --correlated-files) CORRELATED_FILES="$2"; shift 2 ;;
     -h|--help) usage ;;
     *) echo "Unknown option: $1" >&2; usage ;;
   esac
@@ -63,6 +67,8 @@ done
 FAILURE_SUMMARY=${FAILURE_SUMMARY:-Unknown failure}
 FAILURE_EXCERPT=${FAILURE_EXCERPT:-$FAILURE_SUMMARY}
 PR_DIFF=${PR_DIFF:-}
+HYPOTHESIS=${HYPOTHESIS:-}
+CORRELATED_FILES=${CORRELATED_FILES:-}
 
 printf '%s\n' \
   "/repo-assist Repair CI failure for PR #${PR_NUMBER}." \
@@ -95,5 +101,21 @@ if [ -n "$PR_DIFF" ]; then
     "### PR Diff" \
     '```diff' \
     "${PR_DIFF}" \
+    '```'
+fi
+
+if [ -n "$HYPOTHESIS" ]; then
+  printf '%s\n' \
+    "" \
+    "### Diagnostic Hypothesis" \
+    "${HYPOTHESIS}"
+fi
+
+if [ -n "$CORRELATED_FILES" ] && [ "$CORRELATED_FILES" != "[]" ]; then
+  printf '%s\n' \
+    "" \
+    "### Correlated Changed Files" \
+    '```' \
+    "${CORRELATED_FILES}" \
     '```'
 fi
