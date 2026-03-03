@@ -1,6 +1,6 @@
 {
-  "last_run": "2026-03-03T07:04:35Z",
-  "workflow_run_id": "22612106046",
+  "last_run": "2026-03-03T08:03:32Z",
+  "workflow_run_id": "22613792607",
   "current_prd": {
     "issue": 339,
     "title": "PRD: Compliance Scan Service (Run 07 — C#/.NET 10)",
@@ -69,5 +69,8 @@
     {"issue": 362, "pr": 363, "status": "merged"}
   ],
   "open_issues": [],
-  "notes": "Run 07 complete. All 10 PRs merged. No open pipeline issues or PRs. Ready for archive. Status update posted. 2026-03-03T07:04:35Z"
+  "aw_triage": [
+    {"issue": 365, "title": "[aw] Duplicate Code Detector failed", "status": "triaged", "root_cause": "transient: agent prompt file not found, no outputs produced", "action": "commented, retry recommended", "timestamp": "2026-03-03T08:03:32Z"}
+  ],
+  "notes": "Run 07 complete. All 10 PRs merged. No open pipeline issues or PRs. Ready for archive (tag v7.0.0). Status update posted. [aw] #365 triaged as transient env failure. 2026-03-03T08:03:32Z"
 }
