@@ -163,6 +163,15 @@
         font-size: 0.78rem;
         display: none;
     }
+    .refresh-status {
+        color: var(--dim);
+        font-size: 0.75rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
+    .refresh-status.degraded {
+        color: #f59e0b;
+    }
     .empty-msg { color: var(--dim); font-size: 0.78rem; padding: 12px 16px; font-style: italic; }
 </style>
 }
@@ -174,7 +183,9 @@
         <h1 class="font-sans text-3xl font-bold text-white">Compliance Dashboard</h1>
     </div>
 
-    {{!-- (1) Metrics bar --}}
+    <div id="refresh-status" class="refresh-status mb-6" role="status" aria-live="polite">live refresh connected</div>
+
+    @* (1) Metrics bar *@
     <div class="metrics-bar flex items-stretch mb-8" aria-label="Compliance metrics">
         <div class="metric-item flex-1">
             <div class="metric-lbl">total scans</div>
@@ -198,13 +209,13 @@
         </div>
     </div>
 
-    {{!-- Operator ID --}}
+    @* Operator ID *@
     <div class="mb-6 flex items-center gap-4">
         <label class="term-label" for="operator-id" style="white-space:nowrap;margin-bottom:0;">Operator ID</label>
         <input id="operator-id" class="term-input" style="max-width:260px;" type="text" value="demo-operator" autocomplete="off" />
     </div>
 
-    {{!-- (2) HUMAN DECISION REQUIRED --}}
+    @* (2) HUMAN DECISION REQUIRED *@
     <div class="compliance-section human-required" aria-label="Human decision required">
         <div class="section-header human-required">
             <span class="section-title">HUMAN DECISION REQUIRED</span>
@@ -257,7 +268,7 @@
         </div>
     </div>
 
-    {{!-- (3) AUTO-BLOCKED --}}
+    @* (3) AUTO-BLOCKED *@
     <div class="compliance-section auto-blocked" aria-label="Auto-blocked scans">
         <div class="section-header auto-blocked">
             <span class="section-title">AUTO-BLOCKED</span>
@@ -301,7 +312,7 @@
         </div>
     </div>
 
-    {{!-- (4) Recent scans feed --}}
+    @* (4) Recent scans feed *@
     <div class="feed-panel mb-8" aria-label="Recent scans">
         <div class="feed-header" aria-hidden="true">
             <span class="feed-col-id">id</span>
@@ -330,7 +341,7 @@
         </div>
     </div>
 
-    {{!-- (5) Submit-for-scan panel --}}
+    @* (5) Submit-for-scan panel *@
     <div class="submit-panel mb-8">
         <div class="submit-panel-header">
             <span>submit for scan</span>
@@ -367,23 +378,61 @@
 
 @section Scripts {
 <script>
+    const refreshState = { metrics: null, queues: null };
+
+    function getErrorMessage(error) {
+        return error && typeof error.message === 'string' && error.message.length > 0
+            ? error.message
+            : 'request failed';
+    }
+
+    function updateRefreshStatus() {
+        const statusEl = document.getElementById('refresh-status');
+        if (!statusEl) return;
+
+        const errors = Object.values(refreshState).filter(Boolean);
+        statusEl.classList.toggle('degraded', errors.length > 0);
+        statusEl.textContent = errors.length === 0
+            ? 'live refresh connected'
+            : 'live refresh degraded: ' + errors.join(' | ');
+    }
+
+    function setRefreshError(key, message) {
+        refreshState[key] = message;
+        updateRefreshStatus();
+    }
+
+    function clearRefreshError(key) {
+        refreshState[key] = null;
+        updateRefreshStatus();
+    }
+
     async function refreshMetrics() {
         try {
             const res = await fetch('/api/compliance/metrics');
-            if (!res.ok) return;
+            if (!res.ok) {
+                setRefreshError('metrics', 'metrics HTTP ' + res.status);
+                return;
+            }
             const d = await res.json();
             document.getElementById('m-total').textContent       = d.totalScans       ?? '—';
             document.getElementById('m-autoblocked').textContent = d.autoBlocked      ?? '—';
             document.getElementById('m-humanreq').textContent    = d.humanRequired    ?? '—';
             document.getElementById('m-advisory').textContent    = d.advisory         ?? '—';
             document.getElementById('m-pending').textContent     = d.pendingDecisions ?? '—';
-        } catch (_) {}
+            clearRefreshError('metrics');
+        } catch (e) {
+            setRefreshError('metrics', 'metrics ' + getErrorMessage(e));
+        }
     }
 
     async function refreshQueues() {
         try {
             const res = await fetch('/api/scans');
-            if (!res.ok) return;
+            if (!res.ok) {
+                setRefreshError('queues', 'queues HTTP ' + res.status);
+                return;
+            }
             const scans = await res.json();
 
             const hr = scans.filter(s => s.disposition === 'HUMAN_REQUIRED' && !s.hasDecision);
@@ -417,7 +466,10 @@
                             <span class="feed-col-disp"><span class="tag ${dispClass}">${s.disposition}</span></span>
                         </div>`;
                     }).join('');
-        } catch (_) {}
+            clearRefreshError('queues');
+        } catch (e) {
+            setRefreshError('queues', 'queues ' + getErrorMessage(e));
+        }
     }
 
     function renderHumanRequired(s) {
@@ -533,6 +585,7 @@
         }
     }
 
+    updateRefreshStatus();
     setInterval(() => { refreshMetrics(); refreshQueues(); }, 30000);
 </script>
 }

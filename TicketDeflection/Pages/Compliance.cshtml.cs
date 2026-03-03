@@ -25,26 +25,52 @@ public class ComplianceModel : PageModel
 
     public async Task OnGetAsync()
     {
-        var all = await _db.ComplianceScans
-            .Include(s => s.Findings)
-            .OrderByDescending(s => s.SubmittedAt)
-            .Take(50)
-            .ToListAsync();
-
         var decidedScanIds = await _db.ComplianceDecisions
+            .AsNoTracking()
             .Select(d => d.ScanId)
             .Distinct()
             .ToHashSetAsync();
 
-        TotalScans = all.Count;
-        HumanRequiredCount = all.Count(s => s.Disposition == ComplianceDisposition.HUMAN_REQUIRED);
-        AutoBlockedCount = all.Count(s => s.Disposition == ComplianceDisposition.AUTO_BLOCK);
-        AdvisoryCount = all.Count(s => s.Disposition == ComplianceDisposition.ADVISORY);
-        PendingHumanRequiredScans = all
-            .Where(s => s.Disposition == ComplianceDisposition.HUMAN_REQUIRED && !decidedScanIds.Contains(s.Id))
+        TotalScans = await _db.ComplianceScans
+            .AsNoTracking()
+            .CountAsync();
+
+        HumanRequiredCount = await _db.ComplianceScans
+            .AsNoTracking()
+            .CountAsync(s => s.Disposition == ComplianceDisposition.HUMAN_REQUIRED);
+
+        AutoBlockedCount = await _db.ComplianceScans
+            .AsNoTracking()
+            .CountAsync(s => s.Disposition == ComplianceDisposition.AUTO_BLOCK);
+
+        AdvisoryCount = await _db.ComplianceScans
+            .AsNoTracking()
+            .CountAsync(s => s.Disposition == ComplianceDisposition.ADVISORY);
+
+        PendingHumanRequiredScans = await _db.ComplianceScans
+            .AsNoTracking()
+            .Include(s => s.Findings)
+            .Where(s => s.Disposition == ComplianceDisposition.HUMAN_REQUIRED)
+            .OrderByDescending(s => s.SubmittedAt)
+            .ToListAsync();
+
+        PendingHumanRequiredScans = PendingHumanRequiredScans
+            .Where(s => !decidedScanIds.Contains(s.Id))
             .ToList();
+
         PendingDecisionCount = PendingHumanRequiredScans.Count;
-        AutoBlockedScans = all.Where(s => s.Disposition == ComplianceDisposition.AUTO_BLOCK).ToList();
-        RecentScans = all.Take(20).ToList();
+
+        AutoBlockedScans = await _db.ComplianceScans
+            .AsNoTracking()
+            .Include(s => s.Findings)
+            .Where(s => s.Disposition == ComplianceDisposition.AUTO_BLOCK)
+            .OrderByDescending(s => s.SubmittedAt)
+            .ToListAsync();
+
+        RecentScans = await _db.ComplianceScans
+            .AsNoTracking()
+            .OrderByDescending(s => s.SubmittedAt)
+            .Take(20)
+            .ToListAsync();
     }
 }

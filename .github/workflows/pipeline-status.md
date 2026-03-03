@@ -43,6 +43,7 @@ You are a pipeline status reporter for `${{ github.repository }}`.
    - **In Review**: PR is open and has been reviewed
    - **Completed**: Issue is closed
    - **Blocked**: Issue has unmet dependencies (check issue body for "Depends on #N" where #N is still open)
+   - **Traceability Gap**: Issue is missing a `## PRD Traceability` section
 
 4. Find or create the `[Pipeline] Status` issue.
 
@@ -68,6 +69,9 @@ You are a pipeline status reporter for `${{ github.repository }}`.
 
 ### Blocked Issues
 List each blocked issue and what it's waiting on.
+
+### Traceability Gaps
+List each open pipeline issue missing `## PRD Traceability`.
 
 ### Next Actions
 List issues ready to be implemented (all dependencies met, no PR yet).

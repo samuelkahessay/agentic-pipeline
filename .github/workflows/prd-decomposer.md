@@ -55,27 +55,47 @@ If the instructions above contain a URL or file path, fetch/read that content as
 
 1. **Read the PRD carefully.** Understand the full scope before creating any issues.
 
-2. **Identify task dependencies.** Some tasks must be done before others (e.g., scaffold before features, features before tests).
+2. **Extract the authoritative contract before decomposing.** Capture every in-scope normative requirement that must survive decomposition. Normative requirements include:
+   - Exact endpoint paths, HTTP methods, query parameters, and status codes
+   - Exact enum members, field names, response payload fields, and API signatures
+   - Exact counts, minimums, thresholds, caps, and default values
+   - Exact UI strings, headings, labels, and ordering requirements
+   - Explicit `must`, `must not`, `never`, `do not`, and out-of-scope constraints
+   - Required validation commands and required tests
 
-3. **Create atomic issues.** Each issue should be:
+3. **Never weaken, rename, or summarize away normative requirements.** Decomposition may split work across issues, but it must preserve the original contract. Examples:
+   - If the PRD says `at least 20 rules`, do **not** rewrite that as `15 rules`
+   - If the PRD says `GET /api/scans/metrics`, do **not** rename it to `/api/compliance/metrics`
+   - If the PRD says `400` for `ADVISORY` decisions, do **not** omit that behavior
+   - If the PRD requires an exact heading or button label, keep that exact text in scope
+
+4. **Identify task dependencies.** Some tasks must be done before others (e.g., scaffold before features, features before tests).
+
+5. **Create atomic issues.** Each issue should be:
    - Completable by one developer in 1-4 hours
    - Self-contained with all context needed to implement
    - Testable with clear acceptance criteria
 
-4. **For each issue, include:**
+6. **For each issue, include:**
    - A clear, descriptive title
+   - A `## PRD Traceability` section containing:
+     - `Source PRD` — the issue/discussion/file/URL you actually read
+     - `Source Sections` — the exact PRD feature headings or subsections this issue implements
+     - `Normative Requirements In Scope` — a bullet list of the exact contractual requirements for this issue; copy exact strings, names, paths, counts, and status codes where relevant
    - A `## Description` section explaining what to build and why
    - A `## Acceptance Criteria` section as a markdown checklist
    - A `## Dependencies` section (use "Depends on #aw_ID" for issues in this batch)
    - A `## Technical Notes` section with relevant file paths, API signatures, or architectural guidance
 
-5. **Label each issue** by passing a `labels` array with exactly one type: `feature`, `test`, `infra`, `docs`, or `bug`. The `pipeline` label is added automatically — do NOT include it.
+7. **Label each issue** by passing a `labels` array with exactly one type: `feature`, `test`, `infra`, `docs`, or `bug`. The `pipeline` label is added automatically — do NOT include it.
 
-6. **Create issues in dependency order:** infrastructure first, then core features, then dependent features, then tests/docs last.
+8. **Create issues in dependency order:** infrastructure first, then core features, then dependent features, then tests/docs last.
 
-7. **Use valid `temporary_id` values** for cross-referencing issues. Format: `aw_` + 3-8 alphanumeric chars (A-Za-z0-9 only). Use short codes like `aw_task1`, `aw_task2`, `aw_feat01`. Do NOT use `aw_create_task` or `aw_scaffold_project`. Reference dependencies with `#aw_task1` syntax.
+9. **Use valid `temporary_id` values** for cross-referencing issues. Format: `aw_` + 3-8 alphanumeric chars (A-Za-z0-9 only). Use short codes like `aw_task1`, `aw_task2`, `aw_feat01`. Do NOT use `aw_create_task` or `aw_scaffold_project`. Reference dependencies with `#aw_task1` syntax.
 
-8. **Self-contained acceptance criteria.** Each issue's acceptance criteria must ONLY reference files, functions, and artifacts that will be created or modified IN THAT ISSUE. Do not include criteria that depend on artifacts from other issues — those belong on the issue that creates the artifact. If a feature spans multiple issues, each issue's criteria cover only its portion. Example: if Issue A creates `page.tsx` and Issue B adds OG metadata to it, Issue B's criteria should say "Add OG metadata to the card page" NOT "Update `generateMetadata` in `src/app/card/[username]/page.tsx`" — because that file doesn't exist until Issue A merges.
+10. **Self-contained acceptance criteria.** Each issue's acceptance criteria must ONLY reference files, functions, and artifacts that will be created or modified IN THAT ISSUE. Do not include criteria that depend on artifacts from other issues — those belong on the issue that creates the artifact. If a feature spans multiple issues, each issue's criteria cover only its portion.
+
+11. **Self-contained does not mean weaker.** If a PRD requirement belongs to this issue, preserve it exactly even when you rewrite it into issue-local language. Duplicate the exact contractual detail into this issue's traceability and acceptance criteria rather than replacing it with a looser summary.
 
 ## Delivery Mode Detection
 
@@ -147,6 +167,8 @@ Total: N issues created. Implementation starting automatically.
 
 Before creating each issue, verify:
 - [ ] Title is specific (not "Implement feature 1")
+- [ ] PRD Traceability identifies the authoritative source and exact in-scope requirements
+- [ ] In-scope normative requirements from the PRD were preserved exactly
 - [ ] Acceptance criteria are testable (not "works correctly")
 - [ ] Dependencies are accurate
 - [ ] Technical notes reference actual project patterns
