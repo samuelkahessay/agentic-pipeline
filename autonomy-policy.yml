@@ -107,7 +107,9 @@ actions:
       - TicketDeflection/**/Auth/**
       - TicketDeflection/**/Compliance/**
       - TicketDeflection/**/Payments/**
+      - TicketDeflection/Pages/OperatorLogin*
       - TicketDeflection/Services/Compliance*
+      - TicketDeflection/Services/ICompliance*
       - TicketDeflection/Models/Compliance*
       - TicketDeflection/Endpoints/ComplianceEndpoints.cs
       - TicketDeflection/Pages/Compliance*
