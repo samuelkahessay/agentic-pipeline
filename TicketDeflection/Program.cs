@@ -1,9 +1,16 @@
+using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using TicketDeflection.Data;
 using TicketDeflection.Endpoints;
 using TicketDeflection.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Enable string-based enum serialization so JSON like "CODE" or "AUTO_BLOCK" works
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
+});
 
 // --- Service Registrations ---
 builder.Services.AddDbContext<TicketDbContext>(o => o.UseInMemoryDatabase("TicketDb"));
