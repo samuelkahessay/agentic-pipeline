@@ -10,6 +10,7 @@ public class OperatorPageTests : IDisposable
 {
     private readonly string _tempDir;
     private readonly string _decisionsDir;
+    private readonly string _reportsDir;
     private readonly WebApplicationFactory<Program> _factory;
 
     private static readonly JsonSerializerOptions JsonOpts = new()
@@ -22,6 +23,29 @@ public class OperatorPageTests : IDisposable
         _tempDir = Path.Combine(Path.GetTempPath(), $"operator-page-tests-{Guid.NewGuid():N}");
         _decisionsDir = Path.Combine(_tempDir, "decisions");
         Directory.CreateDirectory(_decisionsDir);
+
+        _reportsDir = Path.Combine(_tempDir, "reports");
+        Directory.CreateDirectory(_reportsDir);
+
+        WriteDrillReport(new
+        {
+            drill_id = "20260302-152002",
+            drill_type = "main_build_syntax",
+            failure_signature = "cs1002-missing-semicolon",
+            verdict = "PASS",
+            started_at = "2026-03-02T15:20:03Z",
+            completed_at = "2026-03-02T15:32:25Z",
+            stages = new Dictionary<string, object>
+            {
+                ["ci_failure"] = new { status = "pass", timestamp = "2026-03-02T15:20:07Z", elapsed_from_previous_s = 3, sla_s = 120, url = "" },
+                ["issue_created"] = new { status = "pass", timestamp = "2026-03-02T15:21:03Z", elapsed_from_previous_s = 56, sla_s = 120, url = "" },
+                ["auto_dispatch"] = new { status = "pass", timestamp = "2026-03-02T15:21:33Z", elapsed_from_previous_s = 30, sla_s = 120, url = "" },
+                ["repair_pr"] = new { status = "pass", timestamp = "2026-03-02T15:26:24Z", elapsed_from_previous_s = 291, sla_s = 600, url = "" },
+                ["ci_green"] = new { status = "pass", timestamp = "2026-03-02T15:27:08Z", elapsed_from_previous_s = 44, sla_s = 900, url = "" },
+                ["auto_merge"] = new { status = "pass", timestamp = "2026-03-02T15:30:09Z", elapsed_from_previous_s = 181, sla_s = 600, url = "" },
+                ["main_recovered"] = new { status = "pass", timestamp = "2026-03-02T15:32:17Z", elapsed_from_previous_s = 128, sla_s = 300, url = "" }
+            }
+        });
 
         WriteEvent(new DecisionEvent(
             1,
@@ -71,6 +95,7 @@ public class OperatorPageTests : IDisposable
                 config.AddInMemoryCollection(new Dictionary<string, string?>
                 {
                     ["DecisionLedger:Path"] = _decisionsDir,
+                    ["DrillReports:Path"] = _reportsDir,
                     ["DemoSeed:Enabled"] = "false"
                 }));
         });
@@ -113,6 +138,21 @@ public class OperatorPageTests : IDisposable
         Assert.Contains("Workflow changes alter the control plane and can widen blast radius across the repo.", html);
     }
 
+    [Fact]
+    public async Task Operator_RendersPastRunsSection()
+    {
+        var client = _factory.CreateClient();
+        var html = await client.GetStringAsync("/operator");
+
+        Assert.Contains("Past Runs", html);
+        Assert.Contains("20260302-152002", html);
+        Assert.Contains("PASS", html);
+        Assert.Contains("main_build_syntax", html);
+        Assert.Contains("cs1002-missing-semicolon", html);
+        Assert.Contains("7/7 stages", html);
+        Assert.Contains("decision trail", html);
+    }
+
     public void Dispose()
     {
         _factory.Dispose();
@@ -126,5 +166,11 @@ public class OperatorPageTests : IDisposable
     {
         var json = JsonSerializer.Serialize(evt, JsonOpts);
         File.WriteAllText(Path.Combine(_decisionsDir, $"{evt.EventId}.json"), json);
+    }
+
+    private void WriteDrillReport(object report)
+    {
+        var json = JsonSerializer.Serialize(report, JsonOpts);
+        File.WriteAllText(Path.Combine(_reportsDir, $"test-drill-{Guid.NewGuid():N}.json"), json);
     }
 }
