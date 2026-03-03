@@ -22,7 +22,7 @@ Pressure-testing this at depth revealed edges. I filed 9 bug reports against `gh
 
 ---
 
-Most delivery loops were designed before AI could take on real cognitive work. The manual burden was never just writing code — it was triaging intent, decomposing work, moving state between tools, reviewing against requirements, and deciding when the system must stop. This rebuilds that loop with explicit authority limits, real failure conditions, and visible operator controls. The system is designed to stop rather than silently widen its own authority. That constraint is the point.
+Wealthsimple is landing hundreds of AI-generated changes a day. The bottleneck is not generation — it is routing, oversight, and knowing when the system must stop. I built the infrastructure for exactly that problem. The next version should be pointed at yours.
 
 ---
 
