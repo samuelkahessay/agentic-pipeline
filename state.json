@@ -1,6 +1,6 @@
 {
-  "last_run": "2026-03-03T00:45:43Z",
-  "workflow_run_id": "22602738398",
+  "last_run": "2026-03-03T01:08:00Z",
+  "workflow_run_id": "22603118538",
   "current_prd": {
     "issue": 339,
     "title": "PRD: Compliance Scan Service (Run 07 — C#/.NET 10)",
@@ -57,10 +57,11 @@
     {"issue": 334, "pr": 337, "status": "merged"},
     {"issue": 335, "pr": 338, "status": "merged"},
     {"issue": 340, "pr": 348, "status": "merged"},
-    {"issue": 341, "status": "pr_open", "branch": "repo-assist/issue-341-dbcontext-compliance-seed"},
-    {"issue": 342, "status": "pr_open", "branch": "repo-assist/issue-342-compliance-rule-library"}
+    {"issue": 341, "pr": 349, "status": "merged"},
+    {"issue": 342, "pr": 350, "status": "merged"},
+    {"issue": 343, "status": "pr_open", "branch": "repo-assist/issue-343-compliance-scan-engine"}
   ],
-  "open_issues": [341, 342, 343, 344, 345, 346, 347],
-  "open_prs": ["341-pr", "342-pr"],
-  "notes": "Run 07: PRs open for #341 (DbContext/seed) and #342 (rule library). Both depend only on #340 (merged). Issues #343-#347 blocked pending #341+#342 merge. Next run: after both merge, implement #343 (scan engine, depends on #341+#342)."
+  "open_issues": [343, 344, 345, 346, 347],
+  "open_prs": ["343-pr"],
+  "notes": "Run 07: #341+#342 merged. #343 (Scan Engine Service) PR created this run. Issues #344-#347 blocked pending #343 merge. Next: after #343 merges, implement #344 (API Endpoints)."
 }
