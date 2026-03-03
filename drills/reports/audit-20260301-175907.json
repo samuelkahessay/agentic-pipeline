@@ -1,0 +1,68 @@
+{
+  "drill_id": "audit-20260301-175907",
+  "drill_type": "audit",
+  "injected_commit": "3b2da2fb678773eadc00c0d847bacc81a6281f77",
+  "failure_signature": "",
+  "dispatch_workflow": "",
+  "started_at": "2026-03-01T17:59:07Z",
+  "verdict": "FAIL",
+  "stages": {
+    "ci_failure": {
+      "status": "pass",
+      "timestamp": "2026-03-01T17:50:48Z",
+      "url": "https://github.com/samuelkahessay/prd-to-prod/actions/runs/22549041246",
+      "elapsed_from_previous_s": null,
+      "sla_s": 120,
+      "run_id": "22549041246"
+    },
+    "issue_created": {
+      "status": "fail",
+      "timestamp": "",
+      "url": "",
+      "elapsed_from_previous_s": null,
+      "sla_s": 120
+    },
+    "auto_dispatch": {
+      "status": "fail",
+      "timestamp": "",
+      "url": "",
+      "elapsed_from_previous_s": null,
+      "sla_s": 120,
+      "reason": "no_issue_found"
+    },
+    "repair_pr": {
+      "status": "fail",
+      "timestamp": "",
+      "url": "",
+      "elapsed_from_previous_s": null,
+      "sla_s": 600,
+      "reason": "no_issue_found"
+    },
+    "ci_green": {
+      "status": "fail",
+      "timestamp": "",
+      "url": "",
+      "elapsed_from_previous_s": null,
+      "sla_s": 900,
+      "reason": "no_repair_pr_found"
+    },
+    "auto_merge": {
+      "status": "fail",
+      "timestamp": "",
+      "url": "",
+      "elapsed_from_previous_s": null,
+      "sla_s": 600,
+      "reason": "no_repair_pr_found"
+    },
+    "main_recovered": {
+      "status": "fail",
+      "timestamp": "",
+      "url": "",
+      "elapsed_from_previous_s": null,
+      "sla_s": 300,
+      "reason": "no_merge_sha"
+    }
+  },
+  "verdict_reason": "auto_dispatch=fail, auto_merge=fail, ci_green=fail, issue_created=fail, main_recovered=fail, repair_pr=fail",
+  "completed_at": "2026-03-01T17:59:08Z"
+}

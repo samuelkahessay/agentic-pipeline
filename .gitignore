@@ -26,8 +26,8 @@ obj/
 .azure/
 CLAUDE.md
 
-# Drill reports (generated, not committed)
-drills/reports/*.json
+# Drill reports (committed as evidence)
+# drills/reports/*.json
 
 # Demo video working files
 scripts/demo-video/

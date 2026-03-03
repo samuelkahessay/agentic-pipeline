@@ -1,0 +1,80 @@
+{
+  "drill_id": "audit-20260302-131632",
+  "drill_type": "audit",
+  "injected_commit": "ff2f18746416dfb8ae8bfe1e414e031983a5fb73",
+  "source_drill_id": "20260301-202613",
+  "failure_signature": "",
+  "dispatch_workflow": "Auto-Dispatch Pipeline Issues",
+  "dispatch_substate": "direct",
+  "started_at": "2026-03-02T13:16:32Z",
+  "verdict": "PASS",
+  "stages": {
+    "ci_failure": {
+      "status": "pass",
+      "timestamp": "2026-03-01T20:26:15Z",
+      "url": "https://github.com/samuelkahessay/prd-to-prod/actions/runs/22551907759",
+      "elapsed_from_previous_s": null,
+      "sla_s": 120,
+      "run_id": "22551907759"
+    },
+    "issue_created": {
+      "status": "pass",
+      "timestamp": "2026-03-01T20:27:04Z",
+      "url": "https://github.com/samuelkahessay/prd-to-prod/issues/283",
+      "elapsed_from_previous_s": 49,
+      "sla_s": 120,
+      "issue_number": "283"
+    },
+    "auto_dispatch": {
+      "status": "pass",
+      "timestamp": "2026-03-01T20:27:26Z",
+      "url": "https://github.com/samuelkahessay/prd-to-prod/actions/runs/22551930129",
+      "elapsed_from_previous_s": 22,
+      "sla_s": 120,
+      "dispatch_workflow": "Auto-Dispatch Pipeline Issues",
+      "dispatch_substate": "direct",
+      "dispatch_evidence_source": "issue_comment_marker",
+      "dispatch_origin_workflow": "",
+      "dispatch_reason": "",
+      "deferred_at": "",
+      "blocking_repo_assist_run_id": "",
+      "blocking_repo_assist_run_url": "",
+      "repo_assist_run_id": "22551930129",
+      "repo_assist_run_url": "https://github.com/samuelkahessay/prd-to-prod/actions/runs/22551930129"
+    },
+    "repair_pr": {
+      "status": "pass",
+      "timestamp": "2026-03-01T20:32:22Z",
+      "url": "https://github.com/samuelkahessay/prd-to-prod/pull/284",
+      "elapsed_from_previous_s": 296,
+      "sla_s": 600,
+      "pr_number": "284"
+    },
+    "ci_green": {
+      "status": "pass",
+      "timestamp": "2026-03-01T20:32:55Z",
+      "url": "https://github.com/samuelkahessay/prd-to-prod/actions/runs/22552020799/job/65323372866",
+      "elapsed_from_previous_s": 33,
+      "sla_s": 900
+    },
+    "auto_merge": {
+      "status": "pass",
+      "timestamp": "2026-03-01T20:36:26Z",
+      "url": "",
+      "elapsed_from_previous_s": 211,
+      "sla_s": 600,
+      "merge_sha": "f0c40d4d1842d45de2f769a1bf4619749e2021bf",
+      "merged_by": "samuelkahessay",
+      "auto_merge_armed_observed": "true",
+      "auto_merge_evidence_source": "commit_status:auto-merge-armed"
+    },
+    "main_recovered": {
+      "status": "pass",
+      "timestamp": "2026-03-01T20:38:05Z",
+      "url": "https://github.com/samuelkahessay/prd-to-prod/actions/runs/22552097112",
+      "elapsed_from_previous_s": 99,
+      "sla_s": 300
+    }
+  },
+  "completed_at": "2026-03-02T13:16:39Z"
+}

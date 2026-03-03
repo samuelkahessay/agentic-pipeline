@@ -1,0 +1,69 @@
+{
+  "drill_id": "audit-20260301-202146",
+  "drill_type": "audit",
+  "injected_commit": "b5dc6d377c1b1149d005cf4ae7026f71d801dbbb",
+  "source_drill_id": "",
+  "failure_signature": "",
+  "dispatch_workflow": "",
+  "dispatch_substate": "",
+  "started_at": "2026-03-01T20:21:46Z",
+  "verdict": "FAIL",
+  "stages": {
+    "ci_failure": {
+      "status": "fail",
+      "timestamp": "",
+      "url": "",
+      "elapsed_from_previous_s": null,
+      "sla_s": 120
+    },
+    "issue_created": {
+      "status": "fail",
+      "timestamp": "",
+      "url": "",
+      "elapsed_from_previous_s": null,
+      "sla_s": 120
+    },
+    "auto_dispatch": {
+      "status": "fail",
+      "timestamp": "",
+      "url": "",
+      "elapsed_from_previous_s": null,
+      "sla_s": 120,
+      "reason": "no_issue_found"
+    },
+    "repair_pr": {
+      "status": "fail",
+      "timestamp": "",
+      "url": "",
+      "elapsed_from_previous_s": null,
+      "sla_s": 600,
+      "reason": "no_issue_found"
+    },
+    "ci_green": {
+      "status": "fail",
+      "timestamp": "",
+      "url": "",
+      "elapsed_from_previous_s": null,
+      "sla_s": 900,
+      "reason": "no_repair_pr_found"
+    },
+    "auto_merge": {
+      "status": "fail",
+      "timestamp": "",
+      "url": "",
+      "elapsed_from_previous_s": null,
+      "sla_s": 600,
+      "reason": "no_repair_pr_found"
+    },
+    "main_recovered": {
+      "status": "fail",
+      "timestamp": "",
+      "url": "",
+      "elapsed_from_previous_s": null,
+      "sla_s": 300,
+      "reason": "no_merge_sha"
+    }
+  },
+  "verdict_reason": "ci_failure=fail, issue_created=fail, repair_pr=fail, ci_green=fail, auto_merge=fail, main_recovered=fail",
+  "completed_at": "2026-03-01T20:21:46Z"
+}

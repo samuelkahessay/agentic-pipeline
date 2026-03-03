@@ -1,0 +1,42 @@
+{
+  "drill_id": "20260301-185118",
+  "drill_type": "main_build_syntax",
+  "injected_commit": "[main d9570c1] drill(main_build_syntax): inject deliberate build failure [drill-id:20260301-185117]\n 1 file changed, 1 insertion(+), 1 deletion(-)\nd9570c117118ad81dfa526046e564881d50457f5",
+  "source_drill_id": "",
+  "failure_signature": "cs1002-missing-semicolon",
+  "dispatch_workflow": "",
+  "started_at": "2026-03-01T18:51:18Z",
+  "verdict": "pending",
+  "stages": {
+    "ci_failure": {
+      "status": "timeout",
+      "timestamp": "",
+      "url": "",
+      "elapsed_from_previous_s": null,
+      "sla_s": 120
+    },
+    "issue_created": {
+      "status": "timeout",
+      "timestamp": "",
+      "url": "",
+      "elapsed_from_previous_s": null,
+      "sla_s": 120
+    },
+    "auto_dispatch": {
+      "status": "fail",
+      "timestamp": "",
+      "url": "",
+      "elapsed_from_previous_s": null,
+      "sla_s": 120,
+      "reason": "no_issue_found"
+    },
+    "repair_pr": {
+      "status": "fail",
+      "timestamp": "",
+      "url": "",
+      "elapsed_from_previous_s": null,
+      "sla_s": 600,
+      "reason": "no_issue_found"
+    }
+  }
+}

@@ -1,0 +1,98 @@
+{
+  "drill_id": "audit-20260301-182000",
+  "drill_type": "manual-audit",
+  "injected_commit": "3b2da2f",
+  "failure_signature": "cs1002-expected",
+  "dispatch_workflow": "Auto-Dispatch Pipeline Issues",
+  "started_at": "2026-03-01T17:50:48Z",
+  "verdict": "PASS_WITH_MANUAL_RESUME",
+  "stages": {
+    "ci_failure": {
+      "status": "pass",
+      "timestamp": "2026-03-01T18:11:05Z",
+      "url": "https://github.com/samuelkahessay/prd-to-prod/actions/runs/22549410302",
+      "elapsed_from_previous_s": null,
+      "sla_s": 120,
+      "run_id": "22549410302",
+      "notes": "Deploy to Azure failed on commit 9a396ab (second push after canary inject)"
+    },
+    "issue_created": {
+      "status": "pass",
+      "timestamp": "2026-03-01T18:11:36Z",
+      "url": "https://github.com/samuelkahessay/prd-to-prod/issues/273",
+      "elapsed_from_previous_s": 31,
+      "sla_s": 120,
+      "issue_number": "273",
+      "notes": "CI Failure Router run 22549418391 created issue via GH_AW_GITHUB_TOKEN"
+    },
+    "auto_dispatch": {
+      "status": "pass_manual",
+      "timestamp": "2026-03-01T18:21:02Z",
+      "url": "https://github.com/samuelkahessay/prd-to-prod/actions/runs/22549585491",
+      "elapsed_from_previous_s": 566,
+      "sla_s": 120,
+      "dispatch_workflow": "Auto-Dispatch Pipeline Issues",
+      "repo_assist_run_id": "22549592211",
+      "repo_assist_run_url": "https://github.com/samuelkahessay/prd-to-prod/actions/runs/22549592211",
+      "notes": "Initial dispatch (run 22549420692) SKIPPED — ran old workflow code from 9a396ab which had broken label check. Manual label toggle at 18:20:35Z retriggered against fixed 678f55e."
+    },
+    "repair_pr": {
+      "status": "pass",
+      "timestamp": "2026-03-01T18:24:50Z",
+      "url": "https://github.com/samuelkahessay/prd-to-prod/pull/274",
+      "elapsed_from_previous_s": 228,
+      "sla_s": 600,
+      "pr_number": "274",
+      "notes": "repo-assist opened PR: [Pipeline] Fix CS1002: add missing semicolon in DrillCanary.cs"
+    },
+    "ci_green": {
+      "status": "pass",
+      "timestamp": "2026-03-01T18:26:00Z",
+      "url": "https://github.com/samuelkahessay/prd-to-prod/pull/274",
+      "elapsed_from_previous_s": 70,
+      "sla_s": 900,
+      "notes": "build-and-test check passed on PR #274"
+    },
+    "auto_merge": {
+      "status": "pass",
+      "timestamp": "2026-03-01T18:28:32Z",
+      "url": "https://github.com/samuelkahessay/prd-to-prod/pull/274",
+      "elapsed_from_previous_s": 152,
+      "sla_s": 600,
+      "merge_sha": "0e2103bc1c4a55d0072ee9ff1fdcc9a20de0e3ff",
+      "merged_by": "samuelkahessay",
+      "auto_merge_armed_observed": "true",
+      "notes": "PR review agent approved, pr-review-submit enabled auto-merge, PR merged"
+    },
+    "main_recovered": {
+      "status": "pass",
+      "timestamp": "2026-03-01T18:30:00Z",
+      "url": "https://github.com/samuelkahessay/prd-to-prod/actions/runs/22549731827",
+      "elapsed_from_previous_s": 88,
+      "sla_s": 300,
+      "notes": "Deploy to Azure succeeded on merge commit 0e2103b"
+    }
+  },
+  "verdict_reason": "All 7 stages passed. auto_dispatch required manual label retrigger because fix commit 678f55e was not yet on main when initial issues:labeled events fired (they ran old code from 9a396ab). This is a one-time bootstrapping issue, not a steady-state gap.",
+  "completed_at": "2026-03-01T18:30:00Z",
+  "key_run_ids": {
+    "deploy_failure": "22549410302",
+    "ci_failure_router": "22549418391",
+    "auto_dispatch_skipped": "22549420692",
+    "auto_dispatch_success": "22549585491",
+    "repo_assist": "22549592211",
+    "deploy_recovered": "22549731827"
+  },
+  "key_artifacts": {
+    "issue": "https://github.com/samuelkahessay/prd-to-prod/issues/273",
+    "pr": "https://github.com/samuelkahessay/prd-to-prod/pull/274",
+    "fix_commits": ["678f55e (auto-dispatch label fix)", "9a396ab (router shell quoting fix)"]
+  },
+  "lessons_learned": [
+    "issues:labeled runs workflow from default branch HEAD at event time, not from the commit being pushed — fix must be on main BEFORE the event fires",
+    "github.event.label.name only contains the single label that triggered the event, not all labels — use contains(github.event.issue.labels.*.name) instead",
+    "Per-issue concurrency groups (auto-dispatch-pipeline-$ISSUE_NUMBER) correctly deduplicate burst label events",
+    "Shell heredocs with embedded backticks are interpreted as command substitution — use single-quoted variables + printf instead",
+    "workflow_run events resumed working after the router shell fix in 9a396ab — the earlier breakage may have been caused by invalid YAML/shell in the workflow file"
+  ]
+}

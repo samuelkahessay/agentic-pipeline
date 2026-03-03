@@ -1,0 +1,11 @@
+{
+  "drill_id": "20260301-185947",
+  "drill_type": "main_build_syntax",
+  "injected_commit": "On branch main\nYour branch is up to date with 'origin/main'.\n\nnothing to commit, working tree clean\nd9570c117118ad81dfa526046e564881d50457f5",
+  "source_drill_id": "",
+  "failure_signature": "cs1002-missing-semicolon",
+  "dispatch_workflow": "",
+  "started_at": "2026-03-01T18:59:47Z",
+  "verdict": "pending",
+  "stages": {}
+}

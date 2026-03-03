@@ -1,0 +1,10 @@
+{
+  "drill_id": "20260301-175046",
+  "drill_type": "main_build_syntax",
+  "injected_commit": "[main 3b2da2f] drill(main_build_syntax): inject deliberate build failure [drill-id:20260301-175045]\n 1 file changed, 1 insertion(+), 1 deletion(-)\n3b2da2fb678773eadc00c0d847bacc81a6281f77",
+  "failure_signature": "cs1002-missing-semicolon",
+  "dispatch_workflow": "",
+  "started_at": "2026-03-01T17:50:46Z",
+  "verdict": "pending",
+  "stages": {}
+}
