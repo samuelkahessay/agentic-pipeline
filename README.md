@@ -12,7 +12,7 @@ conditions, and visible operator controls.
 
 ```mermaid
 flowchart TD
-  subgraph C["Human-Owned Control Plane<br/><br/>"]
+  subgraph C["Human-Owned<br/>Control Plane<br/>&nbsp;"]
     H["Human Intent"]
     P["Autonomy Policy"]
   end
