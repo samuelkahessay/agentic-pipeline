@@ -1,12 +1,12 @@
 {
-  "last_run": "2026-03-03T01:35:52Z",
-  "workflow_run_id": "22604114912",
+  "last_run": "2026-03-03T01:53:25Z",
+  "workflow_run_id": "22604573288",
   "current_prd": {
     "issue": 339,
     "title": "PRD: Compliance Scan Service (Run 07 — C#/.NET 10)",
-    "status": "in_progress"
+    "status": "complete"
   },
-  "pipeline_status": "ON_TRACK",
+  "pipeline_status": "COMPLETE",
   "attempts": [
     {"issue": 125, "pr": 138, "status": "merged"},
     {"issue": 126, "pr": 139, "status": "merged"},
@@ -62,9 +62,9 @@
     {"issue": 343, "pr": 351, "status": "merged"},
     {"issue": 344, "pr": 352, "status": "merged"},
     {"issue": 345, "pr": 353, "status": "merged"},
-    {"issue": 346, "branch": "repo-assist/issue-346-compliance-nav-landing", "status": "pr_open"},
-    {"issue": 347, "branch": "repo-assist/issue-347-compliance-tests", "status": "pr_open"}
+    {"issue": 346, "pr": 354, "status": "merged"},
+    {"issue": 347, "pr": 355, "status": "merged"}
   ],
   "open_issues": [],
-  "notes": "Run 07: PR for #346 (nav/landing) and #347 (tests) both opened this run. #345 was merged at run start. All 8 issues from PRD #339 now have PRs."
+  "notes": "Run 07 COMPLETE. All 8 issues from PRD #339 implemented and merged. PRs #348-355. Ready to archive as v7.0.0 / showcase 07-compliance-scan-service."
 }
