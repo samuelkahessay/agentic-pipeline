@@ -17,6 +17,8 @@
   <ItemGroup>
     <Content Include="..\showcase\**\*.json" CopyToOutputDirectory="PreserveNewest"
              Link="showcase\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Content Include="..\drills\decisions\**\*.json" CopyToOutputDirectory="PreserveNewest"
+             Link="drills\decisions\%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 
 </Project>
