@@ -273,6 +273,9 @@
                             target: @(decision.Target.Display ?? decision.Target.Path ?? decision.Target.Type)
                         </div>
                         <div class="meta-line">
+                            reason: @(decision.PolicyResult.Reason ?? "human review required")
+                        </div>
+                        <div class="meta-line">
                             owner: @(decision.HumanOwner ?? "unassigned")
                         </div>
                         <div class="evidence-list">
@@ -286,6 +289,44 @@
             }
         </section>
     </div>
+
+    @if (Model.EscalatedDecisions.Count > 0)
+    {
+        <section class="panel panel-top p-5 mb-8" aria-labelledby="escalated-heading" style="border-top-color: var(--amber);">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <div class="text-xs text-dim uppercase tracking-widest mb-1">escalated decisions</div>
+                    <h2 id="escalated-heading" class="font-sans text-xl font-bold text-white">Escalated beyond initial routing</h2>
+                </div>
+                <span class="badge badge-amber">@Model.EscalatedDecisions.Count escalated</span>
+            </div>
+            @foreach (var decision in Model.EscalatedDecisions)
+            {
+                <article class="record">
+                    <div class="flex flex-wrap items-center gap-2 mb-2">
+                        <span class="badge badge-amber">escalated</span>
+                        <span class="code-pill">@decision.RequestedAction</span>
+                    </div>
+                    <div class="summary-line">@decision.Summary</div>
+                    <div class="meta-line mt-2">
+                        target: @(decision.Target.Display ?? decision.Target.Path ?? decision.Target.Type)
+                    </div>
+                    <div class="meta-line">
+                        reason: @(decision.PolicyResult.Reason ?? "escalation required")
+                    </div>
+                    <div class="meta-line">
+                        owner: @(decision.HumanOwner ?? "unassigned")
+                    </div>
+                    <div class="evidence-list">
+                        @foreach (var evidence in decision.Evidence)
+                        {
+                            <span class="badge badge-blue">@evidence</span>
+                        }
+                    </div>
+                </article>
+            }
+        </section>
+    }
 
     <div class="grid lg:grid-cols-[1fr_1.25fr] gap-6">
         <section class="panel panel-green p-5" aria-labelledby="autonomous-heading">

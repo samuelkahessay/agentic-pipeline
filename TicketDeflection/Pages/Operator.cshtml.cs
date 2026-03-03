@@ -29,6 +29,7 @@ public class OperatorModel : PageModel
     public IReadOnlyList<DecisionEvent> DecisionTrail { get; private set; } = [];
     public DecisionEvent? FeaturedBoundaryStop { get; private set; }
     public IReadOnlyList<DrillReport> DrillRuns { get; private set; } = [];
+    public IReadOnlyList<DecisionEvent> EscalatedDecisions { get; private set; } = [];
 
     public async Task OnGetAsync()
     {
@@ -38,15 +39,16 @@ public class OperatorModel : PageModel
 
         var blocked = all.Where(e => e.Outcome == "blocked").ToList();
         var queuedForHuman = all.Where(e => e.Outcome == "queued_for_human").ToList();
+        var escalated = all.Where(e => e.Outcome == "escalated").ToList();
         var recentAutonomous = all
             .Where(e => e.Outcome == "acted" && e.PolicyResult.Mode == "autonomous")
             .ToList();
         Queue = new DecisionQueue(blocked, queuedForHuman, recentAutonomous);
+        EscalatedDecisions = escalated;
 
         var autonomousActed = all.Count(e => e.Outcome == "acted" && e.PolicyResult.Mode == "autonomous");
-        var escalated = all.Count(e => e.Outcome == "escalated");
         string? lastUpdatedUtc = all.Count > 0 ? all[0].Timestamp : null;
-        Metrics = new DecisionMetrics(all.Count, autonomousActed, blocked.Count, queuedForHuman.Count, escalated, lastUpdatedUtc);
+        Metrics = new DecisionMetrics(all.Count, autonomousActed, blocked.Count, queuedForHuman.Count, escalated.Count, lastUpdatedUtc);
 
         FeaturedBoundaryStop = Queue.Blocked.FirstOrDefault(IsHardBoundaryStop)
             ?? Queue.QueuedForHuman.FirstOrDefault(IsHardBoundaryStop);
