@@ -16,10 +16,26 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 });
 
 // --- Service Registrations ---
-var connectionString = builder.Environment.IsDevelopment()
-    ? "Data Source=ticketdb.db"
-    : "Data Source=/home/data/ticketdb.db";
-builder.Services.AddDbContext<TicketDbContext>(o => o.UseSqlite(connectionString));
+var dbProvider = builder.Configuration["Database:Provider"] ?? "Sqlite";
+
+if (string.Equals(dbProvider, "SqlServer", StringComparison.OrdinalIgnoreCase))
+{
+    var connStr = builder.Configuration.GetConnectionString("SqlServer");
+    if (string.IsNullOrWhiteSpace(connStr))
+    {
+        throw new InvalidOperationException(
+            "Database:Provider is set to SqlServer but ConnectionStrings:SqlServer is not configured.");
+    }
+    builder.Services.AddDbContext<TicketDbContext>(o => o.UseSqlServer(connStr));
+}
+else
+{
+    var connStr = builder.Configuration.GetConnectionString("Sqlite")
+        ?? (builder.Environment.IsDevelopment()
+            ? "Data Source=ticketdb.db"
+            : "Data Source=/home/data/ticketdb.db");
+    builder.Services.AddDbContext<TicketDbContext>(o => o.UseSqlite(connStr));
+}
 builder.Services.AddScoped<ClassificationService>();
 builder.Services.AddScoped<MatchingService>();
 builder.Services.AddScoped<PipelineService>();
@@ -73,17 +89,23 @@ builder.Services.AddRateLimiter(options =>
 
 var app = builder.Build();
 
-// Ensure data directory exists for production SQLite path
-if (!app.Environment.IsDevelopment())
-{
-    Directory.CreateDirectory("/home/data");
-}
-
 // Seed knowledge base and auto-populate demo tickets on startup
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<TicketDbContext>();
-    await SqliteDatabaseInitializer.EnsureCreatedAndApplyCompatibilityFixesAsync(context);
+
+    if (string.Equals(dbProvider, "SqlServer", StringComparison.OrdinalIgnoreCase))
+    {
+        await context.Database.MigrateAsync();
+    }
+    else
+    {
+        // Ensure data directory exists for production SQLite path
+        if (!app.Environment.IsDevelopment())
+            Directory.CreateDirectory("/home/data");
+
+        await SqliteDatabaseInitializer.EnsureCreatedAndApplyCompatibilityFixesAsync(context);
+    }
     SeedData.Initialize(context);
 
     if (app.Configuration.GetValue<bool>("DemoSeed:Enabled", true))
