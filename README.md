@@ -91,10 +91,10 @@ when the system must stop. This repo is built for exactly that problem:
 - **Observable control plane** — every autonomous decision, escalation, and
   merge gate is visible through operator surfaces and a durable decision ledger.
   A human can audit what the system did and why it stopped.
-- **Proven self-healing** — 7 drills where the pipeline broke its own build,
-  detected the failure, created a fix, reviewed it, and merged — with no human
-  in the loop for the repair, but a human-owned kill switch
-  (`PIPELINE_HEALING_ENABLED`) to halt it.
+- **Proven self-healing** — 7 drills exercised the CI-failure repair path end to
+  end, including 2 FULL_PASS runs with zero human intervention. Earlier drills
+  included manual resume at dispatch while the workflow trigger was hardened.
+  A human-owned kill switch (`PIPELINE_HEALING_ENABLED`) can still halt repair.
 
 The architecture separates the human control plane from the AI execution lane.
 Scaling AI-generated changes safely means the control plane must be
