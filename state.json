@@ -1,12 +1,12 @@
 {
-  "last_run": "2026-03-03T05:24:35Z",
-  "workflow_run_id": "22609575454",
+  "last_run": "2026-03-03T05:36:41Z",
+  "workflow_run_id": "22609885088",
   "current_prd": {
     "issue": 339,
     "title": "PRD: Compliance Scan Service (Run 07 — C#/.NET 10)",
     "status": "complete"
   },
-  "pipeline_status": "COMPLETE",
+  "pipeline_status": "ON_TRACK",
   "attempts": [
     {"issue": 125, "pr": 138, "status": "merged"},
     {"issue": 126, "pr": 139, "status": "merged"},
@@ -65,8 +65,9 @@
     {"issue": 346, "pr": 354, "status": "merged"},
     {"issue": 347, "pr": 355, "status": "merged"},
     {"issue": 356, "status": "closed_by_owner"},
-    {"issue": 359, "pr": 361, "status": "merged"}
+    {"issue": 359, "pr": 361, "status": "merged"},
+    {"issue": 362, "pr": null, "status": "pr_open", "branch": "repo-assist/issue-362-trim-nav-to-4-pages"}
   ],
-  "open_issues": [],
-  "notes": "Run 07 COMPLETE. All 22 issues merged (PRs #348-355, #361). CI passing (124 tests). Ready to archive as showcase/07-compliance-scan-service / tag v7.0.0. 2026-03-03T05:24:35Z"
+  "open_issues": [362],
+  "notes": "Run 07 complete; new cleanup issue #362 picked up. PR opened for nav trim. 124 tests passing. 2026-03-03T05:36:41Z"
 }
