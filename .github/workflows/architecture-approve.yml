@@ -1,0 +1,57 @@
+name: Architecture Approval Gate
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  issues: write
+  actions: write
+
+jobs:
+  approve:
+    if: |
+      github.event.issue.pull_request == null &&
+      contains(github.event.issue.labels.*.name, 'architecture-draft') &&
+      startsWith(github.event.comment.body, '/approve-architecture')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify author has write access
+        id: check-access
+        env:
+          GH_TOKEN: ${{ secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          PERM=$(gh api repos/${{ github.repository }}/collaborators/${{ github.event.comment.user.login }}/permission \
+            --jq '.permission' 2>/dev/null || echo "none")
+          if [[ "$PERM" != "admin" && "$PERM" != "write" && "$PERM" != "maintain" ]]; then
+            echo "::error::User ${{ github.event.comment.user.login }} does not have write access"
+            exit 1
+          fi
+          echo "approved_by=${{ github.event.comment.user.login }}" >> "$GITHUB_OUTPUT"
+
+      - name: Swap labels
+        env:
+          GH_TOKEN: ${{ secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue edit ${{ github.event.issue.number }} \
+            --repo ${{ github.repository }} \
+            --remove-label "architecture-draft" \
+            --add-label "architecture-approved"
+
+      - name: Post approval confirmation
+        env:
+          GH_TOKEN: ${{ secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue comment ${{ github.event.issue.number }} \
+            --repo ${{ github.repository }} \
+            --body "Architecture approved by @${{ steps.check-access.outputs.approved_by }}. Dispatching decomposer..."
+
+      - name: Dispatch prd-decomposer
+        env:
+          GH_TOKEN: ${{ secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow run prd-decomposer.lock.yml \
+            --repo ${{ github.repository }} \
+            -f issue_number=${{ github.event.issue.number }}
