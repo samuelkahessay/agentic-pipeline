@@ -3,7 +3,7 @@
 ## System Thesis
 
 `prd-to-prod` is a policy-bounded AI execution system for software delivery.
-The current repository contains 24 workflow YAML files, but the useful mental
+The current repository contains 26 workflow YAML files, but the useful mental
 model is not a flat count. It is a control plane plus a bounded execution lane.
 
 - Humans own intent, policy, escalation rules, and authority expansion.
@@ -63,6 +63,11 @@ PRD Issue → /plan → prd-planner → Architecture Comment + JSON Artifact
 
 See `docs/plans/2026-03-03-architecture-planning-pipeline-design.md` for full design.
 
+> **Status**: The planning chain is wired in workflows but has not yet been
+> activated. No issues have been created with the `architecture-draft` label.
+> To use it, post `/plan` as a comment on a PRD issue to trigger
+> `prd-planner`, then `/approve-architecture` to dispatch the decomposer.
+
 ## Workflow Groups
 
 ### 1. Ingress and Routing
@@ -112,21 +117,54 @@ These workflows handle CI, deploy, repair routing, and stall recovery.
 Key property: self-healing is a bounded recovery loop inside the larger system,
 not a claim that every failure is automatically diagnosed or rolled back.
 
-### 4. Auxiliary Improvement and Governance Agents
+### 4. Planning Agents
 
-These workflows extend the system beyond pure implementation.
+These workflows support the optional architecture planning step.
 
-| Workflow | Role |
-|---|---|
-| `pipeline-status.lock.yml` | Maintains a rolling status issue |
-| `ci-doctor.lock.yml` | Diagnoses CI health and failure patterns |
-| `code-simplifier.lock.yml` | Proposes simplifications in recently changed code |
-| `duplicate-code-detector.lock.yml` | Scans for duplication patterns |
-| `security-compliance.lock.yml` | Runs targeted security and compliance checks |
-| `agentics-maintenance.yml` | Maintains generated gh-aw workflow artifacts |
-| `copilot-setup-steps.yml` | Shared setup for agentic workflow environments |
+| Workflow | Trigger | Role |
+|---|---|---|
+| `prd-planner.lock.yml` | `/plan` slash command on issues | Generates architecture comment and JSON artifact from a PRD |
+| `architecture-approve.yml` | `/approve-architecture` comment on `architecture-draft` issues | Swaps label to `architecture-approved`, dispatches decomposer |
 
-Key property: these are supporting agents. They do not own the merge boundary.
+Key property: the planning chain is optional. Without it, PRDs go directly to
+`prd-decomposer` via `/decompose`.
+
+### 5. Continuous Improvement Agents
+
+These agents run on schedules or events to improve the codebase between pipeline
+runs. They do not own the merge boundary — they open PRs or issues for human or
+pipeline review.
+
+| Workflow | Trigger | Schedule | Role |
+|---|---|---|---|
+| `pipeline-status.lock.yml` | schedule | Daily 19:14 UTC | Maintains a rolling `[Pipeline] Status` issue |
+| `ci-doctor.lock.yml` | `workflow_run` (CI/deploy failure on `main`) | Event-driven | Diagnoses CI failures and posts structured analysis |
+| `code-simplifier.lock.yml` | schedule | Daily 20:47 UTC | Proposes simplifications in recently changed code |
+| `duplicate-code-detector.lock.yml` | schedule | Daily 9:53 UTC | Scans for duplication patterns across the codebase |
+| `security-compliance.lock.yml` | `workflow_dispatch` only | Manual | Runs targeted PIPEDA/FINTRAC security and compliance checks |
+
+**Activation notes:**
+
+- `ci-doctor` only activates when the triggering workflow run concluded with
+  `failure`. It correctly skips on success — a run showing `conclusion: skipped`
+  means CI was green, not that the agent is broken.
+- `code-simplifier` and `duplicate-code-detector` run daily via cron. If they
+  show zero runs, check whether GitHub Actions disabled the workflow for
+  inactivity (Settings > Actions > Workflows) and re-enable it.
+- `code-simplifier` has a `skip-if-match` guard: it will not run if there is
+  already an open PR titled `[code-simplifier]`.
+- `security-compliance` is intentionally manual. Dispatch it before an audit or
+  when targeted scanning is needed.
+
+### 6. Infrastructure and Maintenance
+
+| Workflow | Trigger | Role |
+|---|---|---|
+| `agentics-maintenance.yml` | Every 2 hours | Closes expired gh-aw discussions, issues, and PRs |
+| `copilot-setup-steps.yml` | `workflow_dispatch`, push to its own path | Shared Copilot Agent environment setup |
+
+Key property: these are supporting infrastructure. They do not produce
+application changes.
 
 ## Operator Surfaces
 
@@ -229,7 +267,9 @@ Decision logs, operator views, live pipeline visualization, and drill reports
 exist because a real operator needs to know what the system is doing, what it
 refused to do, and why.
 
-## Secrets
+## Secrets and Variables
+
+### Secrets
 
 | Secret | Purpose |
 |---|---|
@@ -237,6 +277,13 @@ refused to do, and why.
 | `COPILOT_GITHUB_TOKEN` | Copilot engine token for gh-aw workflows |
 | `GH_AW_PROJECT_GITHUB_TOKEN` | Project board access for repo-assist updates |
 | `AZURE_CLIENT_ID` / `AZURE_TENANT_ID` / `AZURE_SUBSCRIPTION_ID` | Azure deploy identity |
+
+### Repository Variables
+
+| Variable | Purpose | Default |
+|---|---|---|
+| `PIPELINE_HEALING_ENABLED` | Kill switch for autonomous healing. Set to `false` to pause dispatch, repair, and auto-merge while keeping detection and recording active. | unset (healing enabled) |
+| `GH_AW_MODEL_AGENT_COPILOT` | Model used by continuous improvement agents (`code-simplifier`, `duplicate-code-detector`). Older agents (`repo-assist`, `pipeline-status`) hardcode their model. | `gpt-5` |
 
 ## Repo Settings
 

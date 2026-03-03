@@ -42,6 +42,19 @@ Configure these repository secrets before using the autonomous lane:
 - `AZURE_TENANT_ID`
 - `AZURE_SUBSCRIPTION_ID`
 
+## Required Repository Variables
+
+| Variable | Purpose | Default |
+|---|---|---|
+| `PIPELINE_HEALING_ENABLED` | Kill switch for autonomous healing (`false` to pause) | unset (enabled) |
+| `GH_AW_MODEL_AGENT_COPILOT` | Model for continuous improvement agents | `gpt-5` |
+
+Set variables with:
+
+```bash
+gh variable set GH_AW_MODEL_AGENT_COPILOT --body "gpt-5"
+```
+
 ## Required Repo Settings
 
 Bootstrap configures some of these automatically, but the live repo must end up
