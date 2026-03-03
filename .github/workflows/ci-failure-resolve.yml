@@ -1,13 +1,14 @@
 #
 # CI Failure Resolver — Marks active PR repair incidents resolved when the
-# current PR head passes the active CI workflow.
+# current PR head passes the active CI workflow. Also closes stale CI Failure
+# Doctor diagnostic issues (label: cookie) when CI passes on main.
 #
 
 name: "CI Failure Resolver"
 
 on:
   workflow_run:
-    workflows: [".NET CI", "Node CI", "Docker CI"]
+    workflows: [".NET CI", "Node CI", "Docker CI", "Deploy Router", "Deploy to Azure"]
     types: [completed]
 
 permissions:
@@ -195,3 +196,31 @@ jobs:
               --body "CI repair incident resolved for PR #${PR_NUMBER}. CI passed on ${SUCCESS_RUN_URL} for head \`${HEAD_SHA}\`." >/dev/null || \
               echo "::warning::Could not post resolution comment on issue #${LINKED_ISSUE}"
           fi
+
+  close-cookie-issues:
+    runs-on: ubuntu-latest
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'main'
+    timeout-minutes: 5
+    steps:
+      - name: Close stale CI Failure Doctor issues
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          SUCCESS_RUN_URL: ${{ github.event.workflow_run.html_url }}
+        run: |
+          set -euo pipefail
+
+          ISSUES=$(gh issue list --repo "$REPO" --state open --label cookie --json number,title --jq '.[].number')
+          if [ -z "$ISSUES" ]; then
+            echo "No open cookie issues to close."
+            exit 0
+          fi
+
+          for ISSUE_NUMBER in $ISSUES; do
+            echo "Closing cookie issue #${ISSUE_NUMBER}..."
+            gh issue close "$ISSUE_NUMBER" --repo "$REPO" \
+              --comment "CI is green on main (${SUCCESS_RUN_URL}). Closing diagnostic issue as resolved." || \
+              echo "::warning::Failed to close cookie issue #${ISSUE_NUMBER}"
+          done
