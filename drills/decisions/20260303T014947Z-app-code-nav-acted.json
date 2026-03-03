@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "event_id": "20260303T014947Z-app-code-nav-acted",
+  "timestamp": "2026-03-03T01:49:47Z",
+  "actor": {
+    "type": "agent",
+    "name": "repo-assist"
+  },
+  "workflow": "auto-dispatch",
+  "requested_action": "app_code_change",
+  "policy_result": {
+    "mode": "autonomous",
+    "reason": null
+  },
+  "target": {
+    "type": "pull_request",
+    "id": "354",
+    "path": null,
+    "display": "[Pipeline] PR #354 — Nav + Landing Link"
+  },
+  "evidence": [
+    "Linked issue #346 with acceptance criteria",
+    "Change scoped to TicketDeflection/Pages/**",
+    "+15 lines: navigation link and landing page specimen section"
+  ],
+  "outcome": "acted",
+  "summary": "Added compliance link to navigation and landing page per issue #346.",
+  "human_owner": null
+}

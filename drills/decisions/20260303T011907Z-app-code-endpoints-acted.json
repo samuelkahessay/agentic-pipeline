@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "event_id": "20260303T011907Z-app-code-endpoints-acted",
+  "timestamp": "2026-03-03T01:19:07Z",
+  "actor": {
+    "type": "agent",
+    "name": "repo-assist"
+  },
+  "workflow": "auto-dispatch",
+  "requested_action": "app_code_change",
+  "policy_result": {
+    "mode": "autonomous",
+    "reason": null
+  },
+  "target": {
+    "type": "pull_request",
+    "id": "352",
+    "path": null,
+    "display": "[Pipeline] PR #352 — Compliance API Endpoints"
+  },
+  "evidence": [
+    "Linked issue #344 with acceptance criteria",
+    "Change scoped to TicketDeflection/Endpoints/**",
+    "+154 lines: scan, metrics, decision endpoints with AUTO_BLOCK guard"
+  ],
+  "outcome": "acted",
+  "summary": "Implemented compliance API endpoints per issue #344.",
+  "human_owner": null
+}

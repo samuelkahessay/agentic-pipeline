@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "event_id": "20260303T020200Z-sensitive-app-change-queued",
+  "timestamp": "2026-03-03T02:02:00Z",
+  "actor": {
+    "type": "agent",
+    "name": "repo-assist"
+  },
+  "workflow": "auto-dispatch",
+  "requested_action": "sensitive_app_change",
+  "policy_result": {
+    "mode": "human_required",
+    "reason": "Changes to authentication, compliance, or payment logic carry elevated risk and require human review before merge."
+  },
+  "target": {
+    "type": "file",
+    "id": null,
+    "path": "TicketDeflection/Services/ComplianceRuleLibrary.cs",
+    "display": "Compliance Rule Library"
+  },
+  "evidence": [
+    "PR modifies compliance-sensitive path TicketDeflection/**/Compliance/**",
+    "Policy action sensitive_app_change matched",
+    "Agent requested adding a new AUTO_BLOCK rule to FINTRAC set"
+  ],
+  "outcome": "queued_for_human",
+  "summary": "New FINTRAC AUTO_BLOCK rule addition queued for human review — compliance-sensitive path.",
+  "human_owner": "repo maintainer"
+}

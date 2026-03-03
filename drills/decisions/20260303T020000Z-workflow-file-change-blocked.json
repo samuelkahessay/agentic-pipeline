@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "event_id": "20260302T201905Z-workflow-file-change-blocked",
-  "timestamp": "2026-03-02T20:19:05Z",
+  "event_id": "20260303T020000Z-workflow-file-change-blocked",
+  "timestamp": "2026-03-03T02:00:00Z",
   "actor": {
     "type": "workflow",
     "name": "pr-review-submit"
@@ -24,6 +24,6 @@
     "Merge gate evaluated after an APPROVE verdict"
   ],
   "outcome": "blocked",
-  "summary": "Autonomous merge blocked because the PR touched a workflow file.",
+  "summary": "Autonomous merge blocked — PR touched a workflow file. Requires human approval.",
   "human_owner": "repo maintainer"
 }

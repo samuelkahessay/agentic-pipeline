@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "event_id": "20260303T002100Z-issue-decomposition-acted",
+  "timestamp": "2026-03-03T00:21:00Z",
+  "actor": {
+    "type": "agent",
+    "name": "repo-assist"
+  },
+  "workflow": "auto-dispatch",
+  "requested_action": "issue_decomposition",
+  "policy_result": {
+    "mode": "autonomous",
+    "reason": null
+  },
+  "target": {
+    "type": "issue",
+    "id": "339",
+    "path": null,
+    "display": "PRD: Compliance Scan Service (Run 07)"
+  },
+  "evidence": [
+    "Human-authored PRD issue #339 with acceptance criteria",
+    "Decomposed into 8 dependency-ordered issues #340–#347",
+    "All sub-issues prefixed with [Pipeline]"
+  ],
+  "outcome": "acted",
+  "summary": "Decomposed compliance scanner PRD into 8 dependency-ordered implementation issues.",
+  "human_owner": null
+}

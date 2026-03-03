@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "event_id": "20260303T015042Z-app-code-tests-acted",
+  "timestamp": "2026-03-03T01:50:42Z",
+  "actor": {
+    "type": "agent",
+    "name": "repo-assist"
+  },
+  "workflow": "auto-dispatch",
+  "requested_action": "app_code_change",
+  "policy_result": {
+    "mode": "autonomous",
+    "reason": null
+  },
+  "target": {
+    "type": "pull_request",
+    "id": "355",
+    "path": null,
+    "display": "[Pipeline] PR #355 — Compliance Tests"
+  },
+  "evidence": [
+    "Linked issue #347 with acceptance criteria",
+    "Change scoped to TicketDeflection.Tests/**",
+    "+273 lines: endpoint, page, and scan service tests (102 total passing)"
+  ],
+  "outcome": "acted",
+  "summary": "Added compliance test suite per issue #347. 102 tests passing.",
+  "human_owner": null
+}

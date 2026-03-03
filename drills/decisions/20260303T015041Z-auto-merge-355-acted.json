@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "event_id": "20260302T201840Z-auto-merge-pipeline-pr-acted",
-  "timestamp": "2026-03-02T20:18:40Z",
+  "event_id": "20260303T015041Z-auto-merge-355-acted",
+  "timestamp": "2026-03-03T01:50:41Z",
   "actor": {
     "type": "workflow",
     "name": "pr-review-submit"
@@ -14,9 +14,9 @@
   },
   "target": {
     "type": "pull_request",
-    "id": "284",
+    "id": "355",
     "path": null,
-    "display": "[Pipeline] PR #284"
+    "display": "[Pipeline] PR #355"
   },
   "evidence": [
     "Formal APPROVE review posted",
@@ -24,6 +24,6 @@
     "PR title starts with [Pipeline]"
   ],
   "outcome": "acted",
-  "summary": "Auto-merge armed after approval on PR #284.",
+  "summary": "Auto-merge armed after approval on PR #355.",
   "human_owner": null
 }

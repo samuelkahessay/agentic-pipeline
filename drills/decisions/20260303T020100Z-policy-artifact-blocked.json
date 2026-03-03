@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "event_id": "20260303T020100Z-policy-artifact-blocked",
+  "timestamp": "2026-03-03T02:01:00Z",
+  "actor": {
+    "type": "agent",
+    "name": "repo-assist"
+  },
+  "workflow": "auto-dispatch",
+  "requested_action": "policy_artifact_change",
+  "policy_result": {
+    "mode": "human_required",
+    "reason": "Changes to policy redefine the system's authority and must remain human-owned."
+  },
+  "target": {
+    "type": "file",
+    "id": null,
+    "path": "autonomy-policy.yml",
+    "display": "autonomy-policy.yml"
+  },
+  "evidence": [
+    "Agent attempted to add compliance-specific policy action",
+    "Policy action policy_artifact_change matched autonomy-policy.yml",
+    "fail_closed: true — unknown expansions blocked by default"
+  ],
+  "outcome": "blocked",
+  "summary": "Agent attempted to modify autonomy policy. Blocked — policy must remain human-owned.",
+  "human_owner": "repo maintainer"
+}
