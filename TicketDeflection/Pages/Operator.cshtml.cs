@@ -6,6 +6,7 @@ namespace TicketDeflection.Pages;
 public class OperatorModel : PageModel
 {
     private readonly IDecisionLedgerService _ledger;
+    private readonly IDrillReportService _drills;
     private static readonly string[] HardBoundaryActions =
     [
         "workflow_file_change",
@@ -16,15 +17,17 @@ public class OperatorModel : PageModel
         "secret_or_token_change"
     ];
 
-    public OperatorModel(IDecisionLedgerService ledger)
+    public OperatorModel(IDecisionLedgerService ledger, IDrillReportService drills)
     {
         _ledger = ledger;
+        _drills = drills;
     }
 
     public DecisionQueue Queue { get; private set; } = new([], [], []);
     public DecisionMetrics Metrics { get; private set; } = new(0, 0, 0, 0, 0, null);
     public IReadOnlyList<DecisionEvent> Decisions { get; private set; } = [];
     public DecisionEvent? FeaturedBoundaryStop { get; private set; }
+    public IReadOnlyList<DrillReport> DrillRuns { get; private set; } = [];
 
     public async Task OnGetAsync()
     {
@@ -45,6 +48,11 @@ public class OperatorModel : PageModel
 
         FeaturedBoundaryStop = Queue.Blocked.FirstOrDefault(IsHardBoundaryStop)
             ?? Queue.QueuedForHuman.FirstOrDefault(IsHardBoundaryStop);
+
+        DrillRuns = (await _drills.GetReportsAsync())
+            .Where(r => r.Verdict != "pending")
+            .Take(10)
+            .ToList();
     }
 
     private static bool IsHardBoundaryStop(DecisionEvent decision)
