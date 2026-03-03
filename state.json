@@ -1,10 +1,10 @@
 {
-  "last_run": "2026-03-03T00:22:42Z",
-  "workflow_run_id": "22602120671",
+  "last_run": "2026-03-03T00:35:00Z",
+  "workflow_run_id": "22602401144",
   "current_prd": {
     "issue": 339,
     "title": "PRD: Compliance Scan Service (Run 07 — C#/.NET 10)",
-    "status": "awaiting_decomposition"
+    "status": "in_progress"
   },
   "pipeline_status": "ON_TRACK",
   "attempts": [
@@ -55,9 +55,10 @@
     {"issue": 331, "pr": 332, "status": "merged"},
     {"issue": 333, "pr": 336, "status": "merged"},
     {"issue": 334, "pr": 337, "status": "merged"},
-    {"issue": 335, "pr": 338, "status": "merged"}
+    {"issue": 335, "pr": 338, "status": "merged"},
+    {"issue": 340, "status": "pr_open", "branch": "repo-assist/issue-340-compliance-models"}
   ],
-  "open_issues": [],
-  "open_prs": [],
-  "notes": "Run 07 PRD #339 (Compliance Scan Service) created 2026-03-03. Awaiting /decompose to generate implementation issues. Run 06 fully complete."
+  "open_issues": [340, 341, 342, 343, 344, 345, 346, 347],
+  "open_prs": [340],
+  "notes": "Run 07: Implementing Compliance Scan Service. Issue #340 PR created (compliance models). Issues #341-#347 blocked in dependency chain. After #340 merges, next run should implement #341 and #342 in parallel."
 }

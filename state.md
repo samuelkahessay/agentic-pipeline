@@ -1,23 +1,25 @@
 # Pipeline State — 2026-03-03
 
 ## Last Run
-- Workflow run: 22602120671
-- Date: 2026-03-03T00:22:42Z
+- Workflow run: 22602401144
+- Date: 2026-03-03T00:35:00Z
 
-## Run 07 — Compliance Scan Service: **AWAITING DECOMPOSITION**
+## Run 07 — Compliance Scan Service: **IN PROGRESS** 🔄
 
-PRD #339 created 2026-03-03T00:20:48Z. No implementation issues exist yet.
-Next step: `/decompose` on issue #339 to generate implementation issues.
-
-## Run 06 — Policy-Bounded Execution: **COMPLETE** ✅
-
-| Issue | Title | Status |
-|-------|-------|--------|
-| #333 | Rewrite public narrative to policy-bounded AI execution system | ✅ Merged PR #336 |
-| #334 | Add demo-preflight.sh with offline and live readiness checks | ✅ Merged PR #337 |
-| #335 | Build backend autonomy APIs for decisions, queue, and metrics | ✅ Merged PR #338 |
+### Issues Created by PRD Decomposer (#339)
+| Issue | Title | Deps | Status |
+|-------|-------|------|--------|
+| #340 | Add Compliance Domain Models and Enums | None | 🟡 PR Open |
+| #341 | Extend DbContext and Add Compliance Demo Seed Data | #340 | ⏳ Blocked |
+| #342 | Implement Static Compliance Rule Library | #340 | ⏳ Blocked |
+| #343 | Implement Compliance Scan Engine Service | #341, #342 | ⏳ Blocked |
+| #344 | Implement Compliance API Endpoints | #343 | ⏳ Blocked |
+| #345 | Create Compliance Dashboard Razor Page at /compliance | #344 | ⏳ Blocked |
+| #346 | Add Compliance Link to Navigation and Landing Page | #345 | ⏳ Blocked |
+| #347 | Add Tests for Compliance Scan Service | #346 | ⏳ Blocked |
 
 ### Next Actions
-1. Archive Run 06 via `scripts/archive-run.sh`
-2. Wait for prd-decomposer to create Run 07 issues from PRD #339
-3. repo-assist will pick up and implement issues in next run
+1. Wait for PR #340 to be reviewed and merged
+2. After #340 merges: implement #341 (DbContext/Seed) and #342 (Rule Library) in parallel
+3. After #341 and #342 merge: implement #343 (Scan Engine Service)
+4. Continue chain through #344, #345, #346, #347
