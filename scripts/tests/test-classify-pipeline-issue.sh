@@ -31,7 +31,8 @@ TRACKER_ISSUE=$(cat <<'JSON'
 {
   "title": "PRD: Ticket Deflection Service (Run 04 - C#/.NET 8)",
   "labels": [
-    { "name": "pipeline" }
+    { "name": "pipeline" },
+    { "name": "feature" }
   ]
 }
 JSON
@@ -48,6 +49,6 @@ printf '%s' "$STATUS_JSON" | jq -e '.actionable == false' >/dev/null
 printf '%s' "$STATUS_JSON" | jq -e '.reason == "status_issue"' >/dev/null
 
 printf '%s' "$TRACKER_JSON" | jq -e '.actionable == false' >/dev/null
-printf '%s' "$TRACKER_JSON" | jq -e '.reason == "missing_actionable_label"' >/dev/null
+printf '%s' "$TRACKER_JSON" | jq -e '.reason == "prd_tracking_issue"' >/dev/null
 
 echo "classify-pipeline-issue.sh tests passed"

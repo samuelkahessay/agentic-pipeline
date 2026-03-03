@@ -20,6 +20,11 @@ if ! has_label "pipeline"; then
 elif [ "$TITLE" = "[Pipeline] Status" ]; then
   ACTIONABLE=false
   REASON="status_issue"
+elif [[ "$TITLE" == PRD:* ]]; then
+  # Root PRD issues are planning/tracking items. repo-assist should work the
+  # decomposed implementation issues, not loop on the PRD itself.
+  ACTIONABLE=false
+  REASON="prd_tracking_issue"
 elif has_label "report"; then
   ACTIONABLE=false
   REASON="report_issue"
