@@ -148,7 +148,7 @@ What breaks first at scale is not raw code generation. It is the control plane.
 The proof is not a slogan about autonomy. It is observable behavior. The
 pipeline was dogfooded heavily — every application, UI surface, and feature
 below was built through the pipeline path. 8 self-healing drill reports and 4
-upstream fixes merged into `gh-aw` came from running it against real work in
+upstream fixes merged into [`gh-aw`](https://github.com/github/gh-aw) came from running it against real work in
 this repo.
 
 ### Completed Runs
@@ -172,6 +172,7 @@ were reported, fixed, and credited in the release notes:
 |---|---|
 | [`v0.51.3`](https://github.com/github/gh-aw/releases/tag/v0.51.3) | [#19023](https://github.com/github/gh-aw/issues/19023) Mixed-trigger concurrency group collapse, [#19024](https://github.com/github/gh-aw/issues/19024) Malformed `#aw_*` references pass without validation |
 | [`v0.51.6`](https://github.com/github/gh-aw/releases/tag/v0.51.6) | [#19158](https://github.com/github/gh-aw/issues/19158) `gh aw checks --json` collapses optional failures into top-level state, [#19020](https://github.com/github/gh-aw/issues/19020) Auto-merge gating ignores non-required deployment statuses |
+| [`v0.53.0`](https://github.com/github/gh-aw/releases/tag/v0.53.0) | [#19476](https://github.com/github/gh-aw/issues/19476) `push_repo_memory` has no retry/backoff on concurrent pushes, [#19475](https://github.com/github/gh-aw/issues/19475) `get_current_branch` leaks stderr outside git repos, [#19474](https://github.com/github/gh-aw/issues/19474) Unconditional agent-output download causes ENOENT noise, [#19473](https://github.com/github/gh-aw/issues/19473) Copilot engine fallback uses `--model` flag instead of `COPILOT_MODEL` env var |
 
 ### Operational Proof
 
