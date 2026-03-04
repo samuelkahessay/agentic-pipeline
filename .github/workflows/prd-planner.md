@@ -9,6 +9,7 @@ on:
   workflow_dispatch:
   slash_command:
     name: plan
+    events: [issues, issue_comment, discussion, discussion_comment]
   reaction: "eyes"
 
 timeout-minutes: 30

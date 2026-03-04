@@ -26,7 +26,7 @@
 # Also maintains its own PRs by fixing CI failures and resolving merge conflicts.
 # Can be triggered on-demand via /repo-assist <instructions>.
 #
-# gh-aw-metadata: {"schema_version":"v1","frontmatter_hash":"4b53dc06a01a4acc45c11aff18d676a12dc18719ffb41db640eb7520901eda44","compiler_version":"v0.52.1"}
+# gh-aw-metadata: {"schema_version":"v1","frontmatter_hash":"6eb55badc960a3942d8e1368d1d858fbc0d9231d64c94be65f89ec2db7712016","compiler_version":"v0.52.1"}
 
 name: "Pipeline Repo Assist"
 "on":
@@ -43,11 +43,6 @@ name: "Pipeline Repo Assist"
     - created
     - edited
   issues:
-    types:
-    - opened
-    - edited
-    - reopened
-  pull_request:
     types:
     - opened
     - edited
@@ -73,19 +68,17 @@ jobs:
     needs: pre_activation
     if: >
       (needs.pre_activation.outputs.activated == 'true') && (((github.event_name == 'issues' || github.event_name == 'issue_comment' ||
-      github.event_name == 'pull_request' || github.event_name == 'pull_request_review_comment' || github.event_name == 'discussion' ||
-      github.event_name == 'discussion_comment') && ((github.event_name == 'issues') && ((startsWith(github.event.issue.body, '/repo-assist ')) ||
-      (github.event.issue.body == '/repo-assist')) || (github.event_name == 'issue_comment') && (((startsWith(github.event.comment.body, '/repo-assist ')) ||
+      github.event_name == 'pull_request_review_comment' || github.event_name == 'discussion' || github.event_name == 'discussion_comment') &&
+      ((github.event_name == 'issues') && ((startsWith(github.event.issue.body, '/repo-assist ')) || (github.event.issue.body == '/repo-assist')) ||
+      (github.event_name == 'issue_comment') && (((startsWith(github.event.comment.body, '/repo-assist ')) ||
       (github.event.comment.body == '/repo-assist')) && (github.event.issue.pull_request == null)) || (github.event_name == 'issue_comment') &&
       (((startsWith(github.event.comment.body, '/repo-assist ')) || (github.event.comment.body == '/repo-assist')) &&
       (github.event.issue.pull_request != null)) || (github.event_name == 'pull_request_review_comment') &&
       ((startsWith(github.event.comment.body, '/repo-assist ')) || (github.event.comment.body == '/repo-assist')) ||
-      (github.event_name == 'pull_request') && ((startsWith(github.event.pull_request.body, '/repo-assist ')) ||
-      (github.event.pull_request.body == '/repo-assist')) || (github.event_name == 'discussion') && ((startsWith(github.event.discussion.body, '/repo-assist ')) ||
+      (github.event_name == 'discussion') && ((startsWith(github.event.discussion.body, '/repo-assist ')) ||
       (github.event.discussion.body == '/repo-assist')) || (github.event_name == 'discussion_comment') && ((startsWith(github.event.comment.body, '/repo-assist ')) ||
       (github.event.comment.body == '/repo-assist')))) || (!(github.event_name == 'issues' || github.event_name == 'issue_comment' ||
-      github.event_name == 'pull_request' || github.event_name == 'pull_request_review_comment' || github.event_name == 'discussion' ||
-      github.event_name == 'discussion_comment')))
+      github.event_name == 'pull_request_review_comment' || github.event_name == 'discussion' || github.event_name == 'discussion_comment')))
     runs-on: ubuntu-slim
     permissions:
       contents: read
@@ -1462,20 +1455,18 @@ jobs:
 
   pre_activation:
     if: >
-      ((github.event_name == 'issues' || github.event_name == 'issue_comment' || github.event_name == 'pull_request' ||
-      github.event_name == 'pull_request_review_comment' || github.event_name == 'discussion' || github.event_name == 'discussion_comment') &&
-      ((github.event_name == 'issues') && ((startsWith(github.event.issue.body, '/repo-assist ')) || (github.event.issue.body == '/repo-assist')) ||
+      ((github.event_name == 'issues' || github.event_name == 'issue_comment' || github.event_name == 'pull_request_review_comment' ||
+      github.event_name == 'discussion' || github.event_name == 'discussion_comment') && ((github.event_name == 'issues') &&
+      ((startsWith(github.event.issue.body, '/repo-assist ')) || (github.event.issue.body == '/repo-assist')) ||
       (github.event_name == 'issue_comment') && (((startsWith(github.event.comment.body, '/repo-assist ')) ||
       (github.event.comment.body == '/repo-assist')) && (github.event.issue.pull_request == null)) || (github.event_name == 'issue_comment') &&
       (((startsWith(github.event.comment.body, '/repo-assist ')) || (github.event.comment.body == '/repo-assist')) &&
       (github.event.issue.pull_request != null)) || (github.event_name == 'pull_request_review_comment') &&
       ((startsWith(github.event.comment.body, '/repo-assist ')) || (github.event.comment.body == '/repo-assist')) ||
-      (github.event_name == 'pull_request') && ((startsWith(github.event.pull_request.body, '/repo-assist ')) ||
-      (github.event.pull_request.body == '/repo-assist')) || (github.event_name == 'discussion') && ((startsWith(github.event.discussion.body, '/repo-assist ')) ||
+      (github.event_name == 'discussion') && ((startsWith(github.event.discussion.body, '/repo-assist ')) ||
       (github.event.discussion.body == '/repo-assist')) || (github.event_name == 'discussion_comment') && ((startsWith(github.event.comment.body, '/repo-assist ')) ||
       (github.event.comment.body == '/repo-assist')))) || (!(github.event_name == 'issues' || github.event_name == 'issue_comment' ||
-      github.event_name == 'pull_request' || github.event_name == 'pull_request_review_comment' || github.event_name == 'discussion' ||
-      github.event_name == 'discussion_comment'))
+      github.event_name == 'pull_request_review_comment' || github.event_name == 'discussion' || github.event_name == 'discussion_comment'))
     runs-on: ubuntu-slim
     permissions:
       discussions: write

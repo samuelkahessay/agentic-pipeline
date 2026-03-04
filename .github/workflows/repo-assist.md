@@ -10,6 +10,7 @@ on:
   workflow_dispatch:
   slash_command:
     name: repo-assist
+    events: [issues, issue_comment, pull_request_comment, pull_request_review_comment, discussion, discussion_comment]
   reaction: "eyes"
 
 concurrency:
