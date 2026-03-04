@@ -104,13 +104,17 @@ actions:
       Changes to authentication, compliance, or payment logic carry elevated risk
       and require human review before merge.
     allowed_targets:
+      - TicketDeflection/Program.cs
       - TicketDeflection/**/Auth/**
       - TicketDeflection/**/Compliance/**
       - TicketDeflection/**/Payments/**
+      - TicketDeflection/Pages/OperatorLogin*
       - TicketDeflection/Services/Compliance*
+      - TicketDeflection/Services/ICompliance*
       - TicketDeflection/Models/Compliance*
       - TicketDeflection/Endpoints/ComplianceEndpoints.cs
       - TicketDeflection/Pages/Compliance*
+      - TicketDeflection/Data/TicketDbContext.cs
       - TicketDeflection/Data/ComplianceSeedData.cs
       - src/**/auth/**
       - src/**/compliance/**

@@ -46,6 +46,7 @@ builder.Services.AddSingleton<IDecisionLedgerService, DecisionLedgerService>();
 builder.Services.AddSingleton<IDrillReportService, DrillReportService>();
 builder.Services.AddSingleton<IShowcaseService, ShowcaseService>();
 builder.Services.AddSingleton<IComplianceRuleLibrary, ComplianceRuleLibrary>();
+builder.Services.AddSingleton<IOperatorLoginThrottle, OperatorLoginThrottle>();
 builder.Services.AddScoped<IComplianceScanService, ComplianceScanService>();
 builder.Services.AddHttpClient<IGitHubPipelineSnapshotService, GitHubPipelineSnapshotService>();
 builder.Services.AddRazorPages();
