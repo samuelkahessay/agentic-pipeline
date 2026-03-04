@@ -1,5 +1,3 @@
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
 
 namespace TicketDeflection.Services;
@@ -8,12 +6,6 @@ public sealed class DecisionLedgerService : IDecisionLedgerService
 {
     private readonly string _decisionsPath;
     private readonly ILogger<DecisionLedgerService> _logger;
-
-    private static readonly JsonSerializerOptions JsonOpts = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
-        PropertyNameCaseInsensitive = true
-    };
 
     public DecisionLedgerService(
         IConfiguration configuration,
@@ -33,18 +25,13 @@ public sealed class DecisionLedgerService : IDecisionLedgerService
     /// is at ../drills/decisions/. In published output, it would be at
     /// drills/decisions/ directly under the content root.
     /// </summary>
-    internal static string ResolveDefaultDecisionsPath(string contentRoot)
-    {
-        var publishedPath = Path.GetFullPath(Path.Combine(contentRoot, "drills", "decisions"));
-        if (Directory.Exists(publishedPath))
-            return publishedPath;
-        return Path.GetFullPath(Path.Combine(contentRoot, "..", "drills", "decisions"));
-    }
+    internal static string ResolveDefaultDecisionsPath(string contentRoot) =>
+        JsonFileLoader.ResolveDefaultDrillsSubdirPath(contentRoot, "decisions");
 
     public Task<IReadOnlyList<DecisionEvent>> GetDecisionsAsync()
     {
         var events = LoadAllEvents();
-        events.Sort((a, b) => CompareTimestampsDescending(a.Timestamp, b.Timestamp));
+        events.Sort((a, b) => JsonFileLoader.CompareTimestampsDescending(a.Timestamp, b.Timestamp));
         return Task.FromResult<IReadOnlyList<DecisionEvent>>(events);
     }
 
@@ -78,28 +65,7 @@ public sealed class DecisionLedgerService : IDecisionLedgerService
 
     private List<DecisionEvent> LoadAllEvents()
     {
-        var results = new List<DecisionEvent>();
-
-        if (!Directory.Exists(_decisionsPath))
-        {
-            _logger.LogWarning("Decision ledger directory not found at {Path}", _decisionsPath);
-            return results;
-        }
-
-        foreach (var file in Directory.EnumerateFiles(_decisionsPath, "*.json"))
-        {
-            try
-            {
-                var json = File.ReadAllText(file);
-                var evt = JsonSerializer.Deserialize<DecisionEvent>(json, JsonOpts);
-                if (evt is not null)
-                    results.Add(evt);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Skipping decision file {File}: failed to parse", file);
-            }
-        }
+        var results = JsonFileLoader.LoadAll<DecisionEvent>(_decisionsPath, _logger, "decision");
 
         // Remove events that have been superseded by corrected versions
         var replacedIds = new HashSet<string>(
@@ -109,19 +75,5 @@ public sealed class DecisionLedgerService : IDecisionLedgerService
             results.RemoveAll(e => replacedIds.Contains(e.EventId));
 
         return results;
-    }
-
-    private static int CompareTimestampsDescending(string left, string right)
-    {
-        var leftParsed = ParseTimestamp(left);
-        var rightParsed = ParseTimestamp(right);
-        return rightParsed.CompareTo(leftParsed);
-    }
-
-    private static DateTimeOffset ParseTimestamp(string value)
-    {
-        return DateTimeOffset.TryParse(value, out var parsed)
-            ? parsed
-            : DateTimeOffset.MinValue;
     }
 }
