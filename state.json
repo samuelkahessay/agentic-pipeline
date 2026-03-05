@@ -1,6 +1,6 @@
 {
-  "last_run": "2026-03-05T05:50:54Z",
-  "run_id": "22704343975",
+  "last_run": "2026-03-05T06:08:00Z",
+  "run_id": "22704676664",
   "current_prd": {
     "issue": 339,
     "title": "PRD: Compliance Scan Service (Run 07 - C#/.NET 10)",
@@ -20,15 +20,15 @@
   },
   "open_issues": {
     "382": "in-progress-pr-created-mobile-responsiveness",
-    "383": "in-progress-pr-created-hero-heading-fix"
+    "384": "in-progress-pr-created-x-axis-scroll"
   },
   "open_prs": [
-    {"issue": 383, "branch": "repo-assist/issue-383-hero-heading-fix", "title": "Hero heading fix: balance line wrapping on all viewports"},
-    {"issue": 382, "branch": "repo-assist/issue-382-mobile-responsiveness", "title": "Mobile responsiveness: fix layout issues on Compliance, Operator, and Activity pages"}
+    {"issue": 382, "branch": "repo-assist/issue-382-mobile-responsiveness-6e443ac865bd3005", "title": "[Pipeline] Mobile responsiveness: fix layout issues on Compliance, Operator, and Activity pages", "pr": 386, "status": "approved-pending-sensitive-review"},
+    {"issue": 384, "branch": "repo-assist/issue-384-prevent-x-axis-scroll", "title": "[Pipeline] Fix: prevent horizontal (x-axis) page scrolling on mobile", "pr": "new-this-run"}
   ],
   "aw_issues_triaged": ["364-no-op-runs-system-managed"],
   "nav_items": ["overview (/)", "operator (/operator)", "pipeline (/pipeline)", "compliance (/compliance)"],
   "pipeline_status": "on-track",
-  "notes": "Run 07 Compliance Scan Service is complete. Two new informal pipeline issues created by samuelkahessay: #383 (hero heading fix) and #382 (mobile responsiveness). PRs created in this run. Issues labeled in-progress.",
-  "backlog_cursor": 383
+  "notes": "PR #386 for #382 is approved but blocked on sensitive-review (owner must /approve-sensitive). New PR created this run for #384 (x-axis scroll fix: html { overflow-x: hidden; } in site.css).",
+  "backlog_cursor": 384
 }
