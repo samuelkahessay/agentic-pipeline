@@ -1,6 +1,6 @@
 {
-  "last_run": "2026-03-05T01:18:05Z",
-  "run_id": "22697591730",
+  "last_run": "2026-03-05T02:41:31Z",
+  "run_id": "22699700974",
   "current_prd": {
     "issue": 339,
     "title": "PRD: Compliance Scan Service (Run 07 - C#/.NET 10)",
@@ -19,12 +19,13 @@
     "362": "closed"
   },
   "open_issues": {
-    "375": "bug-transient-azure-deployment-timeout"
+    "375": "bug-transient-azure-deployment-timeout-investigated",
+    "376": "ci-failure-doctor-azure-startup-informational"
   },
   "open_prs": [],
   "aw_issues_triaged": ["364-no-op-runs-system-managed"],
-  "nav_items": ["overview (/)", "operator (/operator)", "pipeline (/pipeline)", "compliance (/compliance)", "experiment (/experiment)"],
+  "nav_items": ["overview (/)", "operator (/operator)", "pipeline (/pipeline)", "compliance (/compliance)"],
   "pipeline_status": "at-risk-deployment-failure",
-  "notes": "Issue #375 is a transient Azure App Service startup timeout, not a code failure. Tests passed. Recommend rerunning deploy-router for main. Issue #373 closed, PR #374 merged.",
-  "backlog_cursor": 375
+  "notes": "Issue #375 is a transient Azure App Service startup timeout, not a code failure. Investigated in run 22697591730. Issue #376 is a CI Failure Doctor auto-generated analysis (labeled 'cookie', not pipeline). No implementable issues remain. Run 07 is functionally complete. Awaiting archive or new PRD.",
+  "backlog_cursor": 376
 }
