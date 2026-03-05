@@ -171,13 +171,12 @@ public static class ComplianceEndpoints
         TicketDbContext db,
         int count = 10)
     {
-        if (count < 1) count = 1;
-        if (count > 50) count = 50;
+        count = Math.Clamp(count, 1, 50);
 
         var random = new Random();
         int autoBlocked = 0, humanRequired = 0, advisory = 0;
 
-        for (int i = 0; i < count; i++)
+        for (var i = 0; i < count; i++)
         {
             var content = SampleContents[random.Next(SampleContents.Length)];
             var scan = await scanner.ScanAsync(content, ContentType.FREETEXT, "simulate", db);

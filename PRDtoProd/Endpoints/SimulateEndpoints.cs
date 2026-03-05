@@ -50,8 +50,7 @@ public static class SimulateEndpoints
     private static async Task<IResult> RunSimulation(
         TicketDbContext db, PipelineService pipeline, int count = 10)
     {
-        if (count < 1) count = 1;
-        if (count > 100) count = 100;
+        count = Math.Clamp(count, 1, 100);
 
         // Reset to a clean slate before each demo run
         db.ActivityLogs.RemoveRange(db.ActivityLogs);
