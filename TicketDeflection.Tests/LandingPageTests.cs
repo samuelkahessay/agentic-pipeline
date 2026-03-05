@@ -81,7 +81,7 @@ public class LandingPageTests : IClassFixture<WebApplicationFactory<Program>>
     {
         var client = _factory.CreateClient();
         var html = await client.GetStringAsync("/");
-        Assert.Contains("policy-bounded AI execution system", html);
+        Assert.Contains("autonomous delivery pipeline", html);
         Assert.Contains("Humans own intent, policy, and escalation", html);
     }
 

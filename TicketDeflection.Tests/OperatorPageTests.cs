@@ -111,7 +111,7 @@ public class OperatorPageTests : IDisposable
             new DecisionActor("workflow", "pr-review-submit"),
             "pr-review-submit",
             "workflow_file_change",
-            new PolicyResult("human_required", "Workflow changes alter the control plane and can widen blast radius across the repo."),
+            new PolicyResult("human_required", "Workflow changes alter the routing and safety rules and can widen scope of impact across the repo."),
             new DecisionTarget("file", null, ".github/workflows/auto-dispatch.yml", ".github/workflows/auto-dispatch.yml"),
             ["Workflow file touched"],
             "blocked",
@@ -237,8 +237,8 @@ public class OperatorPageTests : IDisposable
         Assert.Contains("Auto-merge armed after approval on PR #284.", html);
         Assert.Contains(".github/workflows/auto-dispatch.yml", html);
         Assert.Contains("GH_AW_GITHUB_TOKEN", html);
-        Assert.Contains("human-owned control plane", html);
-        Assert.Contains("Workflow changes alter the control plane and can widen blast radius across the repo.", html);
+        Assert.Contains("human-owned safety rules", html);
+        Assert.Contains("Workflow changes alter the routing and safety rules and can widen scope of impact across the repo.", html);
     }
 
     [Fact]

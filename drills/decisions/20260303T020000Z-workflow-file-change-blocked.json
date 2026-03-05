@@ -10,7 +10,7 @@
   "requested_action": "workflow_file_change",
   "policy_result": {
     "mode": "human_required",
-    "reason": "Workflow changes alter the control plane and can widen blast radius across the repo."
+    "reason": "Workflow changes alter the routing and safety rules and can widen scope of impact across the repo."
   },
   "target": {
     "type": "file",

@@ -1,6 +1,6 @@
 # prd-to-prod
 
-> Policy-bounded AI execution system for software delivery.
+> Autonomous software delivery pipeline with clear human boundaries.
 > Humans own intent, policy, escalation, and authority expansion. AI operates only inside the pipeline lane.
 
 ## Core Artifacts
@@ -9,18 +9,18 @@
 - [docs/decision-ledger/README.md](docs/decision-ledger/README.md) — decision event schema
 
 ## Workflow Groups
-- Ingress and routing — `auto-dispatch`, `auto-dispatch-requeue`, `prd-decomposer`
-- Execution lane — `repo-assist`, `pr-review-agent`, `pr-review-submit`
+- Entry points and routing — `auto-dispatch`, `auto-dispatch-requeue`, `prd-decomposer`
+- Agent workflows — `repo-assist`, `pr-review-agent`, `pr-review-submit`
 - Delivery and recovery — CI, deploy, failure routing, watchdog, issue cleanup
 - Auxiliary governance — status reporting, diagnostics, simplification, duplication, security/compliance
 
 ## Operator Surfaces
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — grouped architecture and boundary model
-- [docs/SELF_HEALING_MVP.md](docs/SELF_HEALING_MVP.md) — bounded self-healing runbook
+- [docs/SELF_HEALING_MVP.md](docs/SELF_HEALING_MVP.md) — self-healing runbook
 - `/operator` — queue, blocked actions, recent autonomous actions, metrics
 - `/pipeline` — live GitHub-backed pipeline visualization
 
-## Human-Owned Control Plane
+## What Humans Own
 - workflow files
 - policy changes
 - secrets and tokens

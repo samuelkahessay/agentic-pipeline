@@ -44,7 +44,7 @@ public class AutonomyEndpointTests : IDisposable
             new DecisionActor("workflow", "pr-review-submit"),
             "pr-review-submit",
             "workflow_file_change",
-            new PolicyResult("human_required", "Workflow changes alter the control plane and can widen blast radius across the repo."),
+            new PolicyResult("human_required", "Workflow changes alter the routing and safety rules and can widen scope of impact across the repo."),
             new DecisionTarget("file", null, ".github/workflows/auto-dispatch.yml", ".github/workflows/auto-dispatch.yml"),
             ["Workflow file touched"],
             "blocked",

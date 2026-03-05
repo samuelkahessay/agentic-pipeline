@@ -149,7 +149,7 @@ actions:
   - action: workflow_file_change
     scope: Modify GitHub workflow definitions or agent instructions that change autonomous behavior.
     default_mode: human_required
-    requires_human_reason: Workflow changes alter the control plane and can widen scope of impact across the repo.
+    requires_human_reason: Workflow changes alter the routing and safety rules and can widen scope of impact across the repo.
     allowed_targets:
       - .github/workflows/**
       - .github/*.md
