@@ -42,12 +42,12 @@ actions:
     default_mode: autonomous
     requires_human_reason: null
     allowed_targets:
-      - TicketDeflection/**
-      - TicketDeflection.Tests/**
+      - PRDtoProd/**
+      - PRDtoProd.Tests/**
       - src/**
       - tests/**
       - package.json
-      - TicketDeflection.sln
+      - PRDtoProd.sln
       - Dockerfile
       - global.json
     evidence_required:
@@ -77,10 +77,10 @@ actions:
       - drills/decisions/**
       - scripts/log-decision.sh
       - scripts/demo-preflight.sh
-      - TicketDeflection/Pages/Operator.cshtml
-      - TicketDeflection/Pages/Operator.cshtml.cs
-      - TicketDeflection/Endpoints/AutonomyEndpoints.cs
-      - TicketDeflection/Services/**
+      - PRDtoProd/Pages/Operator.cshtml
+      - PRDtoProd/Pages/Operator.cshtml.cs
+      - PRDtoProd/Endpoints/AutonomyEndpoints.cs
+      - PRDtoProd/Services/**
     evidence_required:
       - Existing workflow events or drill outputs to render
       - No authority expansion in the underlying workflows
@@ -104,18 +104,18 @@ actions:
       Changes to authentication, compliance, or payment logic carry elevated risk
       and require human review before merge.
     allowed_targets:
-      - TicketDeflection/Program.cs
-      - TicketDeflection/**/Auth/**
-      - TicketDeflection/**/Compliance/**
-      - TicketDeflection/**/Payments/**
-      - TicketDeflection/Pages/OperatorLogin*
-      - TicketDeflection/Services/Compliance*
-      - TicketDeflection/Services/ICompliance*
-      - TicketDeflection/Models/Compliance*
-      - TicketDeflection/Endpoints/ComplianceEndpoints.cs
-      - TicketDeflection/Pages/Compliance*
-      - TicketDeflection/Data/TicketDbContext.cs
-      - TicketDeflection/Data/ComplianceSeedData.cs
+      - PRDtoProd/Program.cs
+      - PRDtoProd/**/Auth/**
+      - PRDtoProd/**/Compliance/**
+      - PRDtoProd/**/Payments/**
+      - PRDtoProd/Pages/OperatorLogin*
+      - PRDtoProd/Services/Compliance*
+      - PRDtoProd/Services/ICompliance*
+      - PRDtoProd/Models/Compliance*
+      - PRDtoProd/Endpoints/ComplianceEndpoints.cs
+      - PRDtoProd/Pages/Compliance*
+      - PRDtoProd/Data/TicketDbContext.cs
+      - PRDtoProd/Data/ComplianceSeedData.cs
       - src/**/auth/**
       - src/**/compliance/**
       - src/**/payments/**

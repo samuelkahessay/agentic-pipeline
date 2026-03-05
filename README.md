@@ -6,6 +6,16 @@ keep control over policy, secrets, and what the system is allowed to do.
 
 Built on [gh-aw](https://github.com/github/gh-aw) (GitHub Agentic Workflows).
 
+## Latest: meeting-to-main
+
+> Meeting transcript in. Merged PR out.
+
+[meeting-to-main](https://github.com/samuelkahessay/meeting-to-main) takes M365 meeting context via WorkIQ MCP, extracts a
+structured PRD, and feeds it into this pipeline. The first GitHub Agentic
+Workflows + WorkIQ integration.
+
+[Repo](https://github.com/samuelkahessay/meeting-to-main)
+
 > **Try it:** visit [`/operator/login`](https://prd-to-prod.azurewebsites.net/operator/login)
 > for demo credentials. The [`/operator`](https://prd-to-prod.azurewebsites.net/operator) dashboard is public read-only.
 

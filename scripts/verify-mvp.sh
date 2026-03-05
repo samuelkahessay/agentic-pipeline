@@ -50,7 +50,7 @@ CHECKS=(
   "bash scripts/tests/test-run-lifecycle-lib.sh"
   "bash scripts/tests/test-self-healing-drill-dispatch-substate.sh"
   "bash scripts/tests/test-self-healing-drill-workflow-matching.sh"
-  "dotnet test TicketDeflection.sln"
+  "dotnet test PRDtoProd.sln"
 )
 
 run_check() {

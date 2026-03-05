@@ -54,11 +54,11 @@ run_check "Policy: autonomy-policy.yml exists and validates" \
 
 # 2. Build
 run_check "Build: dotnet build succeeds" \
-  dotnet build "$REPO_ROOT/TicketDeflection.sln" -c Release --no-restore -nologo
+  dotnet build "$REPO_ROOT/PRDtoProd.sln" -c Release --no-restore -nologo
 
 # 3. Tests
 run_check "Tests: dotnet test passes" \
-  dotnet test "$REPO_ROOT/TicketDeflection.sln" -c Release --no-build --nologo
+  dotnet test "$REPO_ROOT/PRDtoProd.sln" -c Release --no-build --nologo
 
 # 4. Drill evidence
 check_drill_evidence() {
@@ -68,7 +68,7 @@ check_drill_evidence() {
     return 1
   fi
   local found
-  found=$(find "$reports_dir" -name "*.json" -newer "$REPO_ROOT/TicketDeflection.sln" 2>/dev/null | head -1)
+  found=$(find "$reports_dir" -name "*.json" -newer "$REPO_ROOT/PRDtoProd.sln" 2>/dev/null | head -1)
   if [ -z "$found" ]; then
     # Fall back: look for any JSON with a PASS verdict
     found=$(grep -rl '"verdict":"PASS"' "$reports_dir" 2>/dev/null | head -1)

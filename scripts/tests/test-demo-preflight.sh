@@ -12,7 +12,7 @@ mkdir -p "$TMPDIR/scripts"
 LOG_FILE="$TMPDIR/calls.log"
 : > "$LOG_FILE"
 
-touch "$TMPDIR/TicketDeflection.sln"
+touch "$TMPDIR/PRDtoProd.sln"
 
 # Create fake drill evidence with a PASS verdict
 mkdir -p "$TMPDIR/drills/reports"

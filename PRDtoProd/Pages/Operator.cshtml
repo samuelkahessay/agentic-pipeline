@@ -1,0 +1,488 @@
+@page "/operator"
+@model PRDtoProd.Pages.OperatorModel
+@{
+    ViewData["Title"] = "Decision Evidence";
+    ViewData["NavTitle"] = "DECISION EVIDENCE";
+}
+
+@section Styles {
+<style>
+    .boundary-panel {
+        background: rgba(9, 16, 28, 0.82);
+        border: 1px solid rgba(248, 81, 73, 0.2);
+        border-top: 2px solid var(--red);
+    }
+    .boundary-grid {
+        display: grid;
+        grid-template-columns: 1.2fr 0.8fr;
+        gap: 24px;
+    }
+    .boundary-rule {
+        color: var(--red);
+        font-family: var(--sans);
+        font-size: 1.35rem;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+    .boundary-copy {
+        color: var(--text);
+        font-size: 0.92rem;
+        line-height: 1.65;
+    }
+    .boundary-kv {
+        border-top: 1px solid rgba(248, 81, 73, 0.12);
+        padding-top: 10px;
+        margin-top: 10px;
+    }
+    .boundary-kv:first-child {
+        border-top: none;
+        padding-top: 0;
+        margin-top: 0;
+    }
+    .code-pill {
+        color: var(--accent);
+        background: rgba(0, 170, 255, 0.08);
+        border: 1px solid var(--border);
+        display: inline-block;
+        padding: 3px 8px;
+        font-size: 0.7rem;
+    }
+    .summary-line {
+        color: #d5dfeb;
+        font-size: 0.85rem;
+        line-height: 1.45;
+    }
+    .meta-line {
+        color: var(--dim);
+        font-size: 0.72rem;
+        line-height: 1.45;
+    }
+    .evidence-list {
+        margin-top: 8px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+    .empty-state {
+        color: var(--dim);
+        font-size: 0.78rem;
+        padding: 10px 0 2px;
+    }
+    .run-card {
+        background: rgba(9, 16, 28, 0.6);
+        border: 1px solid var(--border);
+        padding: 14px 16px;
+        margin-bottom: 8px;
+    }
+    .run-card:last-child {
+        margin-bottom: 0;
+    }
+    .stage-dots {
+        display: flex;
+        gap: 4px;
+        align-items: center;
+    }
+    .stage-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 2px;
+    }
+    .stage-dot-pass {
+        background: var(--green);
+    }
+    .stage-dot-manual {
+        background: var(--amber);
+    }
+    .stage-dot-fail {
+        background: var(--red);
+    }
+    .stage-dot-skip {
+        background: var(--border);
+    }
+    .run-duration {
+        color: var(--dim);
+        font-size: 0.72rem;
+        font-family: var(--mono);
+    }
+</style>
+}
+
+<div class="max-w-6xl mx-auto px-4 py-10">
+    <div class="mb-8">
+        <div class="text-xs text-dim mb-2 uppercase tracking-widest">// oversight layer — visible decisions, not hidden automation</div>
+        <h1 class="font-sans text-3xl font-bold text-white mb-3">Decision Evidence</h1>
+        <p class="max-w-3xl text-sm leading-relaxed" style="color: var(--text)">
+            Evidence-backed view of published pipeline decision artifacts. Shows
+            what the system did autonomously, what it blocked, and what it handed
+            back to a human. Built from real decision events, not live state.
+        </p>
+    </div>
+
+    <div class="grid grid-cols-2 md:grid-cols-6 gap-4 mb-8" aria-label="Operator metrics">
+        <div class="panel panel-top p-4">
+            <div class="metric-lbl">total events</div>
+            <div class="metric-val">@Model.Metrics.TotalEvents</div>
+        </div>
+        <div class="panel panel-green p-4">
+            <div class="metric-lbl">autonomous acted</div>
+            <div class="metric-val text-green">@Model.Metrics.AutonomousActed</div>
+        </div>
+        <div class="panel panel-red p-4">
+            <div class="metric-lbl">blocked</div>
+            <div class="metric-val text-red">@Model.Metrics.Blocked</div>
+        </div>
+        <div class="panel panel-amber p-4">
+            <div class="metric-lbl">queued for human</div>
+            <div class="metric-val text-amber">@Model.Metrics.QueuedForHuman</div>
+        </div>
+        <div class="panel p-4">
+            <div class="metric-lbl">escalated</div>
+            <div class="metric-val">@Model.Metrics.Escalated</div>
+        </div>
+        <div class="panel p-4">
+            <div class="metric-lbl">last update</div>
+            <div class="text-white text-sm">
+                @(Model.Metrics.LastUpdatedUtc ?? "no events")
+            </div>
+        </div>
+    </div>
+
+    <section class="boundary-panel p-5 mb-8" aria-labelledby="boundary-heading">
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <div class="text-xs text-dim uppercase tracking-widest mb-1">hard boundary</div>
+                <h2 id="boundary-heading" class="font-sans text-2xl font-bold text-white">The system stops before it can widen its own authority.</h2>
+            </div>
+            <span class="badge badge-red">human-owned safety rules</span>
+        </div>
+
+        @if (Model.FeaturedBoundaryStop is null)
+        {
+            <div class="empty-state">No safety-boundary stop has been recorded yet.</div>
+        }
+        else
+        {
+            <div class="boundary-grid">
+                <div>
+                    <div class="boundary-rule mb-3">
+                        @Model.FeaturedBoundaryStop.Summary
+                    </div>
+                    <div class="boundary-copy">
+                        This is the explicit stop condition for the demo. The AI can implement,
+                        review, merge, and repair inside policy, but it cannot change workflow
+                        rules, secrets, merge scope, or other safety-critical surfaces without a
+                        human taking over.
+                    </div>
+                    <div class="evidence-list mt-4">
+                        <span class="badge badge-red">@Model.FeaturedBoundaryStop.Outcome</span>
+                        <span class="code-pill">@Model.FeaturedBoundaryStop.RequestedAction</span>
+                        @foreach (var evidence in Model.FeaturedBoundaryStop.Evidence)
+                        {
+                            <span class="badge badge-blue">@evidence</span>
+                        }
+                    </div>
+                </div>
+                <div>
+                    <div class="boundary-kv">
+                        <div class="metric-lbl">target</div>
+                        <div class="summary-line">@(Model.FeaturedBoundaryStop.Target.Display ?? Model.FeaturedBoundaryStop.Target.Path ?? Model.FeaturedBoundaryStop.Target.Type)</div>
+                    </div>
+                    <div class="boundary-kv">
+                        <div class="metric-lbl">policy reason</div>
+                        <div class="summary-line">@(Model.FeaturedBoundaryStop.PolicyResult.Reason ?? "human review required")</div>
+                    </div>
+                    <div class="boundary-kv">
+                        <div class="metric-lbl">human owner</div>
+                        <div class="summary-line">@(Model.FeaturedBoundaryStop.HumanOwner ?? "unassigned")</div>
+                    </div>
+                    <div class="boundary-kv">
+                        <div class="metric-lbl">source workflow</div>
+                        <div class="summary-line">@Model.FeaturedBoundaryStop.Workflow</div>
+                    </div>
+                </div>
+            </div>
+        }
+    </section>
+
+    <div class="grid lg:grid-cols-[1.25fr_1fr] gap-6 mb-8">
+        <section class="panel panel-red p-5" aria-labelledby="blocked-heading">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <div class="text-xs text-dim uppercase tracking-widest mb-1">blocked actions</div>
+                    <h2 id="blocked-heading" class="font-sans text-xl font-bold text-white">Human-required refusals</h2>
+                </div>
+                <span class="badge badge-red">@Model.Queue.Blocked.Count blocked</span>
+            </div>
+            @if (Model.Queue.Blocked.Count == 0)
+            {
+                <div class="empty-state">No blocked actions recorded.</div>
+            }
+            else
+            {
+                @foreach (var decision in Model.Queue.Blocked)
+                {
+                    <article class="record">
+                        <div class="flex flex-wrap items-center gap-2 mb-2">
+                            <span class="badge badge-red">@decision.Outcome</span>
+                            <span class="code-pill">@decision.RequestedAction</span>
+                        </div>
+                        <div class="summary-line">@decision.Summary</div>
+                        <div class="meta-line mt-2">
+                            target: @(decision.Target.Display ?? decision.Target.Path ?? decision.Target.Type)
+                        </div>
+                        <div class="meta-line">
+                            reason: @(decision.PolicyResult.Reason ?? "human review required")
+                        </div>
+                        <div class="meta-line">
+                            owner: @(decision.HumanOwner ?? "unassigned")
+                        </div>
+                        <div class="evidence-list">
+                            @foreach (var evidence in decision.Evidence)
+                            {
+                                <span class="badge badge-blue">@evidence</span>
+                            }
+                        </div>
+                    </article>
+                }
+            }
+        </section>
+
+        <section class="panel panel-amber p-5" aria-labelledby="queued-heading">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <div class="text-xs text-dim uppercase tracking-widest mb-1">human queue</div>
+                    <h2 id="queued-heading" class="font-sans text-xl font-bold text-white">Waiting on an operator</h2>
+                </div>
+                <span class="badge badge-amber">@Model.Queue.QueuedForHuman.Count queued</span>
+            </div>
+            @if (Model.Queue.QueuedForHuman.Count == 0)
+            {
+                <div class="empty-state">No queued-for-human actions recorded.</div>
+            }
+            else
+            {
+                @foreach (var decision in Model.Queue.QueuedForHuman)
+                {
+                    <article class="record">
+                        <div class="flex flex-wrap items-center gap-2 mb-2">
+                            <span class="badge badge-amber">@decision.Outcome</span>
+                            <span class="code-pill">@decision.RequestedAction</span>
+                        </div>
+                        <div class="summary-line">@decision.Summary</div>
+                        <div class="meta-line mt-2">
+                            target: @(decision.Target.Display ?? decision.Target.Path ?? decision.Target.Type)
+                        </div>
+                        <div class="meta-line">
+                            reason: @(decision.PolicyResult.Reason ?? "human review required")
+                        </div>
+                        <div class="meta-line">
+                            owner: @(decision.HumanOwner ?? "unassigned")
+                        </div>
+                        <div class="evidence-list">
+                            @foreach (var evidence in decision.Evidence)
+                            {
+                                <span class="badge badge-blue">@evidence</span>
+                            }
+                        </div>
+                    </article>
+                }
+            }
+        </section>
+    </div>
+
+    @if (Model.EscalatedDecisions.Count > 0)
+    {
+        <section class="panel panel-top p-5 mb-8" aria-labelledby="escalated-heading" style="border-top-color: var(--amber);">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <div class="text-xs text-dim uppercase tracking-widest mb-1">escalated decisions</div>
+                    <h2 id="escalated-heading" class="font-sans text-xl font-bold text-white">Escalated beyond initial routing</h2>
+                </div>
+                <span class="badge badge-amber">@Model.EscalatedDecisions.Count escalated</span>
+            </div>
+            @foreach (var decision in Model.EscalatedDecisions)
+            {
+                <article class="record">
+                    <div class="flex flex-wrap items-center gap-2 mb-2">
+                        <span class="badge badge-amber">escalated</span>
+                        <span class="code-pill">@decision.RequestedAction</span>
+                    </div>
+                    <div class="summary-line">@decision.Summary</div>
+                    <div class="meta-line mt-2">
+                        target: @(decision.Target.Display ?? decision.Target.Path ?? decision.Target.Type)
+                    </div>
+                    <div class="meta-line">
+                        reason: @(decision.PolicyResult.Reason ?? "escalation required")
+                    </div>
+                    <div class="meta-line">
+                        owner: @(decision.HumanOwner ?? "unassigned")
+                    </div>
+                    <div class="evidence-list">
+                        @foreach (var evidence in decision.Evidence)
+                        {
+                            <span class="badge badge-blue">@evidence</span>
+                        }
+                    </div>
+                </article>
+            }
+        </section>
+    }
+
+    <div class="grid lg:grid-cols-[1fr_1.25fr] gap-6">
+        <section class="panel panel-green p-5" aria-labelledby="autonomous-heading">
+            <details>
+                <summary class="flex items-center justify-between mb-4 cursor-pointer list-none" style="list-style: none;">
+                    <div>
+                        <div class="text-xs text-dim uppercase tracking-widest mb-1">autonomous lane</div>
+                        <h2 id="autonomous-heading" class="font-sans text-xl font-bold text-white">Recent autonomous actions</h2>
+                    </div>
+                    <span class="badge badge-green">@Model.Queue.RecentAutonomous.Count acted</span>
+                </summary>
+                @if (Model.Queue.RecentAutonomous.Count == 0)
+                {
+                    <div class="empty-state">No autonomous actions recorded.</div>
+                }
+                else
+                {
+                    @foreach (var decision in Model.Queue.RecentAutonomous)
+                    {
+                        <article class="record">
+                            <div class="flex flex-wrap items-center gap-2 mb-2">
+                                <span class="badge badge-green">@decision.Outcome</span>
+                                <span class="code-pill">@decision.RequestedAction</span>
+                            </div>
+                            <div class="summary-line">@decision.Summary</div>
+                            <div class="meta-line mt-2">
+                                workflow: @decision.Workflow
+                            </div>
+                            <div class="meta-line">
+                                target: @(decision.Target.Display ?? decision.Target.Path ?? decision.Target.Type)
+                            </div>
+                        </article>
+                    }
+                }
+            </details>
+        </section>
+
+        <section class="panel panel-top p-5" aria-labelledby="ledger-heading">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <div class="text-xs text-dim uppercase tracking-widest mb-1">decision ledger</div>
+                    <h2 id="ledger-heading" class="font-sans text-xl font-bold text-white">Recent entries</h2>
+                </div>
+                <span class="badge badge-blue">@Model.RecentDecisions.Count shown</span>
+            </div>
+            @foreach (var decision in Model.RecentDecisions)
+            {
+                <article class="record">
+                    <div class="flex flex-wrap items-center gap-2 mb-2">
+                        <span class="badge @(decision.Outcome == "blocked" ? "badge-red" : decision.Outcome == "queued_for_human" ? "badge-amber" : "badge-green")">@decision.Outcome</span>
+                        <span class="code-pill">@decision.RequestedAction</span>
+                        <span class="text-dim text-xs">@decision.Timestamp</span>
+                    </div>
+                    <div class="summary-line">@decision.Summary</div>
+                    <div class="meta-line mt-2">
+                        actor: @decision.Actor.Name · policy: @decision.PolicyResult.Mode
+                    </div>
+                    <div class="meta-line">
+                        target: @(decision.Target.Display ?? decision.Target.Path ?? decision.Target.Type)
+                    </div>
+                </article>
+            }
+        </section>
+    </div>
+
+    <section class="panel panel-top p-5 mt-8" aria-labelledby="past-runs-heading">
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <div class="text-xs text-dim uppercase tracking-widest mb-1">// past runs</div>
+                <h2 id="past-runs-heading" class="font-sans text-2xl font-bold text-white">Past Runs</h2>
+            </div>
+            <span class="badge badge-blue">@Model.DrillRuns.Count runs</span>
+        </div>
+
+        @if (Model.DrillRuns.Count == 0)
+        {
+            <div class="empty-state">No completed drill runs recorded.</div>
+        }
+        else
+        {
+            @foreach (var run in Model.DrillRuns)
+            {
+                var stageNames = new[] { "ci_failure", "issue_created", "auto_dispatch", "repair_pr", "ci_green", "auto_merge", "main_recovered" };
+                var stageSummary = OperatorModel.GetDrillStageSummary(run);
+                var totalStages = stageNames.Length;
+                var durationText = OperatorModel.GetDrillDurationText(run);
+                var verdictBadge = run.Verdict switch
+                {
+                    "PASS" => "badge-green",
+                    "FAIL" => "badge-red",
+                    _ => "badge-amber"
+                };
+
+                <div class="run-card">
+                    <div class="flex flex-wrap items-center gap-3 mb-2">
+                        <span class="badge @verdictBadge">@run.Verdict</span>
+                        <span class="text-white text-sm font-medium">@run.DrillId</span>
+                        <span class="run-duration">@durationText</span>
+                        <span class="text-dim text-xs">@stageSummary.CompletedCount/@totalStages complete</span>
+                        @if (stageSummary.ManualCount > 0)
+                        {
+                            <span class="badge badge-amber">@stageSummary.ManualCount manual</span>
+                        }
+                        @if (stageSummary.FailedCount > 0)
+                        {
+                            <span class="badge badge-red">@stageSummary.FailedCount failed</span>
+                        }
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="code-pill">@run.DrillType</span>
+                        @if (!string.IsNullOrEmpty(run.FailureSignature))
+                        {
+                            <span class="text-dim text-xs">@run.FailureSignature</span>
+                        }
+                    </div>
+                    @if (!string.IsNullOrEmpty(run.VerdictReason))
+                    {
+                        <div class="meta-line mt-2">
+                            reason: @run.VerdictReason
+                        </div>
+                    }
+                    <div class="stage-dots mt-3">
+                        @foreach (var name in stageNames)
+                        {
+                            var dotClass = run.Stages.TryGetValue(name, out var stage)
+                                ? stage.Status switch
+                                {
+                                    "pass" => "stage-dot-pass",
+                                    "pass_manual" => "stage-dot-manual",
+                                    _ => "stage-dot-fail"
+                                }
+                                : "stage-dot-skip";
+                            <div class="stage-dot @dotClass" title="@name"></div>
+                        }
+                    </div>
+                </div>
+            }
+        }
+
+        <div class="mt-6 pt-4" style="border-top: 1px solid var(--border);">
+            <details>
+                <summary class="text-xs text-dim uppercase tracking-widest mb-3 cursor-pointer list-none" style="list-style: none;">
+                    decision trail (@Model.DecisionTrail.Count entries)
+                </summary>
+                @foreach (var decision in Model.DecisionTrail)
+                {
+                    <article class="record">
+                        <div class="flex flex-wrap items-center gap-2 mb-1">
+                            <span class="badge @(decision.Outcome == "blocked" ? "badge-red" : decision.Outcome == "queued_for_human" ? "badge-amber" : "badge-green")">@decision.Outcome</span>
+                            <span class="code-pill">@decision.RequestedAction</span>
+                            <span class="text-dim text-xs">@decision.Timestamp</span>
+                        </div>
+                        <div class="summary-line">@decision.Summary</div>
+                    </article>
+                }
+            </details>
+        </div>
+    </section>
+</div>

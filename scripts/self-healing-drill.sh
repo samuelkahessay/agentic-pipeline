@@ -25,7 +25,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 REPO="samuelkahessay/prd-to-prod"
-CANARY_FILE="$REPO_ROOT/TicketDeflection/Canary/DrillCanary.cs"
+CANARY_FILE="$REPO_ROOT/PRDtoProd/Canary/DrillCanary.cs"
 REPORT_DIR="$REPO_ROOT/drills/reports"
 POLL_INTERVAL=15
 OVERALL_TIMEOUT_S=2700  # 45 minutes
@@ -952,7 +952,7 @@ inject_fault() {
 
   # Write broken canary (missing semicolon => CS1002)
   cat > "$CANARY_FILE" << 'CANARY_EOF'
-namespace TicketDeflection.Canary;
+namespace PRDtoProd.Canary;
 
 /// <summary>
 /// Canary class for self-healing drill suite.

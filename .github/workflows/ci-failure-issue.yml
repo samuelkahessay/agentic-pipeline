@@ -142,7 +142,7 @@ jobs:
               return 0
             fi
 
-            git log --format=%B -- TicketDeflection/Canary/DrillCanary.cs 2>/dev/null \
+            git log --format=%B -- PRDtoProd/Canary/DrillCanary.cs 2>/dev/null \
               | sed -n 's/.*\[drill-id:\([^]]*\)\].*/\1/p' | head -1
           }
 

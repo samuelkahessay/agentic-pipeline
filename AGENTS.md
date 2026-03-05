@@ -52,7 +52,7 @@ Enhancement runs are allowed. A new PRD may evolve the current application in pl
 - `README.md`, `LICENSE`, `.gitignore`
 
 ### Ephemeral files (removed on archive)
-- `src/`, `TicketDeflection/`, `TicketDeflection.Tests/` — Application code (implementation of the active PRD)
-- `package.json`, `tsconfig.json`, `TicketDeflection.sln`, `Dockerfile`, `global.json`, etc. — PRD-specific configs
+- `src/`, `PRDtoProd/`, `PRDtoProd.Tests/` — Application code (implementation of the active PRD)
+- `package.json`, `tsconfig.json`, `PRDtoProd.sln`, `Dockerfile`, `global.json`, etc. — PRD-specific configs
 - `docs/plans/` — Design documents for the active PRD
 - `node_modules/`, `.next/`, `dist/`, `drills/reports/*.json` — Build and generated artifacts
