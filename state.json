@@ -1,6 +1,6 @@
 {
-  "last_run": "2026-03-05T06:17:09Z",
-  "run_id": "22704999982",
+  "last_run": "2026-03-05T10:08:22Z",
+  "run_id": "22712760504",
   "current_prd": {
     "issue": 339,
     "title": "PRD: Compliance Scan Service (Run 07 - C#/.NET 10)",
@@ -28,6 +28,6 @@
   "aw_issues_triaged": ["364-no-op-runs-system-managed"],
   "nav_items": ["overview (/)", "operator (/operator)", "pipeline (/pipeline)", "compliance (/compliance)"],
   "pipeline_status": "at-risk",
-  "notes": "PR #386 for #382 is APPROVED (review status=success) but blocked on sensitive-review (owner must /approve-sensitive). PR #387 for #384 was merged, issue #384 closed. No other implementable issues.",
+  "notes": "PR #386 for #382 is APPROVED (review check=success) but blocked on sensitive-review (owner must /approve-sensitive). No new implementable issues. Run 07 complete. [aw] issue #364 is system-managed no-op tracker — no action needed.",
   "backlog_cursor": 382
 }
