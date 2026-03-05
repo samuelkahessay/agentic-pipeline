@@ -1,6 +1,6 @@
 {
-  "last_run": "2026-03-05T10:35:34Z",
-  "run_id": "22713823909",
+  "last_run": "2026-03-05T10:45:33Z",
+  "run_id": "22714180464",
   "current_prd": {
     "issue": 339,
     "title": "PRD: Compliance Scan Service (Run 07 - C#/.NET 10)",
@@ -17,19 +17,22 @@
     "347": "closed",
     "359": "closed",
     "362": "closed",
+    "382": "closed",
     "384": "closed"
   },
   "open_issues": {
-    "382": "in-progress-pr-386-approved-blocked-sensitive-review",
-    "388": "in-progress-pr-created"
+    "388": "in-progress-pr-390-open-awaiting-review"
   },
   "open_prs": [
-    {"issue": 382, "branch": "repo-assist/issue-382-mobile-responsiveness-6e443ac865bd3005", "title": "[Pipeline] Mobile responsiveness: fix layout issues on Compliance, Operator, and Activity pages", "pr": 386, "status": "approved-blocked-sensitive-review"},
-    {"issue": 388, "branch": "repo-assist/issue-388-refactor-ticketresponse-helper", "title": "[Pipeline] Refactor: extract shared TicketResponse mapping to TicketDtos.cs", "status": "open-awaiting-review"}
+    {"issue": 388, "branch": "repo-assist/issue-388-refactor-ticketresponse-helper-30788d0c681d9820", "title": "[Pipeline] Refactor: extract shared TicketResponse mapping to TicketDtos.cs", "pr": 390, "status": "open-awaiting-review"},
+    {"pr": 389, "title": "Refactor: extract shared ToResponse extension method", "author": "Copilot-SWE", "issue": 388, "status": "open-duplicate-non-pipeline"}
+  ],
+  "resolved_this_run": [
+    {"issue": 382, "pr": 386, "merged_by": "samuelkahessay", "note": "PR #386 merged, issue #382 closed"}
   ],
   "aw_issues_triaged": ["364-no-op-runs-system-managed"],
   "nav_items": ["overview (/)", "operator (/operator)", "pipeline (/pipeline)", "compliance (/compliance)"],
-  "pipeline_status": "at-risk",
-  "notes": "PR #386 for #382 is APPROVED but blocked on sensitive-review. PR for #388 created (refactor duplicate TicketResponse construction). [aw] issue #364 is system-managed no-op tracker — no action needed.",
+  "pipeline_status": "on-track",
+  "notes": "PR #386 merged (issue #382 closed). PR #390 open for issue #388 (refactor TicketResponse), awaiting review. PR #389 is a non-pipeline duplicate from Copilot SWE agent. [aw] issue #364 is system-managed no-op tracker.",
   "backlog_cursor": 388
 }
