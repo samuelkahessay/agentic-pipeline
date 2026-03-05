@@ -12,7 +12,7 @@ printf '%s' "$VALIDATE_JSON" | jq -e '.action_count >= 1' >/dev/null
 WORKFLOW_JSON=$(bash "$SCRIPT" resolve workflow_file_change "$POLICY")
 printf '%s' "$WORKFLOW_JSON" | jq -e '.found == true' >/dev/null
 printf '%s' "$WORKFLOW_JSON" | jq -e '.mode == "human_required"' >/dev/null
-printf '%s' "$WORKFLOW_JSON" | jq -e '.requires_human_reason | contains("control plane")' >/dev/null
+printf '%s' "$WORKFLOW_JSON" | jq -e '.requires_human_reason | contains("routing and safety rules")' >/dev/null
 
 UNKNOWN_JSON=$(bash "$SCRIPT" resolve some_unknown_action "$POLICY")
 printf '%s' "$UNKNOWN_JSON" | jq -e '.found == false' >/dev/null
@@ -24,21 +24,21 @@ printf '%s' "$WORKFLOW_MATCH_JSON" | jq -e '.found == true' >/dev/null
 printf '%s' "$WORKFLOW_MATCH_JSON" | jq -e '.matched == true' >/dev/null
 printf '%s' "$WORKFLOW_MATCH_JSON" | jq -e '.mode == "human_required"' >/dev/null
 
-APP_MATCH_JSON=$(bash "$SCRIPT" match app_code_change "TicketDeflection/Program.cs" "$POLICY")
+APP_MATCH_JSON=$(bash "$SCRIPT" match app_code_change "PRDtoProd/Program.cs" "$POLICY")
 printf '%s' "$APP_MATCH_JSON" | jq -e '.matched == true' >/dev/null
 printf '%s' "$APP_MATCH_JSON" | jq -e '.mode == "autonomous"' >/dev/null
 
 # --- Regression: sensitive_app_change must match real compliance file paths ---
 COMPLIANCE_FILES=(
-  "TicketDeflection/Services/ComplianceScanService.cs"
-  "TicketDeflection/Services/ComplianceRuleLibrary.cs"
-  "TicketDeflection/Models/ComplianceDecision.cs"
-  "TicketDeflection/Models/ComplianceScan.cs"
-  "TicketDeflection/Models/ComplianceEnums.cs"
-  "TicketDeflection/Endpoints/ComplianceEndpoints.cs"
-  "TicketDeflection/Pages/Compliance.cshtml"
-  "TicketDeflection/Pages/Compliance.cshtml.cs"
-  "TicketDeflection/Data/ComplianceSeedData.cs"
+  "PRDtoProd/Services/ComplianceScanService.cs"
+  "PRDtoProd/Services/ComplianceRuleLibrary.cs"
+  "PRDtoProd/Models/ComplianceDecision.cs"
+  "PRDtoProd/Models/ComplianceScan.cs"
+  "PRDtoProd/Models/ComplianceEnums.cs"
+  "PRDtoProd/Endpoints/ComplianceEndpoints.cs"
+  "PRDtoProd/Pages/Compliance.cshtml"
+  "PRDtoProd/Pages/Compliance.cshtml.cs"
+  "PRDtoProd/Data/ComplianceSeedData.cs"
 )
 
 for FILE in "${COMPLIANCE_FILES[@]}"; do
@@ -53,15 +53,15 @@ for FILE in "${COMPLIANCE_FILES[@]}"; do
   }
 done
 
-PROGRAM_SENSITIVE_JSON=$(bash "$SCRIPT" match sensitive_app_change "TicketDeflection/Program.cs" "$POLICY")
+PROGRAM_SENSITIVE_JSON=$(bash "$SCRIPT" match sensitive_app_change "PRDtoProd/Program.cs" "$POLICY")
 printf '%s' "$PROGRAM_SENSITIVE_JSON" | jq -e '.matched == true' >/dev/null || {
-  echo "FAIL: sensitive_app_change should match TicketDeflection/Program.cs" >&2
+  echo "FAIL: sensitive_app_change should match PRDtoProd/Program.cs" >&2
   exit 1
 }
 
-DBCTX_SENSITIVE_JSON=$(bash "$SCRIPT" match sensitive_app_change "TicketDeflection/Data/TicketDbContext.cs" "$POLICY")
+DBCTX_SENSITIVE_JSON=$(bash "$SCRIPT" match sensitive_app_change "PRDtoProd/Data/TicketDbContext.cs" "$POLICY")
 printf '%s' "$DBCTX_SENSITIVE_JSON" | jq -e '.matched == true' >/dev/null || {
-  echo "FAIL: sensitive_app_change should match TicketDeflection/Data/TicketDbContext.cs" >&2
+  echo "FAIL: sensitive_app_change should match PRDtoProd/Data/TicketDbContext.cs" >&2
   exit 1
 }
 

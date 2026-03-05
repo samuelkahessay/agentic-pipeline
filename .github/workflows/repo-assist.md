@@ -206,7 +206,7 @@ Each checkpoint value is a JSON string:
   "stage": "plan | progress | pre-pr",
   "issue": 123,
   "summary": "Read issue #123, plan: add AuthService with 2 endpoints",
-  "files_touched": ["TicketDeflection/Services/AuthService.cs"],
+  "files_touched": ["PRDtoProd/Services/AuthService.cs"],
   "blockers": [],
   "next_step": "Create test file and write failing tests"
 }

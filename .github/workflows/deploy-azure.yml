@@ -42,10 +42,10 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      - run: dotnet restore TicketDeflection.sln
-      - run: dotnet build TicketDeflection.sln --no-restore -c Release
-      - run: dotnet test TicketDeflection.sln --no-build -c Release --verbosity normal
-      - run: dotnet publish TicketDeflection/TicketDeflection.csproj --no-build -c Release -o ./publish
+      - run: dotnet restore PRDtoProd.sln
+      - run: dotnet build PRDtoProd.sln --no-restore -c Release
+      - run: dotnet test PRDtoProd.sln --no-build -c Release --verbosity normal
+      - run: dotnet publish PRDtoProd/PRDtoProd.csproj --no-build -c Release -o ./publish
 
       - name: Login to Azure
         uses: azure/login@v2

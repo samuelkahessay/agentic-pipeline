@@ -5,8 +5,8 @@
 
 RUN_LIFECYCLE_EPHEMERAL_DIRS=(
   "src"
-  "TicketDeflection"
-  "TicketDeflection.Tests"
+  "PRDtoProd"
+  "PRDtoProd.Tests"
 )
 
 RUN_LIFECYCLE_EPHEMERAL_FILES=(
@@ -19,7 +19,7 @@ RUN_LIFECYCLE_EPHEMERAL_FILES=(
   "vitest.config.ts"
   "vercel.json"
   "next-env.d.ts"
-  "TicketDeflection.sln"
+  "PRDtoProd.sln"
   "Dockerfile"
   "global.json"
 )

@@ -38,6 +38,6 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
-      - run: dotnet restore TicketDeflection.sln
-      - run: dotnet build TicketDeflection.sln --no-restore
-      - run: dotnet test TicketDeflection.sln --no-build --verbosity normal
+      - run: dotnet restore PRDtoProd.sln
+      - run: dotnet build PRDtoProd.sln --no-restore
+      - run: dotnet test PRDtoProd.sln --no-build --verbosity normal
