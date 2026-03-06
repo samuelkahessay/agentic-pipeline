@@ -243,6 +243,39 @@
         animation: ctaPulse 0.8s cubic-bezier(0.25, 1, 0.5, 1);
     }
 
+    /* Evidence strip */
+    .evidence-strip {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0;
+        border: 1px solid var(--border);
+        margin-bottom: 48px;
+    }
+    .evidence-item {
+        flex: 1 1 120px;
+        padding: 18px 24px;
+        border-right: 1px solid var(--border);
+        text-align: center;
+    }
+    .evidence-item:last-child {
+        border-right: none;
+    }
+    .evidence-val {
+        font-family: var(--mono);
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: var(--text);
+        line-height: 1;
+        margin-bottom: 6px;
+    }
+    .evidence-lbl {
+        font-family: var(--mono);
+        font-size: 0.6rem;
+        color: var(--dim);
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+    }
+
     /* Reduced motion */
     @@media (prefers-reduced-motion: reduce) {
         .pipeline-stage,
@@ -315,6 +348,26 @@
                 <span class="pipeline-arrow">&#8594;</span>
                 <span class="pipeline-desc">Merge, deploy, or escalate</span>
             </div>
+        </div>
+    </section>
+
+    <!-- Evidence strip -->
+    <section aria-label="Pipeline statistics" class="evidence-strip">
+        <div class="evidence-item">
+            <div class="evidence-val">@Model.TotalRuns</div>
+            <div class="evidence-lbl">pipeline runs</div>
+        </div>
+        <div class="evidence-item">
+            <div class="evidence-val">@(Model.TotalIssues > 0 ? $"{Model.TotalIssues}+" : "0")</div>
+            <div class="evidence-lbl">issues resolved</div>
+        </div>
+        <div class="evidence-item">
+            <div class="evidence-val">@(Model.TotalPrs > 0 ? $"{Model.TotalPrs}+" : "0")</div>
+            <div class="evidence-lbl">PRs merged</div>
+        </div>
+        <div class="evidence-item">
+            <div class="evidence-val">~3d</div>
+            <div class="evidence-lbl">avg PRD-to-PR</div><!-- static benchmark; no per-run timing data yet -->
         </div>
     </section>
 
