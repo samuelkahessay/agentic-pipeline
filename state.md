@@ -1,10 +1,10 @@
-# Pipeline State — 2026-03-06 (Run 22761536859)
+# Pipeline State — 2026-03-06 (Run 22761659528)
 
 ## Last Run
-- Workflow run: 22761536859
-- Date: 2026-03-06T11:31:18Z
+- Workflow run: 22761659528
+- Date: 2026-03-06T11:36:04Z
 
-## Run 07 — Compliance Scan Service: **AT RISK** ⚠️
+## Run 07 — Compliance Scan Service: **COMPLETE** ✅
 
 ### Issues Status
 | Issue | Title | Status |
@@ -21,19 +21,19 @@
 | #362 | Trim shared navigation to 4 pages | ✅ Merged (PR #363) |
 | #396 | Consolidate tokenization | ✅ Merged (PR #398) |
 | #399 | CI Build Failure: RunHistoryTests | ✅ Merged (PR #400) |
-| **#402** | **CI Build Failure: EvidenceStrip_TotalsMatchAggregatedData** | **🔄 In Progress (PR #404 open, CI pending)** |
+| #402 | CI Build Failure: EvidenceStrip_TotalsMatchAggregatedData | ✅ Merged (PR #404) |
 
-### Current Work
-- PR #404 open on branch `repo-assist/issue-402-fix-evidencestrip-html-encoding-9f65ed4265b124fc`
-- Fix: @Html.Raw(...) for TotalIssues and TotalPrs in Index.cshtml to prevent HTML-encoding of '+'
+### CI Status
+- ✅ CI green on main (sha 19771938, Deploy Router: success)
+- ✅ All 165+ tests passing
 
 ### [aw] Issues
 - #364: System-managed no-op tracker (do not close)
-- #395: Triaged — root cause resolved, awaiting human closure
-- #401: Triaged — pre-agent transient failure, root cause (issue #402) has a fix PR, awaiting human closure
+- #395: Fully triaged — root cause resolved, PR #404 merged, awaiting human closure
+- #401: Fully triaged — pre-agent failure root cause resolved, awaiting human closure
 
-### Next Actions
-1. Wait for PR #404 CI to pass and be reviewed
-2. After PR #404 merges and CI is green, close issue #402
-3. Close [aw] #395 and #401 (root causes resolved)
-4. Archive Run 07: `scripts/archive-run.sh` to tag v7.0.0
+### Next Actions (Human)
+1. Close [aw] #395 and #401 (root causes resolved)
+2. Archive Run 07: `scripts/archive-run.sh` to tag v7.0.0 and create showcase entry `07-compliance-scan-service`
+3. Close PRD tracking issue #339 after demo recording
+4. Ready for next PRD drop
