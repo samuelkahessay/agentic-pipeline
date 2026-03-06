@@ -65,7 +65,7 @@ public class RunHistoryTests
         var client = factory.CreateClient();
         var html = await client.GetStringAsync("/");
 
-        Assert.Contains("pipeline runs", html);
+        Assert.Contains("0 pipeline runs", html);
     }
 
     [Fact]
