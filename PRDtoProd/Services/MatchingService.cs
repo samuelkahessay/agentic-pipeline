@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using PRDtoProd.Data;
+using PRDtoProd.DTOs;
 using PRDtoProd.Models;
 
 namespace PRDtoProd.Services;
@@ -49,6 +50,20 @@ public class MatchingService
         }
 
         return (bestScore, bestArticle);
+    }
+
+    public IReadOnlyList<ArticleMatch> GetTopMatches(Ticket ticket, IEnumerable<KnowledgeArticle> articles, int topN = 3)
+    {
+        if (topN <= 0) throw new ArgumentOutOfRangeException(nameof(topN), "topN must be greater than zero.");
+        var ticketTokens = Tokenize($"{ticket.Title} {ticket.Description}");
+        return articles
+            .Select(a => new ArticleMatch(
+                a.Id, a.Title,
+                Coverage(ticketTokens, Tokenize($"{a.Content} {a.Tags}"))))
+            .Where(m => m.Score > 0)
+            .OrderByDescending(m => m.Score)
+            .Take(topN)
+            .ToList();
     }
 
     private static readonly char[] _punctuation =

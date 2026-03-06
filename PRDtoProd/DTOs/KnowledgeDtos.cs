@@ -9,3 +9,5 @@ public record KnowledgeResponse(
     string Tags,
     string Category
 );
+
+public record ArticleMatch(Guid ArticleId, string Title, double Score);

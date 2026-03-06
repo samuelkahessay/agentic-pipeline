@@ -203,4 +203,115 @@ public class MatchingServiceTests
         Assert.Equal(TicketStatus.Escalated, ticket.Status);
         Assert.True(score < 0.3, $"Expected score < 0.3 for escalated ticket, got {score}");
     }
+
+    [Fact]
+    public void GetTopMatches_MatchingTicket_ReturnsNonEmptyList()
+    {
+        using var context = CreateContext();
+        SeedPasswordArticle(context);
+
+        var ticket = new Ticket
+        {
+            Title = "forgot password",
+            Description = "",
+            Status = TicketStatus.New
+        };
+
+        var service = CreateService();
+        var articles = context.KnowledgeArticles.ToList();
+        var matches = service.GetTopMatches(ticket, articles);
+
+        Assert.NotEmpty(matches);
+        Assert.True(matches[0].Score > 0);
+        Assert.Contains("Password", matches[0].Title);
+    }
+
+    [Fact]
+    public void GetTopMatches_NoMatchingTicket_ReturnsEmptyList()
+    {
+        using var context = CreateContext();
+        SeedPasswordArticle(context);
+
+        var ticket = new Ticket
+        {
+            Title = "zxqvbnm asdfgh",
+            Description = "",
+            Status = TicketStatus.New
+        };
+
+        var service = CreateService();
+        var articles = context.KnowledgeArticles.ToList();
+        var matches = service.GetTopMatches(ticket, articles);
+
+        Assert.Empty(matches);
+    }
+
+    [Fact]
+    public void GetTopMatches_RespectsTopNLimit()
+    {
+        using var context = CreateContext();
+        // Seed multiple articles
+        for (int i = 0; i < 5; i++)
+        {
+            context.KnowledgeArticles.Add(new KnowledgeArticle
+            {
+                Id = Guid.NewGuid(),
+                Title = $"Password Article {i}",
+                Content = "reset password login email account forgot",
+                Tags = "password,reset,login",
+                Category = TicketCategory.AccountIssue
+            });
+        }
+        context.SaveChanges();
+
+        var ticket = new Ticket
+        {
+            Title = "reset password login",
+            Description = "forgot account email",
+            Status = TicketStatus.New
+        };
+
+        var service = CreateService();
+        var articles = context.KnowledgeArticles.ToList();
+        var matches = service.GetTopMatches(ticket, articles, topN: 2);
+
+        Assert.Equal(2, matches.Count);
+    }
+
+    [Fact]
+    public void GetTopMatches_ResultsOrderedByScoreDescending()
+    {
+        using var context = CreateContext();
+        context.KnowledgeArticles.Add(new KnowledgeArticle
+        {
+            Id = Guid.NewGuid(),
+            Title = "Strong Match",
+            Content = "forgot password login email account reset",
+            Tags = "password,login,reset,email,account,forgot",
+            Category = TicketCategory.AccountIssue
+        });
+        context.KnowledgeArticles.Add(new KnowledgeArticle
+        {
+            Id = Guid.NewGuid(),
+            Title = "Weak Match",
+            Content = "password",
+            Tags = "password",
+            Category = TicketCategory.AccountIssue
+        });
+        context.SaveChanges();
+
+        var ticket = new Ticket
+        {
+            Title = "forgot password login email account reset",
+            Description = "",
+            Status = TicketStatus.New
+        };
+
+        var service = CreateService();
+        var articles = context.KnowledgeArticles.ToList();
+        var matches = service.GetTopMatches(ticket, articles);
+
+        Assert.Equal(2, matches.Count);
+        Assert.True(matches[0].Score >= matches[1].Score);
+    }
 }
