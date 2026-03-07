@@ -1,6 +1,6 @@
 {
-  "last_run": "2026-03-07T19:26:36Z",
-  "run_id": "22805615359",
+  "last_run": "2026-03-07T21:16:01Z",
+  "run_id": "22807371374",
   "current_prd": {
     "issue": 339,
     "title": "PRD: Compliance Scan Service (Run 07 - C#/.NET 10)",
@@ -11,15 +11,15 @@
     "344": "closed", "345": "closed", "346": "closed", "347": "closed",
     "359": "closed", "362": "closed", "382": "closed", "384": "closed",
     "388": "closed", "396": "closed", "399": "closed", "402": "closed",
-    "406": "closed",
-    "411": "pr-open"
+    "406": "closed", "411": "closed",
+    "414": "pr-open"
   },
-  "open_prs": ["pr-for-411"],
+  "open_prs": ["pr-for-414"],
   "pr_notes": {
-    "pr-for-411": "Created [Pipeline] PR for issue #411 (CI fix). 6 failing tests fixed. All 165 tests passing."
+    "pr-for-414": "Created [Pipeline] PR for issue #414. Restored avg PRD-to-PR evidence strip metric removed by UI commit 5c02dd8. All 165 tests passing."
   },
   "aw_issues_triaged": ["364-no-op-runs-system-managed"],
   "pipeline_status": "on-track",
-  "notes": "Run 07 original issues complete. Issue #411 implemented: fix 6 failing CI tests by aligning source with test contracts (event-log height, evidence-val class, nav status-bar classes, Operator headings). All 165 tests passing.",
-  "backlog_cursor": 411
+  "notes": "Issue #414: CI failure EvidenceStrip_ContainsPipelineLabels. Fix: add avg PRD-to-PR metric back to Index.cshtml evidence strip. All 165 tests passing.",
+  "backlog_cursor": 414
 }
