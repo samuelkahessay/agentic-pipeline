@@ -1030,14 +1030,21 @@ jobs:
     if: (github.event_name != 'pull_request') || (github.event.pull_request.head.repo.id == github.repository_id)
     runs-on: ubuntu-slim
     outputs:
-      activated: ${{ steps.check_membership.outputs.is_team_member == 'true' }}
+      activated: ${{ steps.activate_pull_request.outputs.activated == 'true' || steps.check_membership.outputs.is_team_member == 'true' }}
       matched_command: ''
     steps:
       - name: Setup Scripts
         uses: github/gh-aw/actions/setup@v0.53.3
         with:
           destination: /opt/gh-aw/actions
+      - name: Activate same-repo pull request without membership gate
+        id: activate_pull_request
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.id == github.repository_id
+        run: |
+          echo "Same-repository pull request event detected; bypassing membership gate."
+          echo "activated=true" >> "$GITHUB_OUTPUT"
       - name: Check team membership for workflow
+        if: steps.activate_pull_request.outputs.activated != 'true'
         id: check_membership
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         env:

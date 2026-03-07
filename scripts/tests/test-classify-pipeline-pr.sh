@@ -64,6 +64,16 @@ HUMAN_PR=$(cat <<'JSON'
 JSON
 )
 
+AGENTIC_BRANCHES=(
+  "code-simplifier"
+  "ci-doctor"
+  "prd-decomposer"
+  "duplicate-code-detector"
+  "security-compliance"
+  "pipeline-status"
+  "prd-planner"
+)
+
 COPILOT_JSON=$(printf '%s' "$COPILOT_PR" | bash "$SCRIPT")
 REPO_ASSIST_JSON=$(printf '%s' "$REPO_ASSIST_PR" | bash "$SCRIPT")
 TITLE_JSON=$(printf '%s' "$TITLE_PR" | bash "$SCRIPT")
@@ -85,5 +95,35 @@ printf '%s' "$FEATURE_BRANCH_JSON" | jq -e '.reason == "not_main_target"' >/dev/
 
 printf '%s' "$HUMAN_JSON" | jq -e '.pipeline_pr == false' >/dev/null
 printf '%s' "$HUMAN_JSON" | jq -e '.reason == "no_pipeline_markers"' >/dev/null
+
+for branch_prefix in "${AGENTIC_BRANCHES[@]}"; do
+  AGENTIC_PR=$(cat <<JSON
+{
+  "title": "Tune workflow policy",
+  "headRefName": "${branch_prefix}/fix-workflow-policy",
+  "baseRefName": "main",
+  "author": {
+    "login": "samuelkahessay"
+  }
+}
+JSON
+)
+
+  AGENTIC_JSON=$(printf '%s' "$AGENTIC_PR" | bash "$SCRIPT")
+  if ! printf '%s' "$AGENTIC_JSON" | jq -e '.pipeline_pr == true' >/dev/null; then
+    echo "Expected pipeline PR classification for ${branch_prefix}/" >&2
+    exit 1
+  fi
+
+  if ! printf '%s' "$AGENTIC_JSON" | jq -e '.reason == "agentic_branch"' >/dev/null; then
+    echo "Expected agentic_branch reason for ${branch_prefix}/" >&2
+    exit 1
+  fi
+
+  if ! printf '%s' "$AGENTIC_JSON" | jq -e '.reasons | index("agentic_branch") != null' >/dev/null; then
+    echo "Expected reasons to include agentic_branch for ${branch_prefix}/" >&2
+    exit 1
+  fi
+done
 
 echo "classify-pipeline-pr.sh tests passed"

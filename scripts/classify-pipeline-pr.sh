@@ -13,9 +13,16 @@ REASONS=$(jq -cn \
   --arg head_ref_name "$HEAD_REF_NAME" \
   --arg author_login "$AUTHOR_LOGIN" \
   '[
-    if ($title | startswith("[Pipeline]")) then "pipeline_title" else empty end,
     if ($head_ref_name | startswith("repo-assist/")) then "repo_assist_branch" else empty end,
     if ($head_ref_name | startswith("copilot/")) then "copilot_branch" else empty end,
+    if ($head_ref_name | startswith("code-simplifier/")) then "agentic_branch" else empty end,
+    if ($head_ref_name | startswith("ci-doctor/")) then "agentic_branch" else empty end,
+    if ($head_ref_name | startswith("prd-decomposer/")) then "agentic_branch" else empty end,
+    if ($head_ref_name | startswith("duplicate-code-detector/")) then "agentic_branch" else empty end,
+    if ($head_ref_name | startswith("security-compliance/")) then "agentic_branch" else empty end,
+    if ($head_ref_name | startswith("pipeline-status/")) then "agentic_branch" else empty end,
+    if ($head_ref_name | startswith("prd-planner/")) then "agentic_branch" else empty end,
+    if ($title | startswith("[Pipeline]")) then "pipeline_title" else empty end,
     if $author_login == "app/copilot-swe-agent" then "copilot_author" else empty end
   ]')
 

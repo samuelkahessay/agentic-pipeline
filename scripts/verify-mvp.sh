@@ -44,6 +44,7 @@ CHECKS=(
   "bash scripts/tests/test-classify-pipeline-pr.sh"
   "bash scripts/tests/test-log-decision.sh"
   "bash scripts/tests/test-pipeline-watchdog.sh"
+  "bash scripts/tests/test-patch-pr-review-agent-lock.sh"
   "bash scripts/tests/test-pr-review-agent-activation.sh"
   "bash scripts/tests/test-pr-review-submit-policy-gate.sh"
   "bash scripts/tests/test-render-ci-repair-command.sh"
