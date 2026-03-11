@@ -131,7 +131,7 @@ done
 ###############################################################################
 header "Labels"
 
-REQUIRED_LABELS=(pipeline feature bug automation in-progress ci-failure repair-in-progress repair-escalated)
+REQUIRED_LABELS=(pipeline feature bug automation in-progress ci-failure ci-auth ci-rate-limit ci-timeout ci-infrastructure needs-human repair-in-progress repair-escalated)
 
 if [[ "$GH_AUTH_OK" == true ]]; then
   # Fetch all labels once

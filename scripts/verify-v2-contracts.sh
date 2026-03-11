@@ -23,6 +23,7 @@ V2_CHECKS=(
   "bash scripts/tests/test-push-to-existing.sh"
   "bash scripts/tests/test-push-to-existing-golden.sh"
   "bash scripts/tests/test-ci-failure-router-v2.sh"
+  "bash scripts/tests/test-auto-dispatch.sh"
   "bash scripts/tests/test-resolve-deployment-url.sh"
   "bash scripts/tests/test-deploy-validation-wiring.sh"
   # Phase 5
