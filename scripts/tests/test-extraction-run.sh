@@ -33,6 +33,13 @@ exit 0
 STUB
 chmod +x "$TMPDIR/extraction/extract-prd.sh"
 
+cat > "$TMPDIR/extraction/validate-schema.sh" <<'STUB'
+#!/usr/bin/env bash
+cat >/dev/null
+exit 0
+STUB
+chmod +x "$TMPDIR/extraction/validate-schema.sh"
+
 cat > "$TMPDIR/extraction/extract-issues.sh" <<'STUB'
 #!/usr/bin/env bash
 echo "extract-issues.sh called" >> "$CALL_LOG"
@@ -40,9 +47,23 @@ printf '[{"title":"Existing repo change","description":"Patch the current repo",
 STUB
 chmod +x "$TMPDIR/extraction/extract-issues.sh"
 
+cat > "$TMPDIR/extraction/analyze-target.sh" <<'STUB'
+#!/usr/bin/env bash
+echo "analyze-target.sh called" >> "$CALL_LOG"
+if [ "${ANALYZE_TARGET_MODE:-pass}" = "fail" ]; then
+  echo "analysis failed" >&2
+  exit 1
+fi
+printf '[{"title":"Existing repo change","description":"Patch the current repo","acceptance_criteria":["Route issue creation into TARGET_REPO"],"type":"feature","dependencies":[],"technical_notes":{"current_state":"Feature missing","gap":"No v2 handoff yet","complexity":"Medium","estimated_effort":"Small","implementation_steps":["Create issue in target repo"]},"gapAnalysis":{"requirement":"Route issue creation into TARGET_REPO","currentState":"The repo has no existing-product ingress path.","gap":"Gap analysis has not been wired in yet.","suggestedAction":"Feed analyzed context into issue creation.","affectedFiles":["trigger/push-to-existing.sh"],"severity":"major"}}]\n'
+STUB
+chmod +x "$TMPDIR/extraction/analyze-target.sh"
+
 cat > "$TMPDIR/trigger/push-to-existing.sh" <<'STUB'
 #!/usr/bin/env bash
 echo "push-to-existing.sh called" >> "$CALL_LOG"
+if [ -n "${1:-}" ] && [ -f "$1" ]; then
+  cp "$1" "$PUSH_INPUT_CAPTURE"
+fi
 exit 0
 STUB
 chmod +x "$TMPDIR/trigger/push-to-existing.sh"
@@ -68,6 +89,8 @@ cat > "$TMPDIR/classify-existing-low-with-match.json" <<'JSON'
 JSON
 
 RUN_SH="$TMPDIR/extraction/run.sh"
+PUSH_INPUT_CAPTURE="$TMPDIR/push-input.json"
+export PUSH_INPUT_CAPTURE
 
 run_case() {
   : > "$CALL_LOG"
@@ -157,12 +180,18 @@ assert_stderr_contains "TARGET_REPO required" 4
 run_case "TARGET_REPO=acme/repo" --
 assert_not_called "classify.sh" 5
 assert_called "extract-issues.sh" 5
+assert_called "analyze-target.sh" 5
 assert_called "push-to-existing.sh" 5
 assert_not_called "extract-prd.sh" 5
+grep -q "The repo has no existing-product ingress path." "$PUSH_INPUT_CAPTURE" || {
+  echo "FAIL: Test 5: expected analyzed target context to flow into push-to-existing input" >&2
+  exit 1
+}
 
 run_case "TARGET_REPO=acme/repo" -- --mode auto
 assert_not_called "classify.sh" 6
 assert_called "extract-issues.sh" 6
+assert_called "analyze-target.sh" 6
 assert_called "push-to-existing.sh" 6
 assert_not_called "extract-prd.sh" 6
 
@@ -174,6 +203,7 @@ assert_not_called "push-to-existing.sh" 7
 run_case "TARGET_REPO=acme/repo" -- --mode existing
 assert_not_called "classify.sh" 8
 assert_called "extract-issues.sh" 8
+assert_called "analyze-target.sh" 8
 assert_called "push-to-existing.sh" 8
 assert_not_called "extract-prd.sh" 8
 
@@ -194,5 +224,11 @@ assert_called "extract-prd.sh" 12
 assert_not_called "extract-issues.sh" 12
 assert_not_called "push-to-existing.sh" 12
 assert_stderr_contains "TARGET_REPO=acme/dashboard" 12
+
+run_case "TARGET_REPO=acme/repo" "ANALYZE_TARGET_MODE=fail" -- --mode existing
+assert_called "extract-issues.sh" 13
+assert_called "analyze-target.sh" 13
+assert_called "push-to-existing.sh" 13
+assert_stderr_contains "Target analysis failed; continuing with extracted issues" 13
 
 echo "extraction-run.sh tests passed"

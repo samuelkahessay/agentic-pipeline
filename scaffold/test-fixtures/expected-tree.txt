@@ -56,6 +56,7 @@ dist/scaffold/scripts/archive-run.sh
 dist/scaffold/scripts/bootstrap.sh
 dist/scaffold/scripts/capture-run-data.sh
 dist/scaffold/scripts/check-autonomy-policy.sh
+dist/scaffold/scripts/classify-ci-failure.sh
 dist/scaffold/scripts/classify-pipeline-issue.sh
 dist/scaffold/scripts/classify-pipeline-pr.sh
 dist/scaffold/scripts/demo-preflight.sh
@@ -77,6 +78,7 @@ dist/scaffold/scripts/tests/test-bootstrap-test.sh
 dist/scaffold/scripts/tests/test-check-autonomy-policy.sh
 dist/scaffold/scripts/tests/test-ci-failure-context.sh
 dist/scaffold/scripts/tests/test-ci-failure-resolve.sh
+dist/scaffold/scripts/tests/test-ci-failure-router-v2.sh
 dist/scaffold/scripts/tests/test-classify-ci-failure.sh
 dist/scaffold/scripts/tests/test-classify-pipeline-issue.sh
 dist/scaffold/scripts/tests/test-classify-pipeline-pr.sh

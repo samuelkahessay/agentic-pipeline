@@ -20,6 +20,7 @@ include:
 
   # ── Scripts (runtime dependencies of workflows) ──
   - scripts/healing-control.sh
+  - scripts/classify-ci-failure.sh
   - scripts/classify-pipeline-issue.sh
   - scripts/classify-pipeline-pr.sh
   - scripts/check-autonomy-policy.sh

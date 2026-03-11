@@ -8,6 +8,10 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+warn() {
+  echo "WARN: $*" >&2
+}
+
 sha256_of_file() {
   if command -v shasum >/dev/null 2>&1; then
     shasum -a 256 "$1" | awk '{print $1}'
@@ -35,6 +39,76 @@ import sys
 print(hashlib.sha256(sys.stdin.buffer.read()).hexdigest())
 PY
   fi
+}
+
+merge_gap_analysis() {
+  python3 - "$1" "$2" <<'PY'
+from pathlib import Path
+import json
+import sys
+
+base_items = json.loads(Path(sys.argv[1]).read_text())
+analyzed_items = json.loads(Path(sys.argv[2]).read_text())
+
+if not isinstance(base_items, list) or not isinstance(analyzed_items, list):
+    raise SystemExit("expected list inputs")
+if len(base_items) != len(analyzed_items):
+    raise SystemExit("item count mismatch")
+
+severity_to_complexity = {
+    "critical": "High",
+    "major": "Medium",
+    "minor": "Low",
+}
+
+merged = []
+for index, base_item in enumerate(base_items):
+    if not isinstance(base_item, dict):
+        raise SystemExit(f"base item {index + 1} is not an object")
+    analyzed_item = analyzed_items[index]
+    if not isinstance(analyzed_item, dict):
+        raise SystemExit(f"analyzed item {index + 1} is not an object")
+
+    technical = dict(base_item.get("technical_notes") or {})
+    gap = analyzed_item.get("gapAnalysis") or {}
+    if isinstance(gap, dict):
+        current_state = str(gap.get("currentState") or "").strip()
+        gap_summary = str(gap.get("gap") or "").strip()
+        suggested_action = str(gap.get("suggestedAction") or "").strip()
+        affected_files = [
+            str(path).strip()
+            for path in (gap.get("affectedFiles") or [])
+            if str(path).strip()
+        ]
+        severity = str(gap.get("severity") or "").strip().lower()
+
+        if current_state:
+            technical["current_state"] = current_state
+        if gap_summary:
+            technical["gap"] = gap_summary
+        if severity and not str(technical.get("complexity") or "").strip():
+            technical["complexity"] = severity_to_complexity.get(severity, "Medium")
+
+        steps = [
+            str(step).strip()
+            for step in technical.get("implementation_steps", [])
+            if str(step).strip()
+        ]
+        if suggested_action and suggested_action not in steps:
+            steps.insert(0, suggested_action)
+        if affected_files:
+            file_step = "Review affected files: " + ", ".join(affected_files)
+            if file_step not in steps:
+                steps.append(file_step)
+        if steps:
+            technical["implementation_steps"] = steps[:8]
+
+    merged_item = dict(base_item)
+    merged_item["technical_notes"] = technical
+    merged.append(merged_item)
+
+print(json.dumps(merged, indent=2))
+PY
 }
 
 MODE="auto"
@@ -65,10 +139,12 @@ route_greenfield() {
 }
 
 route_existing() {
-  local tmpdir issues_file transcript_hash meeting_source
+  local tmpdir issues_file analyzed_file merged_file transcript_hash meeting_source
 
   tmpdir="$(mktemp -d)"
   issues_file="$tmpdir/issues.json"
+  analyzed_file="$tmpdir/analyzed.json"
+  merged_file="$tmpdir/issues.enriched.json"
 
   cleanup_existing_route() {
     rm -rf "$tmpdir"
@@ -76,6 +152,19 @@ route_existing() {
   trap cleanup_existing_route RETURN
 
   "$SCRIPT_DIR/extract-issues.sh" ${TRANSCRIPT_FILE:+"$TRANSCRIPT_FILE"} > "$issues_file"
+
+  if [ -x "$SCRIPT_DIR/analyze-target.sh" ]; then
+    if "$SCRIPT_DIR/analyze-target.sh" "$issues_file" > "$analyzed_file" 2>"$tmpdir/analyze-target.stderr"; then
+      if merge_gap_analysis "$issues_file" "$analyzed_file" > "$merged_file" 2>"$tmpdir/merge-gap.stderr" && \
+         printf '%s' "$(cat "$merged_file")" | bash "$SCRIPT_DIR/validate-schema.sh" "issues-output.json" - >/dev/null 2>&1; then
+        issues_file="$merged_file"
+      else
+        warn "Target analysis output could not be merged; continuing with extracted issues"
+      fi
+    else
+      warn "Target analysis failed; continuing with extracted issues"
+    fi
+  fi
 
   if [ -n "${PIPELINE_TRANSCRIPT_HASH:-}" ]; then
     transcript_hash="$PIPELINE_TRANSCRIPT_HASH"

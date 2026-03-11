@@ -27,6 +27,7 @@ run_check "classify-transcript" "bash scripts/tests/test-classify-transcript.sh"
 run_check "extraction-run" "bash scripts/tests/test-extraction-run.sh"
 run_check "push-to-existing" "bash scripts/tests/test-push-to-existing.sh"
 run_check "push-to-existing-golden" "bash scripts/tests/test-push-to-existing-golden.sh"
+run_check "ci-failure-router-v2" "bash scripts/tests/test-ci-failure-router-v2.sh"
 run_check "retry-state" "bash scripts/tests/test-retry-state.sh"
 
 # Greenfield mock smoke
