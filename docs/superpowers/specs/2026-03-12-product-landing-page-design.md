@@ -47,7 +47,7 @@ Replaces the current static nav.
 - **Center/Right links:** Pricing · How it works · For Teams · GitHub
 - **Right CTA:** `Send your PRD →` button (dark background, always visible)
 - **Style:** `backdrop-filter: blur(8px)`, semi-transparent background (`rgba(247,244,240,0.95)`), 1px bottom border
-- **Behavior:** Anchor links smooth-scroll to sections. "For Teams" scrolls to the Offer B card within the pricing section.
+- **Behavior:** Anchor links smooth-scroll to sections. "For Teams" scrolls to an `id="for-teams"` wrapper around Card B within the pricing section.
 
 ### Component changes
 - **Modify:** `studio/app/page.tsx` — replace current `<nav>` with new sticky nav component
@@ -127,7 +127,7 @@ Two-column card layout:
 
 ### Heading
 - Section label: `Pricing` (monospace, uppercase, muted)
-- Heading: `Pricing` (or `Pricing that scales with scope` — test both)
+- Heading: `Pricing` (clean, one word — matches the minimal voice of the rest of the page)
 
 ### Component changes
 - **New component:** `studio/components/landing/pricing.tsx` + `pricing.module.css`
@@ -197,7 +197,7 @@ The subtitle addition ("with policy gates deciding what needs human approval") a
 
 ### Layout
 - Same ledger table structure (Time / Event / Duration / Outcome)
-- Compact: show 3–5 rows max
+- Compact: show 5 rows max (`.slice(0, 5)` in the component, regardless of how many `fetchEvidenceData()` returns)
 - Footer: `Showing N events · View all on GitHub →`
 
 ### Component changes
@@ -249,7 +249,7 @@ For now, all CTAs point to the same destination. The page does not need a built-
 - Pricing cards: 2-column → stacked on mobile
 - What You Get: 3-column → stacked on mobile
 - 5-step strip: horizontal → scrollable or stacked on mobile
-- Sticky nav: collapse links into hamburger or simplified layout on mobile
+- Sticky nav: hide section links on mobile, keep only the logo and "Send your PRD →" CTA. No hamburger menu — the anchor links are a convenience, not critical navigation. Full link set returns at tablet breakpoint (~768px).
 - Hero: already single-column, just needs padding adjustment
 
 ---
@@ -285,7 +285,7 @@ For now, all CTAs point to the same destination. The page does not need a built-
 |---|---|---|
 | `studio/app/page.tsx` | Modify | New section order, new imports, remove section numbers/dividers, add anchor IDs |
 | `studio/app/page.module.css` | Modify | Update nav styles for sticky behavior, adjust divider/spacing |
-| `studio/app/globals.css` | Minor modify | May need a scroll-behavior rule for smooth anchor scrolling |
+| `studio/app/globals.css` | Minor modify | Add `html { scroll-behavior: smooth; }` for anchor link scrolling |
 | `studio/components/landing/hero.tsx` | Modify | New copy, remove animation, new CTAs |
 | `studio/components/landing/hero.module.css` | Modify | Single-column layout, no animation container |
 | `studio/components/landing/sticky-nav.tsx` | **New** | Client component with scroll detection, backdrop blur |
