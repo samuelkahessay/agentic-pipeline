@@ -1,8 +1,9 @@
 import { api } from "@/lib/api";
+import type { Run } from "@/lib/types";
 import { RunsTable } from "@/components/console/runs-table";
 
 export default async function RunsPage() {
-  let runs = [];
+  let runs: Run[] = [];
   try {
     runs = await api.listRuns();
   } catch {
