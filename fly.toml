@@ -1,4 +1,4 @@
-app = "prd-to-prod-console"
+app = "prd-to-prod"
 primary_region = "iad"
 
 [build]
