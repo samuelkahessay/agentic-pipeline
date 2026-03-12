@@ -18,7 +18,9 @@ on:
 
 permissions:
   contents: read
-  packages: write   # needed for Docker GHCR
+  packages: write     # needed for Docker GHCR
+  issues: write       # needed for validate-deployment
+  pull-requests: read # needed for validate-deployment
 
 concurrency:
   group: deploy
