@@ -55,16 +55,6 @@ registerQueueRoutes(app, { eventStore });
 registerRunDecisionRoutes(app, { eventStore });
 registerRunAuditRoutes(app, { eventStore });
 
-app.use(express.static(path.join(__dirname, "public")));
-
-app.get("/run/:id", (_req, res) => {
-  res.sendFile(path.join(__dirname, "public", "run.html"));
-});
-
-app.get("/history", (_req, res) => {
-  res.sendFile(path.join(__dirname, "public", "history.html"));
-});
-
 app.listen(port, "127.0.0.1", () => {
   console.log(`Operator console listening on http://127.0.0.1:${port}`);
 });
