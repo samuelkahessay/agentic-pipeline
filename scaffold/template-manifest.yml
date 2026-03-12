@@ -11,7 +11,6 @@ include:
   - .github/workflows/
   - .github/deploy-profiles/
   - .github/agents/agentic-workflows.agent.md
-  - .github/aw/actions-lock.json
   - .github/copilot-instructions.md
   - .github/ISSUE_TEMPLATE/
 
