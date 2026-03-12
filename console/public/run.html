@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Run Progress</title>
+    <link rel="stylesheet" href="/css/console.css" />
+  </head>
+  <body class="console-shell">
+    <main class="console-layout run-layout">
+      <section class="console-hero compact">
+        <p class="eyebrow">Run Progress</p>
+        <h1 id="run-title">Live execution stream</h1>
+        <p class="hero-copy">Stages turn as the shell pipeline emits progress. Artifacts appear as soon as they are discovered.</p>
+        <a class="history-link" href="/">New run</a>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <p class="eyebrow">Timeline</p>
+          <h2>Pipeline stages</h2>
+        </div>
+        <div id="stage-list" class="stage-list"></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <p class="eyebrow">Activity</p>
+          <h2>Raw event log</h2>
+        </div>
+        <div id="event-log" class="event-log"></div>
+      </section>
+    </main>
+
+    <script src="/js/app.js" defer></script>
+    <script src="/js/run-progress.js" defer></script>
+  </body>
+  </html>

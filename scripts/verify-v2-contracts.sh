@@ -10,6 +10,9 @@ V2_CHECKS=(
   "bash scripts/tests/test-manifest-completeness.sh"
   # Phase 2
   "bash scripts/tests/test-manifest-parse.sh"
+  "bash scripts/tests/test-console-structure.sh"
+  "bash scripts/tests/test-console-preflight.sh"
+  "bash scripts/tests/test-console-server.sh"
   "bash scripts/tests/test-export-scaffold.sh"
   "bash scripts/tests/test-leak-test.sh"
   "bash scripts/tests/test-bootstrap-test.sh"

@@ -833,7 +833,7 @@ Retry count is tracked via a reserved HTML comment block in the CI failure issue
 
 ## 6. Migration Plan (High-Level)
 
-**Execution status as of 2026-03-11:** The repo has completed the core consolidation work, scaffold export, v2 issue routing, gap-analysis wiring, schema validation, sub-issue linking, and deterministic CI failure classification. Local contract verification is green via `bash scripts/verify-v2-contracts.sh`. The major remaining slices are post-deploy validation (`validate-deployment.yml` + deploy/close gating), category-aware downstream routing in `auto-dispatch.yml`, live end-to-end smoke tests against a real target repo/deployment, and the operator console.
+**Execution status as of 2026-03-11:** The repo has completed the core consolidation work, scaffold export, v2 issue routing, gap-analysis wiring, schema validation, sub-issue linking, post-deploy validation wiring, category-aware auto-dispatch routing, and the first operator console implementation. Local contract verification is green via `bash scripts/verify-v2-contracts.sh`. The major remaining slices are live end-to-end smoke tests against a real target repo/deployment, explicit prompt-file artifacts for the staged gap-analysis/validation prompts, and polish on the console's richer v2 progress rendering.
 
 ### Phase 1: Create the single maintained source repo
 - [x] Move `extraction/`, `trigger/`, `mocks/` into prd-to-prod
@@ -844,9 +844,9 @@ Retry count is tracked via a reserved HTML comment block in the CI failure issue
 - [ ] Archive meeting-to-main repo
 
 ### Phase 1b: Operator Console
-- [ ] Create `console/` directory with server, orchestrator, routes, and static files
-- [ ] Add `console/` to `scaffold/template-manifest.yml` forbidden_paths
-- [ ] Wire orchestrator to spawn `extraction/extract-prd.sh` for v1 mode
+- [x] Create `console/` directory with server, orchestrator, routes, and static files
+- [x] Add `console/` to `scaffold/template-manifest.yml` forbidden_paths
+- [x] Wire orchestrator to spawn `extraction/run.sh` for unified v1/v2 mode
 - [ ] Test: operator starts console, fills form, sees PRD extraction stream in browser
 - **Prerequisite:** Phase 1 complete (`extraction/` and `trigger/` must be in prd-to-prod)
 - **Independent of:** Phase 2 (scaffold export) and Phase 3 (v2 routing)
@@ -879,19 +879,19 @@ Retry count is tracked via a reserved HTML comment block in the CI failure issue
 - [x] Wire schema validation into extract-issues.sh, analyze-target.sh
 - [x] Create `extraction/validate-deployment.sh` (evidence collection + AI verification)
 - [ ] Create `extraction/prompt-validate-claim.md` (adversarial QA prompt)
-- [ ] Create `.github/workflows/validate-deployment.yml` (dispatched by deploy-router)
-- [ ] Wire close-issues.yml to gate on validation pass
+- [x] Create `.github/workflows/validate-deployment.yml` (dispatched by deploy-router)
+- [x] Wire close-issues.yml to gate on validation pass
 - [x] Create `scripts/classify-ci-failure.sh` (deterministic failure classifier)
 - [x] Update ci-failure-issue.yml to call classifier, add category to title/labels
-- [ ] Update auto-dispatch.yml for category-aware routing
+- [x] Update auto-dispatch.yml for category-aware routing
 - [x] Update `push-to-existing.sh` for sub-issue linking
 - [ ] Update `activate-decomposed-issues.yml` for sub-issue linking parity
 - [ ] Test validation against a deployed smoke app with known acceptance criteria
 - [ ] Test degraded mode: pipeline completes when validation infrastructure fails
 - [x] Test error classification with sample CI failure logs from each category
-- [ ] Wire orchestrator to spawn `extraction/run.sh` for unified v1/v2 mode
+- [x] Wire orchestrator to spawn `extraction/run.sh` for unified v1/v2 mode
 - [ ] Add v2-specific progress rendering (gap analysis rows, per-requirement progress)
-- [ ] Add target repo input and mode toggle to form
+- [x] Add target repo input and mode toggle to form
 
 ### Phase 4: CI integration
 - [x] Add scaffold export as a CI step on prd-to-prod pushes to main
@@ -922,16 +922,16 @@ Retry count is tracked via a reserved HTML comment block in the CI failure issue
 - [x] Scaffold is reconstructable: delete dist/scaffold/, rerun export, get identical output
 - [ ] Gap analysis enriches v2 issues with specific file citations from target repo
 - [x] Gap analysis degrades gracefully: pipeline completes even when all analyses fail
-- [ ] Post-deployment validation runs automatically after deploy-router succeeds
+- [x] Post-deployment validation runs automatically after deploy-router succeeds
 - [ ] Validation failures create repair issues that re-enter the pipeline
 - [ ] Validation degrades gracefully: pipeline completes when validation infra fails
 - [x] LLM output schema validation catches malformed output before downstream corruption
-- [ ] CI failure classification routes auth/infra errors differently from code errors
+- [x] CI failure classification routes auth/infra errors differently from code errors
 - [x] Sub-issues are natively linked to parent via GitHub API (with body-text fallback)
 - [ ] Non-technical user can trigger v1 pipeline from browser without touching terminal
 - [ ] Real-time SSE streaming shows pipeline progress stage-by-stage
 - [ ] Preflight checks prevent launch when required credentials are missing
-- [ ] Console is excluded from scaffold export (forbidden_paths)
+- [x] Console is excluded from scaffold export (forbidden_paths)
 
 ---
 

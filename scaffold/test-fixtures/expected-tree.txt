@@ -85,6 +85,9 @@ dist/scaffold/scripts/tests/test-classify-ci-failure.sh
 dist/scaffold/scripts/tests/test-classify-pipeline-issue.sh
 dist/scaffold/scripts/tests/test-classify-pipeline-pr.sh
 dist/scaffold/scripts/tests/test-classify-transcript.sh
+dist/scaffold/scripts/tests/test-console-preflight.sh
+dist/scaffold/scripts/tests/test-console-server.sh
+dist/scaffold/scripts/tests/test-console-structure.sh
 dist/scaffold/scripts/tests/test-demo-preflight.sh
 dist/scaffold/scripts/tests/test-deploy-validation-wiring.sh
 dist/scaffold/scripts/tests/test-duplicate-code-detector.sh

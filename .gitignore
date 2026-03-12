@@ -10,6 +10,8 @@
 .env.*
 .claude/
 node_modules/
+console/data/*
+!console/data/.gitkeep
 dist/
 .next/
 .github/aw/

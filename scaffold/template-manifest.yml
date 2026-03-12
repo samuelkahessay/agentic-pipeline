@@ -60,6 +60,7 @@ include:
   - README.template.md
 
 forbidden_paths:
+  - console/
   - docs/plans/
   - extraction/
   - trigger/
