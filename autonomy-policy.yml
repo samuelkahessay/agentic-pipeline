@@ -42,14 +42,12 @@ actions:
     default_mode: autonomous
     requires_human_reason: null
     allowed_targets:
-      - PRDtoProd/**
-      - PRDtoProd.Tests/**
+      - studio/**
+      - console/**
       - src/**
       - tests/**
       - package.json
-      - PRDtoProd.sln
       - Dockerfile
-      - global.json
     evidence_required:
       - Linked issue with acceptance criteria
       - Tests or verification commands for the change
@@ -77,10 +75,9 @@ actions:
       - drills/decisions/**
       - scripts/log-decision.sh
       - scripts/demo-preflight.sh
-      - PRDtoProd/Pages/Operator.cshtml
-      - PRDtoProd/Pages/Operator.cshtml.cs
-      - PRDtoProd/Endpoints/AutonomyEndpoints.cs
-      - PRDtoProd/Services/**
+      - console/**/operator/**
+      - console/**/autonomy/**
+      - studio/**/operator/**
     evidence_required:
       - Existing workflow events or drill outputs to render
       - No authority expansion in the underlying workflows
@@ -104,18 +101,10 @@ actions:
       Changes to authentication, compliance, or payment logic carry elevated risk
       and require human review before merge.
     allowed_targets:
-      - PRDtoProd/Program.cs
-      - PRDtoProd/**/Auth/**
-      - PRDtoProd/**/Compliance/**
-      - PRDtoProd/**/Payments/**
-      - PRDtoProd/Pages/OperatorLogin*
-      - PRDtoProd/Services/Compliance*
-      - PRDtoProd/Services/ICompliance*
-      - PRDtoProd/Models/Compliance*
-      - PRDtoProd/Endpoints/ComplianceEndpoints.cs
-      - PRDtoProd/Pages/Compliance*
-      - PRDtoProd/Data/TicketDbContext.cs
-      - PRDtoProd/Data/ComplianceSeedData.cs
+      - console/**/auth/**
+      - console/**/compliance/**
+      - console/**/payments/**
+      - studio/**/auth/**
       - src/**/auth/**
       - src/**/compliance/**
       - src/**/payments/**
@@ -165,7 +154,9 @@ actions:
     allowed_targets:
       - GitHub Actions secrets
       - GitHub Actions variables
-      - Azure credentials
+      - VERCEL_TOKEN
+      - VERCEL_ORG_ID
+      - VERCEL_PROJECT_ID
       - COPILOT_GITHUB_TOKEN
       - GH_AW_GITHUB_TOKEN
       - GH_AW_PROJECT_GITHUB_TOKEN
@@ -181,7 +172,6 @@ actions:
     requires_human_reason: Deployment policy changes can affect live systems and widen operational scope of impact.
     allowed_targets:
       - .deploy-profile
-      - Azure App Service configuration
       - Vercel configuration
       - Docker deployment workflow inputs
     evidence_required:
