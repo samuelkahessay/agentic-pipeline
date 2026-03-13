@@ -1,8 +1,8 @@
-const styleMock = new Proxy(
+const styles = new Proxy<Record<string, string>>(
   {},
   {
-    get: (_, key) => (typeof key === "string" ? key : ""),
-  }
+    get: (_target, prop) => (typeof prop === "string" ? prop : ""),
+  },
 );
 
-export default styleMock;
+export default styles;
