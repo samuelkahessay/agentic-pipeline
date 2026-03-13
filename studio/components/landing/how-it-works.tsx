@@ -1,58 +1,68 @@
+import { PipelineAnimation } from "./pipeline-animation";
 import styles from "./how-it-works.module.css";
 
 const STEPS = [
-  {
-    label: "Plan",
-    title: "Brief decomposes into issues",
-    body: "A PRD, transcript, or description is analyzed and broken into scoped GitHub issues — each with acceptance criteria the system can verify.",
-  },
-  {
-    label: "Implement",
-    title: "Agents build, review, merge",
-    body: "Each issue is picked up by a specialized agent. It implements, opens a PR, passes automated review. Policy gates block anything that needs human sign-off.",
-  },
-  {
-    label: "Recover",
-    title: "Failures become work items",
-    body: "CI failures are detected, diagnosed, and fixed through the same pipeline. The system treats its own failures as new issues.",
-    boundary: true,
-  },
+  { num: "01", title: "Decompose", body: "PRD → scoped GitHub issues with acceptance criteria", color: "accent" },
+  { num: "02", title: "Build", body: "Agents implement each issue, open PRs with tests", color: "accent" },
+  { num: "03", title: "Review", body: "Automated code review verifies against the original spec", color: "accent" },
+  { num: "04", title: "Gate", body: "Policy decides what merges autonomously vs. needs human sign-off", color: "policy" },
+  { num: "05", title: "Ship + Heal", body: "Deploy to production. CI failures route back through the pipeline.", color: "good" },
 ];
+
+const STEP_CLASS: Record<string, string> = {
+  policy: styles.stepPolicy,
+  good: styles.stepGood,
+};
+
+const NUM_CLASS: Record<string, string> = {
+  accent: styles.stepNumAccent,
+  policy: styles.stepNumPolicy,
+  good: styles.stepNumGood,
+};
 
 export function HowItWorks() {
   return (
-    <section className={styles.section}>
-      <span className={styles.num}>01</span>
-      <h2 className={styles.heading}>Three stages. Zero handoffs.</h2>
+    <section id="how-it-works" className={styles.section}>
+      <div className={styles.labelRow}>
+        <span className={styles.label}>How it works</span>
+        <span className={styles.dot}>·</span>
+        <span className={styles.labelGhaw}>Powered by GitHub Agentic Workflows</span>
+      </div>
+      <h2 className={styles.heading}>
+        Agents build the app. Policy controls the boundaries.
+      </h2>
+      <p className={styles.subtitle}>
+        Your PRD is decomposed into scoped issues. Specialized agents implement
+        each one, open PRs, pass automated review. Human approval gates enforce
+        where the boundary is.
+      </p>
+
+      <div className={styles.animation}>
+        <PipelineAnimation />
+      </div>
+
       <div className={styles.steps}>
-        {STEPS.map((step, i) => (
+        {STEPS.map((step) => (
           <div
-            key={step.label}
-            className={`${styles.step} ${i === 2 ? styles.recover : ""}`}
+            key={step.num}
+            className={`${styles.step} ${STEP_CLASS[step.color] || ""}`}
           >
-            <div
-              className={styles.label}
-              data-variant={
-                i === 0 ? "accent" : i === 1 ? "muted" : "heal"
-              }
-            >
-              {step.label}
-            </div>
-            <h3 className={styles.title}>{step.title}</h3>
-            <p className={styles.body}>{step.body}</p>
-            {step.boundary && (
-              <div className={styles.boundary}>
-                <span className={styles.blocked}>BLOCKED</span> deploy to
-                production
-                <br />
-                <span className={styles.policyTag}>policy:</span> requires
-                human approval
-                <br />
-                owner: operator@team · queued 2m ago
-              </div>
-            )}
+            <p className={`${styles.stepNum} ${NUM_CLASS[step.color] || ""}`}>
+              {step.num}
+            </p>
+            <p className={styles.stepTitle}>{step.title}</p>
+            <p className={styles.stepBody}>{step.body}</p>
           </div>
         ))}
+      </div>
+
+      <div className={styles.credibility}>
+        <p className={styles.credibilityBody}>
+          Built on <strong>GitHub Agentic Workflows</strong> — an open framework
+          from GitHub for autonomous development workflows. We've filed 31
+          upstream findings, with 17 fixes shipped across 7 releases. The
+          pipeline is real infrastructure, not a demo.
+        </p>
       </div>
     </section>
   );

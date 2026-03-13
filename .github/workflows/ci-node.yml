@@ -36,9 +36,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Install and build studio
+      - name: Install, build, and test studio
         working-directory: studio
-        run: npm ci && npm run build
+        run: npm ci && npm run build && npx jest --verbose
       - name: Install and test console
         working-directory: console
         run: npm ci && npx jest --verbose
