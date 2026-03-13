@@ -99,3 +99,27 @@
   text-decoration: underline;
   text-underline-offset: 2px;
 }
+
+@media (max-width: 640px) {
+  .section {
+    padding: 0 20px;
+  }
+  .header {
+    display: none;
+  }
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 12px;
+  }
+  .event {
+    width: 100%;
+    word-break: break-word;
+  }
+  .time {
+    font-size: 11px;
+  }
+  .duration, .outcome {
+    font-size: 11px;
+  }
+}
