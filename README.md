@@ -53,6 +53,9 @@ Then create an issue with your product spec and comment `/decompose`.
 **You'll need:** a GitHub repo with Actions, an LLM license (~$19/mo), and
 hosting (Vercel free tier works). Optional support available at $299/mo.
 
+See [`llms.txt`](llms.txt) for a machine-readable overview of the pipeline,
+agents, and architecture — useful for pointing your own AI tools at this repo.
+
 ## What humans own vs. what AI does
 
 | Humans decide | AI handles |

@@ -1,28 +1,56 @@
 # prd-to-prod
 
-> Autonomous software delivery pipeline with clear human boundaries.
-> Humans own intent, policy, escalation, and authority expansion. AI operates only inside the pipeline lane.
+> Send a PRD, get a deployed app. Open-source autonomous pipeline powered by
+> GitHub Agentic Workflows. MIT licensed.
 
-## Core Artifacts
-- [AGENTS.md](AGENTS.md) — coding standards, PR rules, and repository conventions
+## What this is
+
+An autonomous software delivery pipeline. You write a product spec as a GitHub
+issue. AI agents decompose it into tasks, implement each one, review the code,
+merge approved PRs, deploy to production, and self-heal from CI failures.
+Humans own policy, secrets, and escalation decisions.
+
+## Quick start
+
+Fork this repo, install gh-aw (`gh extension install github/gh-aw`), run
+`bash scripts/bootstrap.sh && gh aw secrets bootstrap && git push`. Create an
+issue with a product spec and comment `/decompose`.
+
+You'll need: GitHub Actions, an LLM license (Copilot, Claude, Codex, or
+Gemini), and hosting (Vercel free tier works).
+
+## Core artifacts
+
+- [AGENTS.md](AGENTS.md) — coding standards, PR rules, repository conventions
 - [autonomy-policy.yml](autonomy-policy.yml) — machine-readable authority boundary
-- [docs/decision-ledger/README.md](docs/decision-ledger/README.md) — decision event schema
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — how workflows and agents connect
 
-## Workflow Groups
+## Pipeline agents
+
+- `prd-decomposer` — splits a spec into ordered sub-issues
+- `prd-planner` — creates an architecture plan before coding starts
+- `repo-assist` — implements issues and opens PRs
+- `frontend-agent` — handles visual/UI issues with design-aware review
+- `pr-review-agent` — reviews diffs against the spec and policy
+- `ci-doctor` — diagnoses failed CI runs
+
+## Workflow groups
+
 - Entry points and routing — `auto-dispatch`, `auto-dispatch-requeue`, `prd-decomposer`
-- Agent workflows — `repo-assist`, `pr-review-agent`, `pr-review-submit`
-- Delivery and recovery — CI, deploy, failure routing, watchdog, issue cleanup
-- Auxiliary governance — status reporting, diagnostics, simplification, duplication, security/compliance
+- Agent workflows — `repo-assist`, `frontend-agent`, `pr-review-agent`, `pr-review-submit`
+- Delivery and recovery — CI, deploy-router, failure routing, watchdog, issue cleanup
+- Auxiliary — status reporting, code simplification, duplication detection, security compliance
 
-## Operator Surfaces
-- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — grouped architecture and boundary model
-- [docs/SELF_HEALING_MVP.md](docs/SELF_HEALING_MVP.md) — self-healing runbook
-- `/operator` — queue, blocked actions, recent autonomous actions, metrics
-- `/pipeline` — live GitHub-backed pipeline visualization
+## What humans own
 
-## What Humans Own
-- workflow files
-- policy changes
-- secrets and tokens
-- deploy policy
-- branch protection and merge-scope expansion
+- Workflow files (`.github/workflows/`)
+- Policy changes (`autonomy-policy.yml`)
+- Secrets and tokens
+- Deploy configuration
+- Branch protection and merge-scope expansion
+
+## Pricing
+
+The code is free (MIT). Managed service: $99–$499 per pipeline run, all
+compute included. Self-hosted: bring your own LLM (~$19/mo) + hosting (~$0–20/mo).
+Optional support at $299/mo.
