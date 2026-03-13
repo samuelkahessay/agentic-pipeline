@@ -26,6 +26,8 @@ dist/scaffold/.github/workflows/deploy-router.yml
 dist/scaffold/.github/workflows/deploy-vercel.yml
 dist/scaffold/.github/workflows/duplicate-code-detector.lock.yml
 dist/scaffold/.github/workflows/duplicate-code-detector.md
+dist/scaffold/.github/workflows/frontend-agent.lock.yml
+dist/scaffold/.github/workflows/frontend-agent.md
 dist/scaffold/.github/workflows/pipeline-status.lock.yml
 dist/scaffold/.github/workflows/pipeline-status.md
 dist/scaffold/.github/workflows/pipeline-watchdog.yml
@@ -95,6 +97,7 @@ dist/scaffold/scripts/tests/test-extract-linked-issue-numbers.sh
 dist/scaffold/scripts/tests/test-extract-prd-mock.sh
 dist/scaffold/scripts/tests/test-extraction-run.sh
 dist/scaffold/scripts/tests/test-final-validation-matrix.sh
+dist/scaffold/scripts/tests/test-frontend-agent.sh
 dist/scaffold/scripts/tests/test-healing-control.sh
 dist/scaffold/scripts/tests/test-leak-test.sh
 dist/scaffold/scripts/tests/test-log-decision.sh
@@ -157,6 +160,8 @@ dist/scaffold/studio/components/landing/hero.module.css
 dist/scaffold/studio/components/landing/hero.tsx
 dist/scaffold/studio/components/landing/how-it-works.module.css
 dist/scaffold/studio/components/landing/how-it-works.tsx
+dist/scaffold/studio/components/landing/pipeline-animation.module.css
+dist/scaffold/studio/components/landing/pipeline-animation.tsx
 dist/scaffold/studio/jest.config.ts
 dist/scaffold/studio/lib/api.ts
 dist/scaffold/studio/lib/github.ts
