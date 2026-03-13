@@ -19,7 +19,7 @@ jobs:
           sparse-checkout-cone-mode: false
       - id: check
         run: |
-          PROFILE=$(cat .deploy-profile 2>/dev/null || echo "dotnet-azure")
+          PROFILE=$(cat .deploy-profile 2>/dev/null || echo "nextjs-vercel")
           if [[ "$PROFILE" == "nextjs-vercel" ]]; then
             echo "should-run=true" >> $GITHUB_OUTPUT
           else

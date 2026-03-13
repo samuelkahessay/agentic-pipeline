@@ -8,7 +8,7 @@ name: "CI Failure Resolver"
 
 on:
   workflow_run:
-    workflows: [".NET CI", "Node CI", "Docker CI", "Deploy Router", "Deploy to Azure"]
+    workflows: ["Node CI", "Docker CI", "Deploy Router"]
     types: [completed]
   pull_request:
     types: [closed]
