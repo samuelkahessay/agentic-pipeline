@@ -98,6 +98,7 @@ function createDatabase(dataDir) {
       deploy_url TEXT,
       prd_final TEXT,
       app_installation_id INTEGER,
+      is_demo INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
     );
@@ -115,6 +116,13 @@ function createDatabase(dataDir) {
     );
     CREATE INDEX IF NOT EXISTS idx_build_events_session ON build_events(build_session_id, id);
   `);
+
+  // Safe migration for existing databases
+  try {
+    db.exec("ALTER TABLE build_sessions ADD COLUMN is_demo INTEGER NOT NULL DEFAULT 0");
+  } catch {
+    // Column already exists — ignore
+  }
 
   return db;
 }

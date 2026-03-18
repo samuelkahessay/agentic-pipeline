@@ -55,6 +55,19 @@
   text-decoration: none;
 }
 
+.ctaSecondary {
+  display: inline-block;
+  background: transparent;
+  color: var(--ink);
+  border: 1.5px solid var(--ink);
+  padding: 14px 28px;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: inherit;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+}
+
 .ctaLink {
   font-size: 14px;
   color: var(--ink-muted);

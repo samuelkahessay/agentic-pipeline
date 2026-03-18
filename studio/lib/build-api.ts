@@ -43,8 +43,8 @@ export interface StreamChunk {
 export const buildApi = {
   getMe: () => get<BuildUser>("/pub/auth/me"),
 
-  createSession: () =>
-    post<{ sessionId: string }>("/pub/build-session"),
+  createSession: (demo = false) =>
+    post<{ sessionId: string }>("/pub/build-session", demo ? { demo: true } : undefined),
 
   getSession: (id: string) =>
     get<{ session: BuildSession; messages: BuildEvent[] }>(

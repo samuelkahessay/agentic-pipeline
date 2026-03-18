@@ -1,5 +1,5 @@
-const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
-const DEFAULT_MODEL = "anthropic/claude-sonnet-4.5";
+const DEFAULT_URL = "https://api.z.ai/api/coding/paas/v4/chat/completions";
+const DEFAULT_MODEL = "glm-5";
 const MAX_TOKENS = 2048;
 
 const SYSTEM_PROMPT = `You are a product requirements analyst. Your job is to help users refine vague ideas into specific, actionable PRDs (Product Requirements Documents).
@@ -142,8 +142,9 @@ const RESPONSE_FORMAT = {
 };
 
 function createLLMClient() {
-  const apiKey = process.env.OPENROUTER_API_KEY;
+  const apiKey = process.env.LLM_API_KEY || process.env.OPENROUTER_API_KEY;
   const model = process.env.LLM_MODEL || DEFAULT_MODEL;
+  const apiUrl = process.env.LLM_API_URL || DEFAULT_URL;
 
   function buildRequestBody(messages, stream) {
     return {
@@ -151,36 +152,31 @@ function createLLMClient() {
       messages: [{ role: "system", content: SYSTEM_PROMPT }, ...messages],
       max_tokens: MAX_TOKENS,
       stream,
-      response_format: RESPONSE_FORMAT,
-      provider: {
-        require_parameters: true,
-      },
+      response_format: { type: "json_object" },
     };
   }
 
   async function streamChat(messages, onChunk) {
     if (!apiKey) {
-      throw new Error("OPENROUTER_API_KEY is not configured");
+      throw new Error("LLM_API_KEY is not configured");
     }
 
-    const res = await fetch(OPENROUTER_URL, {
+    const res = await fetch(apiUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${apiKey}`,
-        "HTTP-Referer": "https://prd-to-prod.vercel.app",
-        "X-Title": "prd-to-prod",
       },
       body: JSON.stringify(buildRequestBody(messages, true)),
     });
 
     if (!res.ok) {
       const body = await res.text();
-      throw new Error(`OpenRouter error ${res.status}: ${body}`);
+      throw new Error(`LLM API error ${res.status}: ${body}`);
     }
 
     if (!res.body) {
-      throw new Error("OpenRouter returned an empty streaming response");
+      throw new Error("LLM API returned an empty streaming response");
     }
 
     const reader = res.body.getReader();
@@ -212,23 +208,21 @@ function createLLMClient() {
 
   async function chat(messages) {
     if (!apiKey) {
-      throw new Error("OPENROUTER_API_KEY is not configured");
+      throw new Error("LLM_API_KEY is not configured");
     }
 
-    const res = await fetch(OPENROUTER_URL, {
+    const res = await fetch(apiUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${apiKey}`,
-        "HTTP-Referer": "https://prd-to-prod.vercel.app",
-        "X-Title": "prd-to-prod",
       },
       body: JSON.stringify(buildRequestBody(messages, false)),
     });
 
     if (!res.ok) {
       const body = await res.text();
-      throw new Error(`OpenRouter error ${res.status}: ${body}`);
+      throw new Error(`LLM API error ${res.status}: ${body}`);
     }
 
     const data = await res.json();

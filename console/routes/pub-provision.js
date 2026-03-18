@@ -1,6 +1,6 @@
 const { getActiveUserSession } = require("../lib/auth-store");
 
-function registerProvisionRoutes(app, { db, provisioner, buildRunner }) {
+function registerProvisionRoutes(app, { db, serviceResolver }) {
   // Start provisioning — creates repo, checks App install
   app.post("/pub/build-session/:id/provision", async (req, res) => {
     const userSession = requireUserSession(db, req, res);
@@ -14,6 +14,7 @@ function registerProvisionRoutes(app, { db, provisioner, buildRunner }) {
     }
 
     try {
+      const { provisioner } = serviceResolver.forSession(session.id);
       const result = await provisioner.provisionRepo(session.id);
       res.json(result);
     } catch (err) {
@@ -53,6 +54,7 @@ function registerProvisionRoutes(app, { db, provisioner, buildRunner }) {
     }
 
     try {
+      const { provisioner, buildRunner } = serviceResolver.forSession(session.id);
       await provisioner.createPrdIssue(
         session.id,
         session.app_installation_id

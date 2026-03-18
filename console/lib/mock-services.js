@@ -438,4 +438,6 @@ module.exports = {
   createMockProvisioner,
   createMockBuildRunner,
   registerMockAuthRoutes,
+  createMockUser,
+  createMockSession,
 };

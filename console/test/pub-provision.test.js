@@ -7,11 +7,19 @@ const path = require("path");
 const { createDatabase } = require("../lib/db");
 const { registerProvisionRoutes } = require("../routes/pub-provision");
 
+function wrapAsServiceResolver({ provisioner, buildRunner }) {
+  return {
+    forSession() {
+      return { provisioner, buildRunner };
+    },
+  };
+}
+
 async function withServer(db, routes, run) {
   const app = express();
   app.use(express.json());
   app.use(cookieParser());
-  registerProvisionRoutes(app, { db, ...routes });
+  registerProvisionRoutes(app, { db, serviceResolver: wrapAsServiceResolver(routes) });
 
   const server = await new Promise((resolve) => {
     const instance = app.listen(0, "127.0.0.1", () => resolve(instance));

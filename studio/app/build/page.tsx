@@ -76,6 +76,28 @@ export default function BuildPage() {
       });
   }, []);
 
+  // Auto-start demo session when ?demo=true is in the URL
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("demo") !== "true") return;
+
+    // Remove demo param from URL immediately
+    url.searchParams.delete("demo");
+    replaceCurrentUrl(toRelativeUrl(url));
+
+    // Create demo session (startSession isn't available yet, so call API directly)
+    buildApi.createSession(true).then(({ sessionId: id }) => {
+      setSessionId(id);
+      // Re-fetch auth since demo session sets a cookie
+      buildApi.getMe().then(setUser).catch(() => setUser(null));
+      const nextUrl = new URL(window.location.href);
+      nextUrl.searchParams.set("session", id);
+      replaceCurrentUrl(toRelativeUrl(nextUrl));
+    }).catch((err) => {
+      setError(err instanceof Error ? err.message : "Failed to start demo session");
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const persistSessionInUrl = useCallback(
     (nextSessionId: string, nextResumeAction?: string | null) => {
       const url = new URL(window.location.href);
@@ -90,8 +112,8 @@ export default function BuildPage() {
     []
   );
 
-  const startSession = useCallback(async () => {
-    const { sessionId: id } = await buildApi.createSession();
+  const startSession = useCallback(async (demo = false) => {
+    const { sessionId: id } = await buildApi.createSession(demo);
     setSessionId(id);
     persistSessionInUrl(id);
     return id;

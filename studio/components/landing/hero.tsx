@@ -17,6 +17,7 @@ export function Hero() {
       </p>
       <div className={styles.actions}>
         <a href={MAILTO} className={styles.ctaPrimary}>Send your PRD →</a>
+        <a href="/build?demo=true" className={styles.ctaSecondary}>Try demo</a>
         <a href="#pricing" className={styles.ctaLink}>See pricing</a>
       </div>
     </section>

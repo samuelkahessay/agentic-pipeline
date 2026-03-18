@@ -20,10 +20,7 @@ const { registerPubAuthRoutes } = require("./routes/pub-auth");
 const { registerBuildSessionRoutes } = require("./routes/pub-build-session");
 const { registerBuildStreamRoutes } = require("./routes/pub-build-stream");
 const { createBuildSessionStore } = require("./lib/build-session-store");
-const { createLLMClient } = require("./lib/llm");
-const { createGitHubClient } = require("./lib/github-api");
-const { createProvisioner } = require("./lib/provisioner");
-const { createBuildRunner } = require("./lib/build-runner");
+const { createServiceResolver } = require("./lib/service-resolver");
 const { registerProvisionRoutes } = require("./routes/pub-provision");
 const { registerInternalBuildRoutes } = require("./routes/internal-build");
 
@@ -99,32 +96,23 @@ registerRunAuditRoutes(app, { eventStore });
 
 // --- Public routes (real or demo mode) ---
 
-const DEMO_MODE = process.env.DEMO_MODE === "true";
-
 const buildSessionStore = createBuildSessionStore(db);
+const serviceResolver = createServiceResolver({ db, buildSessionStore });
 
-let llmClient, githubClient, provisioner, buildRunner;
-
+// DEMO_MODE env var: when set, register mock auth globally (all-mock deployment).
+// Otherwise register real OAuth. Per-session demo is always available via the API.
+const DEMO_MODE = process.env.DEMO_MODE === "true";
 if (DEMO_MODE) {
   const mock = require("./lib/mock-services");
-  llmClient = mock.createMockLLMClient();
-  githubClient = mock.createMockGitHubClient();
-  provisioner = mock.createMockProvisioner({ db, buildSessionStore, githubClient });
-  buildRunner = mock.createMockBuildRunner({ buildSessionStore });
-  // Mock auth skips OAuth — creates demo user directly
   mock.registerMockAuthRoutes(app, { db });
-  console.log("DEMO_MODE enabled — using mock services");
+  console.log("DEMO_MODE enabled — mock auth registered globally");
 } else {
-  llmClient = createLLMClient();
-  githubClient = createGitHubClient();
-  provisioner = createProvisioner({ db, buildSessionStore, githubClient });
-  buildRunner = createBuildRunner({ buildSessionStore, githubClient });
   registerPubAuthRoutes(app, { db });
 }
 
-registerBuildSessionRoutes(app, { db, buildSessionStore, llmClient });
+registerBuildSessionRoutes(app, { db, buildSessionStore, serviceResolver });
 registerBuildStreamRoutes(app, { buildSessionStore });
-registerProvisionRoutes(app, { db, provisioner, buildRunner });
+registerProvisionRoutes(app, { db, serviceResolver });
 
 // --- Internal routes (behind /internal auth middleware) ---
 

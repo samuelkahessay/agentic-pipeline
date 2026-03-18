@@ -12,13 +12,13 @@ function createBuildSessionStore(db) {
   }
 
   return {
-    createSession(userId) {
+    createSession(userId, { isDemo = false } = {}) {
       const id = crypto.randomUUID();
       const now = new Date().toISOString();
       db.prepare(
-        `INSERT INTO build_sessions (id, user_id, status, created_at, updated_at)
-         VALUES (?, ?, 'refining', ?, ?)`
-      ).run(id, userId || null, now, now);
+        `INSERT INTO build_sessions (id, user_id, status, is_demo, created_at, updated_at)
+         VALUES (?, ?, 'refining', ?, ?, ?)`
+      ).run(id, userId || null, isDemo ? 1 : 0, now, now);
       return this.getSession(id);
     },
 

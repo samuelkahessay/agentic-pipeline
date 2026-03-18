@@ -1,3 +1,4 @@
+const crypto = require("crypto");
 const { getActiveUserSession } = require("../lib/auth-store");
 
 function resolveUserId(db, req) {
@@ -7,9 +8,41 @@ function resolveUserId(db, req) {
   return session ? session.user_id : null;
 }
 
-function registerBuildSessionRoutes(app, { db, buildSessionStore, llmClient }) {
+function registerBuildSessionRoutes(app, { db, buildSessionStore, serviceResolver }) {
   // Create a new build session
   app.post("/pub/build-session", (req, res) => {
+    const isDemo = req.body?.demo === true;
+
+    if (isDemo) {
+      const { createMockUser, createMockSession } = require("../lib/mock-services");
+      const { encrypt } = require("../lib/crypto");
+
+      const userId = createMockUser(db);
+      const authSessionId = createMockSession(db, userId);
+
+      // Create a mock OAuth grant so provisioner can consume it
+      if (!process.env.ENCRYPTION_KEY) {
+        process.env.ENCRYPTION_KEY = crypto.randomBytes(32).toString("hex");
+      }
+
+      const now = new Date().toISOString();
+      const grantExpires = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+      db.prepare("DELETE FROM oauth_grants WHERE user_id = ?").run(userId);
+      db.prepare(
+        `INSERT INTO oauth_grants (id, user_id, github_access_token, created_at, expires_at)
+         VALUES (?, ?, ?, ?, ?)`
+      ).run(crypto.randomUUID(), userId, encrypt("mock-token"), now, grantExpires);
+
+      res.cookie("build_session", authSessionId, {
+        httpOnly: true,
+        sameSite: "lax",
+        maxAge: 24 * 60 * 60 * 1000,
+      });
+
+      const session = buildSessionStore.createSession(userId, { isDemo: true });
+      return res.status(201).json({ sessionId: session.id });
+    }
+
     const userId = resolveUserId(db, req);
     const session = buildSessionStore.createSession(userId);
     res.status(201).json({ sessionId: session.id });
@@ -55,6 +88,9 @@ function registerBuildSessionRoutes(app, { db, buildSessionStore, llmClient }) {
         role: e.data.role === "user" ? "user" : "assistant",
         content: e.data.content,
       }));
+
+    // Resolve LLM client based on session type
+    const { llmClient } = serviceResolver.forSession(session.id);
 
     // Stream response via SSE
     res.writeHead(200, {
