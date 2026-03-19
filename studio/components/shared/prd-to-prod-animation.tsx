@@ -60,10 +60,10 @@ export function PrdToProdAnimation({
         className={`${styles.letters} ${amplitudeClass ?? ""}`.trim()}
         style={{ fontSize: `${size}px`, ...cssVars } as React.CSSProperties}
       >
-        <span className={`${styles.letter} ${styles.letterP}`}>p</span>
-        <span className={`${styles.letter} ${styles.letterR}`}>r</span>
-        <span className={`${styles.letter} ${styles.letterO}`}>o</span>
-        <span className={`${styles.letter} ${styles.letterD}`}>d</span>
+        <span className={`${styles.letter} ${styles.letterP}`} aria-hidden="true">p</span>
+        <span className={`${styles.letter} ${styles.letterR}`} aria-hidden="true">r</span>
+        <span className={`${styles.letter} ${styles.letterO}`} aria-hidden="true">o</span>
+        <span className={`${styles.letter} ${styles.letterD}`} aria-hidden="true">d</span>
       </div>
     </div>
   );

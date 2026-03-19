@@ -125,6 +125,17 @@ export function BuildStatus({
     void startBuild();
   }, [pendingAction, session.status, startBuild]);
 
+  // 200ms show-delay: prevents animation flicker on fast responses (Vercel guideline)
+  const [showAnimation, setShowAnimation] = useState(false);
+  useEffect(() => {
+    if (!pendingAction) {
+      setShowAnimation(false);
+      return;
+    }
+    const timer = setTimeout(() => setShowAnimation(true), 200);
+    return () => clearTimeout(timer);
+  }, [pendingAction]);
+
   const activityEvents = useMemo(
     () => events.filter((event) => event.category !== "chat"),
     [events]
@@ -183,7 +194,7 @@ export function BuildStatus({
       <section className={styles.section}>
         <h2 className={styles.sectionTitle}>Next step</h2>
         <div className={styles.card}>
-          {pendingAction ? (
+          {pendingAction && showAnimation ? (
             <div style={{ margin: "8px 0 16px" }}>
               <PrdToProdAnimation size={28} amplitude="tight" />
             </div>

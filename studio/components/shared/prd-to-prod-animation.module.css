@@ -28,6 +28,14 @@
   --ripple-squash-x-inv: 1;
   --ripple-squash-y-inv: 1;
   --duration: 3.6s;
+
+  /* Spring easing via CSS linear() — slight overshoot (~1.7%) then settle.
+     Approximates a damped spring (ζ ≈ 0.7). All modern browsers support this. */
+  --spring: linear(
+    0, 0.006, 0.025 2.8%, 0.101 6.1%, 0.539 18.9%, 0.721 25.3%,
+    0.849 31.5%, 0.937 38.1%, 0.968 41.8%, 0.991 45.7%,
+    1.006 50.1%, 1.015 55%, 1.017 63.9%, 1.001 85.5%, 1
+  );
 }
 
 .letter {
@@ -38,22 +46,22 @@
 
 /* "d" starts shifted left to close the gap where "o" will appear */
 .letterD {
-  animation: shiftD var(--duration) ease infinite;
+  animation: shiftD var(--duration) var(--spring) infinite;
 }
 
 /* "o" starts hidden above */
 .letterO {
-  animation: dropO var(--duration) ease infinite;
+  animation: dropO var(--duration) var(--spring) infinite;
 }
 
 /* "r" ripple — fires first on impact */
 .letterR {
-  animation: rippleR var(--duration) ease infinite;
+  animation: rippleR var(--duration) var(--spring) infinite;
 }
 
 /* "p" ripple — fires slightly after "r" */
 .letterP {
-  animation: rippleP var(--duration) ease infinite;
+  animation: rippleP var(--duration) var(--spring) infinite;
 }
 
 @keyframes dropO {
