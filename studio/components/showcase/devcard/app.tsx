@@ -1,8 +1,13 @@
 "use client";
 
-import { useState, useRef, useCallback, FormEvent } from "react";
+import { useState, useEffect, useCallback, FormEvent } from "react";
 import { FIXTURE_PROFILES, findProfile, type DeveloperProfile } from "./fixtures";
 import { THEMES, DEFAULT_THEME, type Theme } from "./themes";
+import { exportCardAsPng } from "./export";
+import {
+  buildDevCardShareUrl,
+  resolveDevCardShareState,
+} from "./share";
 import styles from "./app.module.css";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -147,170 +152,6 @@ function DevCard({
   );
 }
 
-// ── PNG export (canvas-based, no external dependencies) ──────────────────
-
-function drawRoundRect(
-  ctx: CanvasRenderingContext2D,
-  x: number, y: number, w: number, h: number, r: number,
-) {
-  ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.lineTo(x + w - r, y);
-  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-  ctx.lineTo(x + w, y + h - r);
-  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-  ctx.lineTo(x + r, y + h);
-  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-  ctx.lineTo(x, y + r);
-  ctx.quadraticCurveTo(x, y, x + r, y);
-  ctx.closePath();
-}
-
-async function exportCardAsPng(profile: DeveloperProfile, theme: Theme) {
-  const scale = 2;
-  const w = 380;
-  const h = 420;
-  const canvas = document.createElement("canvas");
-  canvas.width = w * scale;
-  canvas.height = h * scale;
-  const ctx = canvas.getContext("2d")!;
-  ctx.scale(scale, scale);
-
-  // Card background
-  drawRoundRect(ctx, 0, 0, w, h, 12);
-  ctx.fillStyle = theme.cardBg;
-  ctx.fill();
-  ctx.strokeStyle = theme.cardBorder;
-  ctx.lineWidth = 1;
-  ctx.stroke();
-
-  // Avatar circle placeholder
-  ctx.beginPath();
-  ctx.arc(52, 52, 32, 0, Math.PI * 2);
-  ctx.fillStyle = theme.accent;
-  ctx.fill();
-  // Initials in avatar
-  ctx.fillStyle = theme.cardBg;
-  ctx.font = "bold 18px system-ui, sans-serif";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  const initials = profile.name.split(" ").map((w) => w[0]).join("").slice(0, 2);
-  ctx.fillText(initials, 52, 52);
-
-  // Name
-  ctx.textAlign = "left";
-  ctx.fillStyle = theme.foreground;
-  ctx.font = "bold 17px system-ui, sans-serif";
-  ctx.fillText(profile.name, 96, 36);
-
-  // Username
-  ctx.fillStyle = theme.mutedText;
-  ctx.font = "13px monospace";
-  ctx.fillText(`@${profile.username}`, 96, 56);
-
-  // Bio
-  if (profile.bio) {
-    ctx.fillStyle = theme.mutedText;
-    ctx.font = "12px system-ui, sans-serif";
-    const bio = profile.bio.length > 60 ? profile.bio.slice(0, 57) + "..." : profile.bio;
-    ctx.fillText(bio, 96, 74);
-  }
-
-  // Separator
-  ctx.strokeStyle = theme.cardBorder;
-  ctx.beginPath();
-  ctx.moveTo(20, 96);
-  ctx.lineTo(w - 20, 96);
-  ctx.stroke();
-
-  // Stats
-  const stats = [
-    { label: "REPOS", val: formatNumber(profile.stats.repos) },
-    { label: "FOLLOWERS", val: formatNumber(profile.stats.followers) },
-    { label: "FOLLOWING", val: formatNumber(profile.stats.following) },
-  ];
-  const statWidth = (w - 40) / 3;
-  stats.forEach((s, i) => {
-    const cx = 20 + statWidth * i + statWidth / 2;
-    ctx.fillStyle = theme.foreground;
-    ctx.font = "bold 16px system-ui, sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText(s.val, cx, 122);
-    ctx.fillStyle = theme.statLabel;
-    ctx.font = "500 9px system-ui, sans-serif";
-    ctx.fillText(s.label, cx, 138);
-  });
-
-  // Language bar
-  let lx = 20;
-  const barW = w - 40;
-  const barY = 156;
-  profile.languages.forEach((lang) => {
-    const segW = (lang.percentage / 100) * barW;
-    drawRoundRect(ctx, lx, barY, segW - 1, 6, 3);
-    ctx.fillStyle = lang.color;
-    ctx.fill();
-    lx += segW;
-  });
-
-  // Language legend
-  ctx.textAlign = "left";
-  let ly = 176;
-  let legendX = 20;
-  profile.languages.forEach((lang) => {
-    ctx.beginPath();
-    ctx.arc(legendX + 4, ly, 4, 0, Math.PI * 2);
-    ctx.fillStyle = lang.color;
-    ctx.fill();
-    ctx.fillStyle = theme.mutedText;
-    ctx.font = "11px system-ui, sans-serif";
-    const text = `${lang.name} ${lang.percentage}%`;
-    ctx.fillText(text, legendX + 12, ly + 4);
-    legendX += ctx.measureText(text).width + 22;
-    if (legendX > w - 60) {
-      legendX = 20;
-      ly += 18;
-    }
-  });
-
-  // Repos section
-  let ry = ly + 28;
-  ctx.fillStyle = theme.statLabel;
-  ctx.font = "600 9px system-ui, sans-serif";
-  ctx.textAlign = "left";
-  ctx.fillText("TOP REPOSITORIES", 20, ry);
-  ry += 16;
-
-  profile.topRepos.forEach((repo) => {
-    drawRoundRect(ctx, 20, ry, w - 40, 28, 4);
-    ctx.fillStyle = theme.repoBg;
-    ctx.fill();
-    ctx.strokeStyle = theme.cardBorder;
-    ctx.stroke();
-    ctx.fillStyle = theme.accent;
-    ctx.font = "500 12px monospace";
-    ctx.fillText(repo.name, 30, ry + 17);
-    if (repo.stars > 0) {
-      ctx.fillStyle = theme.mutedText;
-      ctx.font = "11px system-ui, sans-serif";
-      ctx.textAlign = "right";
-      ctx.fillText(`★ ${formatNumber(repo.stars)}`, w - 30, ry + 17);
-      ctx.textAlign = "left";
-    }
-    ry += 36;
-  });
-
-  canvas.toBlob((blob) => {
-    if (!blob) return;
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${profile.username}-devcard.png`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }, "image/png");
-}
-
 // ── Main App ───────────────────────────────────────────────────────────────
 
 export default function App() {
@@ -322,16 +163,45 @@ export default function App() {
   const [selectedTheme, setSelectedTheme] = useState<Theme>(DEFAULT_THEME);
   const [linkCopied, setLinkCopied] = useState(false);
 
+  useEffect(() => {
+    const { profile, requestedUser, theme } = resolveDevCardShareState(
+      window.location.search
+    );
+
+    setSelectedTheme(theme);
+
+    if (profile) {
+      setActiveProfile(profile);
+      setNotFound(false);
+      setInput(requestedUser ?? "");
+      return;
+    }
+
+    if (requestedUser) {
+      setActiveProfile(null);
+      setNotFound(true);
+      setInput(requestedUser);
+    }
+  }, []);
+
   const handleCopyLink = useCallback(() => {
-    navigator.clipboard.writeText(window.location.href).then(() => {
+    if (!activeProfile) return;
+
+    const shareUrl = buildDevCardShareUrl(
+      window.location.href,
+      activeProfile,
+      selectedTheme
+    );
+
+    navigator.clipboard.writeText(shareUrl).then(() => {
       setLinkCopied(true);
       setTimeout(() => setLinkCopied(false), 2000);
     });
-  }, []);
+  }, [activeProfile, selectedTheme]);
 
   const handleExportPng = useCallback(() => {
     if (activeProfile) {
-      exportCardAsPng(activeProfile, selectedTheme);
+      void exportCardAsPng(activeProfile, selectedTheme);
     }
   }, [activeProfile, selectedTheme]);
 
