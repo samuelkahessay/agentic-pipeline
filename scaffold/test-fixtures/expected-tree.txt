@@ -103,7 +103,6 @@ dist/scaffold/scripts/tests/test-patch-pr-review-agent-lock.sh
 dist/scaffold/scripts/tests/test-pipeline-watchdog.sh
 dist/scaffold/scripts/tests/test-pr-review-agent-activation.sh
 dist/scaffold/scripts/tests/test-pr-review-submit-policy-gate.sh
-dist/scaffold/scripts/tests/test-prd-decomposer-activation.sh
 dist/scaffold/scripts/tests/test-push-to-existing-golden.sh
 dist/scaffold/scripts/tests/test-push-to-existing.sh
 dist/scaffold/scripts/tests/test-push-to-pipeline-dryrun.sh
@@ -223,6 +222,10 @@ dist/scaffold/studio/components/showcase/ticket-deflection/app.tsx
 dist/scaffold/studio/components/showcase/ticket-deflection/classifier.ts
 dist/scaffold/studio/components/showcase/ticket-deflection/seed-data.ts
 dist/scaffold/studio/components/showcase/ticket-deflection/store.ts
+dist/scaffold/studio/components/vision/harness-layers.module.css
+dist/scaffold/studio/components/vision/harness-layers.tsx
+dist/scaffold/studio/components/vision/landscape-map.module.css
+dist/scaffold/studio/components/vision/landscape-map.tsx
 dist/scaffold/studio/jest.config.ts
 dist/scaffold/studio/lib/api.ts
 dist/scaffold/studio/lib/browser-navigation.ts
@@ -243,6 +246,7 @@ dist/scaffold/studio/test/__mocks__/styleMock.ts
 dist/scaffold/studio/test/build-flow.test.tsx
 dist/scaffold/studio/test/components.test.tsx
 dist/scaffold/studio/test/factory-state.test.ts
+dist/scaffold/studio/test/pipeline-animation-timeline.test.ts
 dist/scaffold/studio/test/prd-to-prod-animation.test.tsx
 dist/scaffold/studio/test/showcase-classifier.test.ts
 dist/scaffold/studio/test/showcase-components.test.tsx
@@ -250,5 +254,4 @@ dist/scaffold/studio/test/showcase-data.test.ts
 dist/scaffold/studio/test/showcase-devcard.test.tsx
 dist/scaffold/studio/test/showcase-scanner.test.ts
 dist/scaffold/studio/tsconfig.json
-dist/scaffold/studio/tsconfig.tsbuildinfo
 dist/scaffold/vercel.json
