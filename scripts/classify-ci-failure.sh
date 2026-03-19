@@ -11,32 +11,32 @@ CONFIDENCE="low"
 SUMMARY="Unknown CI failure"
 SUGGESTED_ACTION="fix"
 
-if printf '%s' "$LOG_LOWER" | grep -Eq '403|401|resource not accessible|token|credentials'; then
+if [[ "$LOG_LOWER" =~ 403|401|resource\ not\ accessible|token|credentials ]]; then
   CATEGORY="auth"
   CONFIDENCE="high"
   SUMMARY="Authentication or permission failure"
   SUGGESTED_ACTION="escalate"
-elif printf '%s' "$LOG_LOWER" | grep -Eq 'fail|failing|test'; then
+elif [[ "$LOG_LOWER" =~ fail|failing|test ]]; then
   CATEGORY="test"
   CONFIDENCE="high"
   SUMMARY="Test failure detected"
   SUGGESTED_ACTION="fix"
-elif printf '%s' "$LOG_LOWER" | grep -Eq 'rate limit|429|quota'; then
+elif [[ "$LOG_LOWER" =~ rate\ limit|429|quota ]]; then
   CATEGORY="rate-limit"
   CONFIDENCE="high"
   SUMMARY="Rate limit encountered"
   SUGGESTED_ACTION="retry"
-elif printf '%s' "$LOG_LOWER" | grep -Eq 'timeout'; then
+elif [[ "$LOG_LOWER" =~ timeout ]]; then
   CATEGORY="timeout"
   CONFIDENCE="high"
   SUMMARY="CI job timed out"
   SUGGESTED_ACTION="retry"
-elif printf '%s' "$LOG_LOWER" | grep -Eq 'build|compile|tsc|error ts'; then
+elif [[ "$LOG_LOWER" =~ build|compile|tsc|error\ ts ]]; then
   CATEGORY="build"
   CONFIDENCE="high"
   SUMMARY="Build failure detected"
   SUGGESTED_ACTION="fix"
-elif printf '%s' "$LOG_LOWER" | grep -Eq 'econnrefused|5[0-9][0-9]|service unavailable'; then
+elif [[ "$LOG_LOWER" =~ econnrefused|5[0-9][0-9]|service\ unavailable ]]; then
   CATEGORY="infrastructure"
   CONFIDENCE="high"
   SUMMARY="Infrastructure failure detected"
