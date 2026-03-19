@@ -61,9 +61,9 @@ beforeEach(() => {
   db.prepare(
     `INSERT INTO build_sessions (id, user_id, status, app_installation_id, created_at, updated_at)
      VALUES
-     ('owned-build', 'user-1', 'provisioning', 101, '2026-03-14T00:00:00Z', '2026-03-14T00:00:00Z'),
+     ('owned-build', 'user-1', 'ready_to_launch', 101, '2026-03-14T00:00:00Z', '2026-03-14T00:00:00Z'),
      ('foreign-ready', 'user-2', 'ready', NULL, '2026-03-14T00:00:00Z', '2026-03-14T00:00:00Z'),
-     ('foreign-build', 'user-2', 'provisioning', 202, '2026-03-14T00:00:00Z', '2026-03-14T00:00:00Z')`
+     ('foreign-build', 'user-2', 'ready_to_launch', 202, '2026-03-14T00:00:00Z', '2026-03-14T00:00:00Z')`
   ).run();
 });
 
@@ -76,6 +76,7 @@ test("provision rejects a build session owned by another user", async () => {
   const provisioner = {
     provisionRepo: jest.fn(),
     createPrdIssue: jest.fn(),
+    launchPipeline: jest.fn(),
   };
   const buildRunner = {
     dispatchBuild: jest.fn(),
@@ -99,6 +100,7 @@ test("start-build rejects a build session owned by another user", async () => {
   const provisioner = {
     provisionRepo: jest.fn(),
     createPrdIssue: jest.fn(),
+    launchPipeline: jest.fn(),
   };
   const buildRunner = {
     dispatchBuild: jest.fn(),
@@ -116,13 +118,19 @@ test("start-build rejects a build session owned by another user", async () => {
   });
 
   expect(provisioner.createPrdIssue).not.toHaveBeenCalled();
+  expect(provisioner.launchPipeline).not.toHaveBeenCalled();
   expect(buildRunner.dispatchBuild).not.toHaveBeenCalled();
 });
 
-test("start-build allows the owning user to continue a provisioning session", async () => {
+test("start-build launches the target repo pipeline for real sessions", async () => {
   const provisioner = {
     provisionRepo: jest.fn(),
     createPrdIssue: jest.fn().mockResolvedValue(undefined),
+    launchPipeline: jest.fn().mockResolvedValue({
+      sessionId: "owned-build",
+      status: "building",
+      rootIssueNumber: 17,
+    }),
   };
   const buildRunner = {
     dispatchBuild: jest.fn().mockResolvedValue(undefined),
@@ -140,11 +148,10 @@ test("start-build allows the owning user to continue a provisioning session", as
     await expect(response.json()).resolves.toEqual({
       sessionId: "owned-build",
       status: "building",
+      rootIssueNumber: 17,
     });
   });
 
-  expect(provisioner.createPrdIssue).toHaveBeenCalledWith("owned-build", 101);
-  // buildRunner.dispatchBuild is only called for demo sessions —
-  // real sessions rely on the pipeline's /decompose flow
+  expect(provisioner.launchPipeline).toHaveBeenCalledWith("owned-build");
   expect(buildRunner.dispatchBuild).not.toHaveBeenCalled();
 });

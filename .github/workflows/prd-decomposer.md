@@ -6,6 +6,10 @@ description: |
 
 on:
   workflow_dispatch:
+    inputs:
+      issue_number:
+        description: "Issue number containing the PRD to decompose."
+        required: false
   slash_command:
     name: decompose
     events: [issues, issue_comment, discussion, discussion_comment]
@@ -22,11 +26,15 @@ permissions: read-all
 network: defaults
 
 safe-outputs:
+  github-app:
+    app-id: ${{ vars.PIPELINE_APP_ID }}
+    private-key: ${{ secrets.PIPELINE_APP_PRIVATE_KEY }}
   create-issue:
     title-prefix: "[Pipeline] "
     labels: [pipeline]
     max: 20
   add-comment:
+    discussions: false
     max: 5
   add-labels:
     allowed: [feature, test, infra, docs, bug, pipeline, blocked, ready]
@@ -39,6 +47,7 @@ tools:
   bash: true
   github:
     toolsets: [issues, labels]
+    min-integrity: none
   repo-memory: true
 
 ---
@@ -51,7 +60,9 @@ You are a senior technical project manager. Your job is to read a Product Requir
 
 "${{ steps.sanitized.outputs.text }}"
 
-If the instructions above contain a URL or file path, fetch/read that content as the PRD. If the instructions are empty, read the body of issue #${{ github.event.issue.number }} as the PRD.
+If `${{ github.event.inputs.issue_number }}` is non-empty, read the body of issue #${{ github.event.inputs.issue_number }} as the PRD and treat that issue as the source for this run.
+
+If the instructions above contain a URL or file path, fetch/read that content as the PRD. If the instructions are empty and `${{ github.event.inputs.issue_number }}` is empty, read the body of issue #${{ github.event.issue.number }} as the PRD.
 
 ## Decomposition Rules
 

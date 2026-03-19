@@ -72,6 +72,20 @@ export function mapBuildEvent(event: BuildEvent): FactoryAction[] {
     if (kind === "app_installed") {
       actions.push({ type: "AGENT_UNBLOCKED", agent: "planner" });
     }
+
+    if (kind === "bootstrap_started") {
+      actions.push({
+        type: "AGENT_START_WORK",
+        agent: "planner",
+        task: "Bootstrapping repo",
+      });
+      actions.push({ type: "AMBIENT_CHANGE", ambient: "busy" });
+    }
+
+    if (kind === "bootstrap_complete") {
+      actions.push({ type: "AGENT_FINISH_WORK", agent: "planner" });
+      actions.push({ type: "AGENT_CELEBRATE", agent: "planner" });
+    }
   }
 
   // --- Build events → Developer / Frontend Designer / Reviewer ---
@@ -79,7 +93,7 @@ export function mapBuildEvent(event: BuildEvent): FactoryAction[] {
   if (category === "build") {
     const agent = inferAgent(data);
 
-    if (kind === "agent_started") {
+    if (kind === "pipeline_started" || kind === "agent_started") {
       const detail =
         typeof data.detail === "string" ? data.detail : "Building";
       actions.push({
@@ -167,6 +181,15 @@ export function mapBuildEvent(event: BuildEvent): FactoryAction[] {
         task: "Fixing CI failure",
       });
     }
+
+    if (kind === "pipeline_stalled" || kind === "capacity_waitlisted") {
+      actions.push({
+        type: "AGENT_BLOCKED",
+        agent,
+        reason: typeof data.detail === "string" ? data.detail : "Pipeline stalled",
+      });
+      actions.push({ type: "AMBIENT_CHANGE", ambient: "blocked" });
+    }
   }
 
   // --- Delivery events → Deployer ---
@@ -177,6 +200,14 @@ export function mapBuildEvent(event: BuildEvent): FactoryAction[] {
         type: "AGENT_START_WORK",
         agent: "deployer",
         task: "Deploying to preview",
+      });
+    }
+
+    if (kind === "deploy_started") {
+      actions.push({
+        type: "AGENT_START_WORK",
+        agent: "deployer",
+        task: "Waiting for Vercel deployment",
       });
     }
 
@@ -191,6 +222,26 @@ export function mapBuildEvent(event: BuildEvent): FactoryAction[] {
     }
 
     if (kind === "complete") {
+      actions.push({ type: "AGENT_FINISH_WORK", agent: "deployer" });
+      actions.push({ type: "AGENT_CELEBRATE", agent: "deployer" });
+      // Celebrate across all agents
+      actions.push({ type: "AGENT_CELEBRATE", agent: "planner" });
+      actions.push({ type: "AGENT_CELEBRATE", agent: "developer" });
+      actions.push({ type: "AGENT_CELEBRATE", agent: "frontend-designer" });
+      actions.push({ type: "AGENT_CELEBRATE", agent: "reviewer" });
+      actions.push({ type: "AMBIENT_CHANGE", ambient: "celebrating" });
+      actions.push({
+        type: "OUTPUT_UPDATE",
+        fields: {
+          deployUrl:
+            typeof data.deploy_url === "string"
+              ? data.deploy_url
+              : null,
+        },
+      });
+    }
+
+    if (kind === "handoff_ready") {
       actions.push({ type: "AGENT_FINISH_WORK", agent: "deployer" });
       actions.push({ type: "AGENT_CELEBRATE", agent: "deployer" });
       // Celebrate across all agents

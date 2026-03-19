@@ -115,6 +115,32 @@ function createDatabase(dataDir) {
       created_at TEXT NOT NULL
     );
     CREATE INDEX IF NOT EXISTS idx_build_events_session ON build_events(build_session_id, id);
+
+    CREATE TABLE IF NOT EXISTS build_session_refs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      build_session_id TEXT NOT NULL REFERENCES build_sessions(id),
+      ref_type TEXT NOT NULL,
+      ref_key TEXT NOT NULL DEFAULT '',
+      ref_value TEXT NOT NULL,
+      metadata TEXT NOT NULL DEFAULT '{}',
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      UNIQUE(build_session_id, ref_type, ref_key, ref_value)
+    );
+    CREATE INDEX IF NOT EXISTS idx_build_session_refs_session ON build_session_refs(build_session_id, ref_type, ref_key);
+    CREATE INDEX IF NOT EXISTS idx_build_session_refs_lookup ON build_session_refs(ref_type, ref_key, ref_value);
+
+    CREATE TABLE IF NOT EXISTS github_webhook_events (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      delivery_id TEXT NOT NULL UNIQUE,
+      event_name TEXT NOT NULL,
+      action TEXT NOT NULL DEFAULT '',
+      repository_id INTEGER,
+      installation_id INTEGER,
+      payload TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_github_webhook_events_repo ON github_webhook_events(repository_id, created_at);
   `);
 
   // Safe migration for existing databases

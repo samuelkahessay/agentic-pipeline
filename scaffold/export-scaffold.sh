@@ -88,6 +88,7 @@ if find "$OUTPUT_DIR/.github/workflows" -maxdepth 1 -name "*.md" | grep -q .; th
       :
     fi
     gh aw compile >/dev/null 2>&1
+    bash scripts/patch-pr-review-agent-lock.sh .github/workflows/pr-review-agent.lock.yml >/dev/null 2>&1
   ) || { echo "FAIL: gh aw compile failed inside scaffold export" >&2; exit 1; }
 fi
 

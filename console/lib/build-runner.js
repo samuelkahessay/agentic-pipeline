@@ -14,7 +14,7 @@ function createBuildRunner({ buildSessionStore, githubClient }) {
     if (!session) throw new Error("Session not found");
     if (!session.github_repo) throw new Error("Session has no repo");
     if (!session.app_installation_id) throw new Error("App not installed");
-    if (session.status !== "provisioning") {
+    if (session.status !== "ready_to_launch") {
       throw new Error(`Session is not ready to build from status ${session.status}`);
     }
 

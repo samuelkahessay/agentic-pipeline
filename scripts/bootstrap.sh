@@ -76,6 +76,10 @@ gh api repos/{owner}/{repo} --method PATCH \
 echo "Squash merge set to use PR body (preserves Closes #N)."
 echo "Auto-merge enabled."
 
+PIPELINE_BOT_LOGIN_VALUE="${PIPELINE_BOT_LOGIN:-prd-to-prod-pipeline}"
+gh variable set PIPELINE_BOT_LOGIN --body "$PIPELINE_BOT_LOGIN_VALUE" >/dev/null 2>&1 || true
+echo "PIPELINE_BOT_LOGIN set to ${PIPELINE_BOT_LOGIN_VALUE}."
+
 # Configure secrets reminder
 echo ""
 echo "=== Setup Complete ==="

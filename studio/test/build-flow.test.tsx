@@ -239,7 +239,7 @@ describe("BuildStatusPage", () => {
     });
     mockedBuildApi.provisionRepo.mockResolvedValue({
       sessionId: "session-1",
-      status: "provisioning",
+      status: "ready_to_launch",
       installRequired: false,
     });
     mockedBuildApi.startBuild.mockResolvedValue({
@@ -286,12 +286,18 @@ describe("BuildStatusPage", () => {
       session: makeSession("ready"),
       messages: [makeAssistantEvent(makeParsedResponse("ready"))],
     });
-    mockedBuildApi.provisionRepo.mockResolvedValue({
-      sessionId: "session-1",
-      status: "awaiting_install",
-      installRequired: true,
-      installUrl: "https://github.com/apps/prd-to-prod/install",
-    });
+    mockedBuildApi.provisionRepo
+      .mockResolvedValueOnce({
+        sessionId: "session-1",
+        status: "awaiting_install",
+        installRequired: true,
+        installUrl: "https://github.com/apps/prd-to-prod/install",
+      })
+      .mockResolvedValueOnce({
+        sessionId: "session-1",
+        status: "ready_to_launch",
+        installRequired: false,
+      });
     mockedBuildApi.startBuild.mockResolvedValue({
       sessionId: "session-1",
       status: "building",
@@ -307,6 +313,9 @@ describe("BuildStatusPage", () => {
       screen.getByRole("button", { name: "I've installed it - continue" })
     );
 
+    await waitFor(() => {
+      expect(mockedBuildApi.provisionRepo).toHaveBeenCalledTimes(2);
+    });
     await waitFor(() => {
       expect(mockedBuildApi.startBuild).toHaveBeenCalledWith("session-1");
     });

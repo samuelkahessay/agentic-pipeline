@@ -87,9 +87,12 @@ export type BuildSessionStatus =
   | "refining"
   | "ready"
   | "awaiting_install"
-  | "provisioning"
+  | "bootstrapping"
+  | "ready_to_launch"
+  | "awaiting_capacity"
   | "building"
   | "complete"
+  | "stalled"
   | "failed";
 
 export interface BuildSession {

@@ -172,6 +172,12 @@ if [[ "$GH_AUTH_OK" == true ]]; then
     APP_ID_SET=true
   fi
 
+  if echo "$VAR_LIST" | grep -qx "PIPELINE_BOT_LOGIN" 2>/dev/null; then
+    pass "Variable 'PIPELINE_BOT_LOGIN' is set"
+  else
+    fail "Variable 'PIPELINE_BOT_LOGIN' is not set"
+  fi
+
   if echo "$SECRET_LIST" | grep -qx "PIPELINE_APP_PRIVATE_KEY" 2>/dev/null; then
     pass "Secret 'PIPELINE_APP_PRIVATE_KEY' is set"
     APP_KEY_SET=true
