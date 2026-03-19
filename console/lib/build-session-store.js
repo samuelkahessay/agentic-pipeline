@@ -118,6 +118,142 @@ function createBuildSessionStore(db) {
         }
       };
     },
+
+    countSessionsByStatuses(statuses) {
+      if (!Array.isArray(statuses) || statuses.length === 0) {
+        return 0;
+      }
+
+      const placeholders = statuses.map(() => "?").join(", ");
+      const row = db
+        .prepare(
+          `SELECT COUNT(*) AS total
+           FROM build_sessions
+           WHERE status IN (${placeholders})`
+        )
+        .get(...statuses);
+      return row?.total || 0;
+    },
+
+    findSessionByRepoId(repoId, { statuses } = {}) {
+      if (!repoId) {
+        return null;
+      }
+
+      if (Array.isArray(statuses) && statuses.length > 0) {
+        const placeholders = statuses.map(() => "?").join(", ");
+        return db
+          .prepare(
+            `SELECT *
+             FROM build_sessions
+             WHERE github_repo_id = ? AND status IN (${placeholders})
+             ORDER BY updated_at DESC
+             LIMIT 1`
+          )
+          .get(repoId, ...statuses);
+      }
+
+      return db
+        .prepare(
+          `SELECT *
+           FROM build_sessions
+           WHERE github_repo_id = ?
+           ORDER BY updated_at DESC
+           LIMIT 1`
+        )
+        .get(repoId);
+    },
+
+    upsertRef(sessionId, { type, key = "", value, metadata = {} }) {
+      const now = new Date().toISOString();
+      db.prepare(
+        `INSERT INTO build_session_refs
+           (build_session_id, ref_type, ref_key, ref_value, metadata, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT(build_session_id, ref_type, ref_key, ref_value)
+         DO UPDATE SET metadata = excluded.metadata, updated_at = excluded.updated_at`
+      ).run(
+        sessionId,
+        type,
+        key,
+        String(value),
+        JSON.stringify(metadata),
+        now,
+        now
+      );
+    },
+
+    getRefs(sessionId, { type, key } = {}) {
+      const clauses = ["build_session_id = ?"];
+      const values = [sessionId];
+
+      if (type) {
+        clauses.push("ref_type = ?");
+        values.push(type);
+      }
+      if (typeof key === "string") {
+        clauses.push("ref_key = ?");
+        values.push(key);
+      }
+
+      return db
+        .prepare(
+          `SELECT *
+           FROM build_session_refs
+           WHERE ${clauses.join(" AND ")}
+           ORDER BY updated_at ASC, id ASC`
+        )
+        .all(...values)
+        .map(parseRefRow);
+    },
+
+    findSessionByRef({ type, key, value }) {
+      const clauses = ["ref_type = ?", "ref_value = ?"];
+      const values = [type, String(value)];
+
+      if (typeof key === "string") {
+        clauses.push("ref_key = ?");
+        values.push(key);
+      }
+
+      return db
+        .prepare(
+          `SELECT bs.*
+           FROM build_session_refs refs
+           JOIN build_sessions bs ON bs.id = refs.build_session_id
+           WHERE ${clauses.join(" AND ")}
+           ORDER BY refs.updated_at DESC, refs.id DESC
+           LIMIT 1`
+        )
+        .get(...values);
+    },
+
+    recordWebhookDelivery({
+      deliveryId,
+      eventName,
+      action = "",
+      repositoryId = null,
+      installationId = null,
+      payload,
+    }) {
+      const now = new Date().toISOString();
+      const result = db.prepare(
+        `INSERT INTO github_webhook_events
+           (delivery_id, event_name, action, repository_id, installation_id, payload, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT(delivery_id) DO NOTHING`
+      ).run(
+        deliveryId,
+        eventName,
+        action,
+        repositoryId,
+        installationId,
+        JSON.stringify(payload),
+        now
+      );
+
+      return result.changes > 0;
+    },
   };
 }
 
@@ -125,6 +261,14 @@ function parseEventRow(row) {
   return {
     ...row,
     data: typeof row.data === "string" ? JSON.parse(row.data) : row.data,
+  };
+}
+
+function parseRefRow(row) {
+  return {
+    ...row,
+    metadata:
+      typeof row.metadata === "string" ? JSON.parse(row.metadata) : row.metadata,
   };
 }
 

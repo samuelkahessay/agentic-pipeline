@@ -1,7 +1,7 @@
 const { getActiveUserSession } = require("../lib/auth-store");
 
 function registerProvisionRoutes(app, { db, serviceResolver }) {
-  // Start provisioning — creates repo, checks App install
+  // Start provisioning — creates repo, waits for app installation, bootstraps target repo
   app.post("/pub/build-session/:id/provision", async (req, res) => {
     const userSession = requireUserSession(db, req, res);
     if (!userSession) {
@@ -27,7 +27,7 @@ function registerProvisionRoutes(app, { db, serviceResolver }) {
     }
   });
 
-  // Resume after App install — creates PRD issue + dispatches build
+  // Launch the target-repo pipeline after bootstrap is complete
   app.post("/pub/build-session/:id/start-build", async (req, res) => {
     const userSession = requireUserSession(db, req, res);
     if (!userSession) {
@@ -63,15 +63,11 @@ function registerProvisionRoutes(app, { db, serviceResolver }) {
 
     try {
       const { provisioner, buildRunner } = serviceResolver.forSession(session.id);
-      await provisioner.createPrdIssue(
-        session.id,
-        session.app_installation_id
-      );
-
-      // Only dispatch mock build runner for demo sessions —
-      // real sessions are handled by the pipeline via /decompose
       if (session.is_demo) {
         await buildRunner.dispatchBuild(session.id);
+      } else {
+        const result = await provisioner.launchPipeline(session.id);
+        return res.json(result);
       }
 
       res.json({ sessionId: session.id, status: "building" });
@@ -111,7 +107,7 @@ function getOwnedBuildSession(db, buildSessionId, userId) {
 }
 
 function isStartableStatus(status) {
-  return status === "provisioning";
+  return status === "ready_to_launch" || status === "awaiting_capacity" || status === "stalled";
 }
 
 function enforceSessionBoundary(db, userId, session, res) {

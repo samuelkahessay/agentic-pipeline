@@ -20,7 +20,7 @@ describe("createBuildRunner", () => {
     const buildSessionStore = {
       getSession: jest.fn().mockReturnValue({
         id: "build-1",
-        status: "provisioning",
+        status: "ready_to_launch",
         github_repo: "octocat/customer-portal",
         app_installation_id: 99,
       }),
@@ -52,7 +52,7 @@ describe("createBuildRunner", () => {
     const buildSessionStore = {
       getSession: jest.fn().mockReturnValue({
         id: "build-1",
-        status: "provisioning",
+        status: "ready_to_launch",
         github_repo: "octocat/customer-portal",
         app_installation_id: 99,
       }),

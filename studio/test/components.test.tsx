@@ -20,7 +20,7 @@ describe("Hero", () => {
     expect(screen.getByText("Powered by GitHub Agentic Workflows")).toBeInTheDocument();
     expect(screen.getByText(/Send a PRD/)).toBeInTheDocument();
     expect(screen.getByText(/Get a deployed app/)).toBeInTheDocument();
-    expect(screen.getByText("$1.")).toBeInTheDocument();
+    expect(screen.getByText(/\$1\./)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Send your PRD" })).toHaveAttribute("href", MAILTO);
   });
 });
@@ -28,7 +28,7 @@ describe("Hero", () => {
 describe("StickyNav", () => {
   it("renders anchor links and CTA", () => {
     render(<StickyNav />);
-    expect(screen.getByRole("link", { name: "prd-to-prod" })).toHaveAttribute("href", "/");
+    expect(screen.getByRole("link", { name: "prd to prod" })).toHaveAttribute("href", "/");
     expect(screen.getByRole("link", { name: "Pricing" })).toHaveAttribute("href", "#pricing");
     expect(screen.getByRole("link", { name: "How it works" })).toHaveAttribute("href", "#how-it-works");
     expect(screen.getByRole("link", { name: "GitHub" })).toHaveAttribute(

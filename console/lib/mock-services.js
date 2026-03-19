@@ -121,6 +121,10 @@ function createMockGitHubClient() {
     async createLabel() {},
     async configureActionsPermissions() {},
     async enableAutoMerge() {},
+    async upsertActionsVariable() {},
+    async createOrUpdateActionsSecret() {},
+    async ensureRepoMemoryBranch() {},
+    async ensureBranchProtection() {},
     async createIssue(_token, owner, repo, { title }) {
       return {
         number: 1,
@@ -150,7 +154,7 @@ function createMockBuildRunner({ buildSessionStore }) {
   async function dispatchBuild(sessionId) {
     const session = buildSessionStore.getSession(sessionId);
     if (!session) throw new Error("Session not found");
-    if (session.status !== "provisioning") {
+    if (session.status !== "ready_to_launch") {
       throw new Error(`Cannot build from status ${session.status}`);
     }
 

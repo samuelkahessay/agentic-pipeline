@@ -7,22 +7,18 @@ test("createPrdIssue is idempotent once the pipeline issue has been created", as
       prd_final: "# PRD: Customer portal\n\n## Problem\n\nSupport requests get lost\n",
       github_repo: "octocat/customer-portal",
     }),
-    getEvents: jest
+    getRefs: jest
       .fn()
       .mockReturnValueOnce([])
       .mockReturnValueOnce([
         {
-          id: 1,
-          build_session_id: "build-1",
-          category: "provision",
-          kind: "prd_issue_created",
-          data: {
-            issueNumber: 17,
+          ref_value: "17",
+          metadata: {
             issueUrl: "https://github.com/octocat/customer-portal/issues/17",
           },
-          created_at: "2026-03-14T18:00:00.000Z",
         },
       ]),
+    upsertRef: jest.fn(),
     appendEvent: jest.fn(),
   };
   const githubClient = {

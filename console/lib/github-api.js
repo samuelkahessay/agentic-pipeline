@@ -1,4 +1,5 @@
 const crypto = require("crypto");
+const sodium = require("libsodium-wrappers");
 
 const GITHUB_API = "https://api.github.com";
 
@@ -140,6 +141,160 @@ function createGitHubClient() {
     );
   }
 
+  async function upsertActionsVariable(token, owner, repo, { name, value }) {
+    try {
+      return await githubFetch(
+        `${GITHUB_API}/repos/${owner}/${repo}/actions/variables/${name}`,
+        {
+          method: "PATCH",
+          headers: { Authorization: `Bearer ${token}` },
+          body: { name, value },
+        }
+      );
+    } catch (error) {
+      if (error.status !== 404) {
+        throw error;
+      }
+    }
+
+    return githubFetch(
+      `${GITHUB_API}/repos/${owner}/${repo}/actions/variables`,
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: { name, value },
+      }
+    );
+  }
+
+  async function createOrUpdateActionsSecret(token, owner, repo, { name, value }) {
+    await sodium.ready;
+    const key = await githubFetch(
+      `${GITHUB_API}/repos/${owner}/${repo}/actions/secrets/public-key`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    const encrypted = sodium.crypto_box_seal(
+      Buffer.from(String(value)),
+      sodium.from_base64(key.key, sodium.base64_variants.ORIGINAL)
+    );
+
+    return githubFetch(
+      `${GITHUB_API}/repos/${owner}/${repo}/actions/secrets/${name}`,
+      {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+        body: {
+          encrypted_value: sodium.to_base64(
+            encrypted,
+            sodium.base64_variants.ORIGINAL
+          ),
+          key_id: key.key_id,
+        },
+      }
+    );
+  }
+
+  async function getBranchRef(token, owner, repo, branch) {
+    return githubFetch(
+      `${GITHUB_API}/repos/${owner}/${repo}/git/ref/heads/${encodeURIComponent(branch)}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+  }
+
+  async function ensureRepoMemoryBranch(token, owner, repo, {
+    branch = "memory/repo-assist",
+    seedPath = "state.json",
+    seedContent = JSON.stringify(
+      { initialized: true, note: "Seeded by public beta bootstrap" },
+      null,
+      2
+    ) + "\n",
+  } = {}) {
+    try {
+      await getBranchRef(token, owner, repo, branch);
+    } catch (error) {
+      if (error.status !== 404) {
+        throw error;
+      }
+
+      const repoData = await githubFetch(
+        `${GITHUB_API}/repos/${owner}/${repo}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const baseRef = await getBranchRef(token, owner, repo, repoData.default_branch);
+      await githubFetch(
+        `${GITHUB_API}/repos/${owner}/${repo}/git/refs`,
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          body: {
+            ref: `refs/heads/${branch}`,
+            sha: baseRef.object.sha,
+          },
+        }
+      );
+    }
+
+    let existingSha = null;
+    try {
+      const existing = await githubFetch(
+        `${GITHUB_API}/repos/${owner}/${repo}/contents/${seedPath}?ref=${encodeURIComponent(branch)}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      existingSha = existing.sha || null;
+    } catch (error) {
+      if (error.status !== 404) {
+        throw error;
+      }
+    }
+
+    return githubFetch(
+      `${GITHUB_API}/repos/${owner}/${repo}/contents/${seedPath}`,
+      {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+        body: {
+          message: "Seed repo memory",
+          content: Buffer.from(seedContent).toString("base64"),
+          branch,
+          ...(existingSha ? { sha: existingSha } : {}),
+        },
+      }
+    );
+  }
+
+  async function ensureBranchProtection(token, owner, repo, {
+    branch = "main",
+    requiredStatusChecks = ["review"],
+  } = {}) {
+    return githubFetch(
+      `${GITHUB_API}/repos/${owner}/${repo}/branches/${branch}/protection`,
+      {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+        body: {
+          required_status_checks: {
+            strict: false,
+            contexts: requiredStatusChecks,
+          },
+          enforce_admins: false,
+          required_pull_request_reviews: {
+            dismiss_stale_reviews: false,
+            require_code_owner_reviews: false,
+            required_approving_review_count: 1,
+          },
+          restrictions: null,
+          required_linear_history: false,
+          allow_force_pushes: false,
+          allow_deletions: false,
+          block_creations: false,
+          required_conversation_resolution: false,
+          lock_branch: false,
+        },
+      }
+    );
+  }
+
   async function dispatchWorkflow(token, owner, repo, workflowFile, inputs) {
     return githubFetch(
       `${GITHUB_API}/repos/${owner}/${repo}/actions/workflows/${workflowFile}/dispatches`,
@@ -162,6 +317,10 @@ function createGitHubClient() {
     enableAutoMerge,
     createIssue,
     createIssueComment,
+    upsertActionsVariable,
+    createOrUpdateActionsSecret,
+    ensureRepoMemoryBranch,
+    ensureBranchProtection,
     dispatchWorkflow,
   };
 }
@@ -180,7 +339,9 @@ async function githubFetch(url, { method = "GET", headers = {}, body } = {}) {
 
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`GitHub API ${method} ${url}: ${res.status} ${text}`);
+    const error = new Error(`GitHub API ${method} ${url}: ${res.status} ${text}`);
+    error.status = res.status;
+    throw error;
   }
 
   if (res.status === 204) return null;

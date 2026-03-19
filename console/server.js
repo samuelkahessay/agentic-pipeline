@@ -120,7 +120,7 @@ registerInternalBuildRoutes(app, { buildSessionStore });
 
 // --- Webhook routes ---
 
-registerWebhookRoutes(app, { db });
+registerWebhookRoutes(app, { db, buildSessionStore, serviceResolver });
 
 // --- Health check ---
 

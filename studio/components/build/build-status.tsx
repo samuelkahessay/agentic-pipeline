@@ -50,8 +50,12 @@ export function BuildStatus({
 
       if (
         event.kind === "app_installed" ||
+        event.kind === "bootstrap_started" ||
+        event.kind === "bootstrap_complete" ||
+        event.kind === "pipeline_started" ||
         event.kind === "agent_started" ||
         event.kind === "agent_progress" ||
+        event.kind === "handoff_ready" ||
         event.kind === "complete"
       ) {
         setInstallUrl(null);
@@ -114,7 +118,7 @@ export function BuildStatus({
 
   useEffect(() => {
     if (
-      session.status !== "provisioning" ||
+      session.status !== "ready_to_launch" ||
       autoBuildStartedRef.current ||
       pendingAction !== null
     ) {
@@ -208,6 +212,7 @@ export function BuildStatus({
 
           <div className={styles.actions}>
             {renderActions({
+              events,
               installUrl,
               isDemo,
               pendingAction,
@@ -279,6 +284,7 @@ export function BuildStatus({
 }
 
 function renderActions({
+  events,
   installUrl,
   isDemo,
   pendingAction,
@@ -286,6 +292,7 @@ function renderActions({
   onProvision,
   onStartBuild,
 }: {
+  events: BuildEvent[];
   installUrl: string | null;
   isDemo: boolean;
   pendingAction: PendingAction;
@@ -322,18 +329,31 @@ function renderActions({
         <button
           className={styles.button}
           disabled={pendingAction !== null}
-          onClick={onStartBuild}
+          onClick={onProvision}
           type="button"
         >
-          {pendingAction === "start_build"
-            ? "Starting build..."
+          {pendingAction === "provision"
+            ? "Checking installation..."
             : "I've installed it - continue"}
         </button>
       </>
     );
   }
 
-  if (session.status === "provisioning") {
+  if (session.status === "bootstrapping") {
+    return (
+      <button
+        className={styles.button}
+        disabled={pendingAction !== null}
+        onClick={onProvision}
+        type="button"
+      >
+        {pendingAction === "provision" ? "Bootstrapping..." : "Retry bootstrap"}
+      </button>
+    );
+  }
+
+  if (session.status === "ready_to_launch" || session.status === "awaiting_capacity") {
     return (
       <button
         className={styles.button}
@@ -341,8 +361,61 @@ function renderActions({
         onClick={onStartBuild}
         type="button"
       >
-        {pendingAction === "start_build" ? "Starting build..." : "Retry build start"}
+        {pendingAction === "start_build"
+          ? "Launching pipeline..."
+          : session.status === "awaiting_capacity"
+            ? "Retry launch"
+            : "Start pipeline"}
       </button>
+    );
+  }
+
+  if (session.status === "stalled") {
+    const hasPipelinePr = events.some(
+      (event) =>
+        event.kind === "first_pr_opened" ||
+        event.kind === "pr_opened" ||
+        event.kind === "pr_merged"
+    );
+    const stalledStage = readLatestStalledStage(events);
+
+    if (!hasPipelinePr) {
+      const resumeProvision = stalledStage === "bootstrap";
+      return (
+        <button
+          className={styles.button}
+          disabled={pendingAction !== null}
+          onClick={resumeProvision ? onProvision : onStartBuild}
+          type="button"
+        >
+          {pendingAction === (resumeProvision ? "provision" : "start_build")
+            ? "Retrying..."
+            : resumeProvision
+              ? "Retry bootstrap"
+              : "Retry launch"}
+        </button>
+      );
+    }
+
+    return (
+      <>
+        {session.github_repo_url ? (
+          <a
+            className={styles.linkButton}
+            href={session.github_repo_url}
+            rel="noreferrer"
+            target="_blank"
+          >
+            Open repo
+          </a>
+        ) : null}
+        <a
+          className={styles.linkButton}
+          href={`mailto:${readSupportEmail()}?subject=${encodeURIComponent(`prd-to-prod stalled run ${session.id}`)}`}
+        >
+          Request help
+        </a>
+      </>
     );
   }
 
@@ -402,10 +475,13 @@ function applyEventToSession(
     };
   }
 
-  if (event.category === "provision" && event.kind === "app_installed") {
+  if (
+    event.category === "provision" &&
+    (event.kind === "app_installed" || event.kind === "bootstrap_started")
+  ) {
     return {
       ...session,
-      status: "provisioning",
+      status: "bootstrapping",
       app_installation_id:
         typeof event.data.installationId === "number"
           ? event.data.installationId
@@ -413,14 +489,35 @@ function applyEventToSession(
     };
   }
 
-  if (event.category === "build" && event.kind === "agent_started") {
+  if (event.category === "provision" && event.kind === "bootstrap_complete") {
+    return {
+      ...session,
+      status: "ready_to_launch",
+      deploy_url:
+        typeof event.data.deploy_url === "string"
+          ? event.data.deploy_url
+          : session.deploy_url,
+    };
+  }
+
+  if (event.category === "build" && event.kind === "capacity_waitlisted") {
+    return {
+      ...session,
+      status: "awaiting_capacity",
+    };
+  }
+
+  if (
+    event.category === "build" &&
+    (event.kind === "pipeline_started" || event.kind === "agent_started")
+  ) {
     return {
       ...session,
       status: "building",
     };
   }
 
-  if (event.category === "delivery" && event.kind === "complete") {
+  if (event.category === "delivery" && (event.kind === "handoff_ready" || event.kind === "complete")) {
     return {
       ...session,
       status: "complete",
@@ -431,10 +528,13 @@ function applyEventToSession(
     };
   }
 
-  if (event.category === "build" && event.kind === "agent_error") {
+  if (
+    (event.category === "build" || event.category === "delivery" || event.category === "provision") &&
+    (event.kind === "agent_error" || event.kind === "pipeline_stalled")
+  ) {
     return {
       ...session,
-      status: "failed",
+      status: "stalled",
     };
   }
 
@@ -446,9 +546,12 @@ function parseBuildStatus(value: string): BuildSessionStatus {
     value === "refining" ||
     value === "ready" ||
     value === "awaiting_install" ||
-    value === "provisioning" ||
+    value === "bootstrapping" ||
+    value === "ready_to_launch" ||
+    value === "awaiting_capacity" ||
     value === "building" ||
     value === "complete" ||
+    value === "stalled" ||
     value === "failed"
   ) {
     return value;
@@ -466,27 +569,39 @@ function describeSessionState(
   }
 
   if (pendingAction === "start_build") {
-    return "Dispatching the builder workflow in GitHub Actions.";
+    return "Creating the root issue and dispatching the target-repo pipeline.";
   }
 
   if (status === "ready") {
-    return "Your PRD is finalized. The next step is provisioning a repository from the template.";
+    return "Your PRD is finalized. The next step is provisioning a repository from the public beta scaffold.";
   }
 
   if (status === "awaiting_install") {
-    return "The repository exists, but the GitHub App still needs access before the builder can run.";
+    return "The repository exists, but the GitHub App still needs access before bootstrap can continue.";
   }
 
-  if (status === "provisioning") {
-    return "The repository is ready. Start the builder workflow to turn the PRD into a working app.";
+  if (status === "bootstrapping") {
+    return "The GitHub App is installed and bootstrap is configuring labels, secrets, variables, and repo memory.";
+  }
+
+  if (status === "ready_to_launch") {
+    return "Bootstrap is complete. Start the pipeline to create the root PRD issue and launch decomposition.";
+  }
+
+  if (status === "awaiting_capacity") {
+    return "This repo is ready, but the shared beta capacity is full. Retry launch when a slot opens.";
   }
 
   if (status === "building") {
-    return "The builder workflow is running. New events will appear here as the agent reports progress.";
+    return "The target repo is running the pipeline. New events will appear here as GitHub reports progress.";
   }
 
   if (status === "complete") {
     return "The build finished successfully. Use the deployment link if one was reported.";
+  }
+
+  if (status === "stalled") {
+    return "The pipeline stalled. Use the retry action if no PR exists yet, or open the repo and inspect the latest pipeline activity.";
   }
 
   if (status === "failed") {
@@ -559,6 +674,17 @@ function formatMessage(data: Record<string, unknown>): string {
   }
 
   return typeof data.content === "string" ? data.content : "";
+}
+
+function readLatestStalledStage(events: BuildEvent[]): string | null {
+  const stalled = [...events]
+    .reverse()
+    .find((event) => event.kind === "pipeline_stalled");
+  return typeof stalled?.data?.stage === "string" ? stalled.data.stage : null;
+}
+
+function readSupportEmail(): string {
+  return process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "kahessay@icloud.com";
 }
 
 function hasParsedMessage(value: unknown): value is { message: string } {

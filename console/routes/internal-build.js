@@ -49,7 +49,7 @@ function registerInternalBuildRoutes(app, { buildSessionStore }) {
     }
 
     if (category === "build" && kind === "agent_error") {
-      buildSessionStore.updateSession(session_id, { status: "failed" });
+      buildSessionStore.updateSession(session_id, { status: "stalled" });
     }
 
     res.json({ ok: true, eventId: event.id });
