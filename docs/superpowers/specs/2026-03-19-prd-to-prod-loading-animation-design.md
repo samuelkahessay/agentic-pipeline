@@ -46,7 +46,7 @@ interface PrdToProdAnimationProps {
   rotation?: boolean
   /** Propagate squash & stretch to all letters, not just the "o" */
   squashPropagation?: boolean
-  /** Font size in pixels — animation values scale proportionally */
+  /** Font size in pixels */
   size?: number
   /** Override cycle duration in seconds */
   duration?: number
