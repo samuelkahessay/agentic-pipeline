@@ -1,6 +1,6 @@
 // ── Compliance Scanner — deterministic rule-based engine ─────────────────────
-// Mirrors the ASP.NET C# classification logic from Run 05.
-// No LLM calls. Fully synchronous. Returns a disposition + findings array.
+// Aligned to the original C# ComplianceRuleLibrary.cs from Run 05 (v5.0.0).
+// 9 rules with PIPEDA/FINTRAC citations. No LLM calls. Fully synchronous.
 
 export type ComplianceDisposition = "AUTO_BLOCK" | "HUMAN_REQUIRED" | "ADVISORY";
 export type ComplianceRegulation = "PIPEDA" | "FINTRAC";
@@ -14,6 +14,7 @@ export interface ComplianceFinding {
   disposition: ComplianceDisposition;
   ruleId: string;
   description: string;
+  citation?: string;
   lineNumber?: number;
   codeSnippet?: string;
 }
@@ -37,10 +38,9 @@ interface Rule {
   severity: FindingSeverity;
   disposition: ComplianceDisposition;
   description: string;
-  // Pattern is tested against each line and the full content.
+  citation: string;
   pattern?: RegExp;
   matcher?: (content: string, lines: string[]) => MatchDetails | null;
-  // Some rules only fire in specific content types (undefined = all types)
   contentTypes?: ContentType[];
 }
 
@@ -52,13 +52,6 @@ interface MatchDetails {
 const TRANSACTION_CONTEXT =
   /\b(transaction|transfer|payment|wire|deposit|withdrawal|cash|beneficiary)\b/i;
 const REPORTING_MARKERS = /\b(fintrac_reported|suspicious_flag|ctr_required)\b/i;
-const NEGATIVE_COMPLIANCE_MARKER =
-  /\b(missing|without|skipp(?:ed|ing)|omit(?:ted)?|not[_\s-]?verified|unverified|pending|false)\b/i;
-const VERIFICATION_TERM =
-  /\b(kyc|know[_\s]?your[_\s]?customer|identity[_\s]?verif(?:ication)?|beneficiary(?:[_\s]?verified)?)\b/i;
-const STRUCTURING_HINT =
-  /\b(split|multiple|structured?|structuring|avoid(?:ing)?(?: reporting)?|below threshold|under threshold|just under)\b/i;
-const STRUCTURING_AMOUNT = /\b([7-9]\d{3})(?:\.\d{2})?\b/;
 
 function clippedLine(line: string): string {
   return line.trim().slice(0, 120);
@@ -99,6 +92,8 @@ function hasLargeTransactionAmount(text: string): boolean {
   return false;
 }
 
+// ── Rules aligned to ComplianceRuleLibrary.cs (v5.0.0) ──────────────────────
+
 const RULES: Rule[] = [
   // ── PIPEDA rules ──────────────────────────────────────────────────────────
 
@@ -107,19 +102,21 @@ const RULES: Rule[] = [
     regulation: "PIPEDA",
     severity: "Critical",
     disposition: "AUTO_BLOCK",
-    description: "Email address logged or stored in plaintext — PII exposure violates PIPEDA s.4.7",
-    pattern: /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/,
-    contentTypes: ["LOG", "CODE", "DIFF"],
+    description:
+      "Social Insurance Number (SIN) in plaintext — direct PII disclosure prohibited",
+    citation: "PIPEDA s.5(3)",
+    // Canadian SIN: 9 digits optionally separated by spaces or dashes
+    pattern: /\b\d{3}[-\s]?\d{3}[-\s]?\d{3}\b/,
   },
   {
     id: "PIPEDA-002",
     regulation: "PIPEDA",
-    severity: "Critical",
-    disposition: "AUTO_BLOCK",
+    severity: "High",
+    disposition: "HUMAN_REQUIRED",
     description:
-      "Social Insurance Number (SIN) pattern detected — direct PII disclosure prohibited under PIPEDA s.4.7",
-    // Canadian SIN: 9 digits optionally separated by spaces or dashes
-    pattern: /\b\d{3}[-\s]?\d{3}[-\s]?\d{3}\b/,
+      "Account number exposure — financial identifiers require safeguards before processing",
+    citation: "PIPEDA s.4.7",
+    pattern: /\b(account[_\s]?(number|no|#|id)|acct[_\s]?#?)\s*[:=]?\s*\d{5,}/i,
   },
   {
     id: "PIPEDA-003",
@@ -127,19 +124,11 @@ const RULES: Rule[] = [
     severity: "High",
     disposition: "HUMAN_REQUIRED",
     description:
-      "Phone number in log context — may constitute PII under PIPEDA depending on associated data",
-    pattern: /\b(\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b/,
-    contentTypes: ["LOG", "FREETEXT"],
-  },
-  {
-    id: "PIPEDA-004",
-    regulation: "PIPEDA",
-    severity: "High",
-    disposition: "AUTO_BLOCK",
-    description:
-      "Unencrypted storage reference for personal data — PIPEDA s.4.7 requires appropriate safeguards",
+      "Date of birth in log or code context — constitutes personal information requiring consent",
+    citation: "PIPEDA s.4.3",
     pattern:
-      /\b(password|passwd|secret|credentials?|api_?key|private_?key)\s*[:=]\s*["']?[^\s"']{4,}/i,
+      /\b(dob|date[_\s]?of[_\s]?birth|birth[_\s]?date|born[_\s]?on)\b/i,
+    contentTypes: ["LOG", "CODE", "DIFF"],
   },
   {
     id: "PIPEDA-005",
@@ -147,29 +136,31 @@ const RULES: Rule[] = [
     severity: "Medium",
     disposition: "ADVISORY",
     description:
-      "Consent gap: personal data collected without explicit opt-in reference — review PIPEDA Principle 3",
-    pattern: /\b(consent|opt[_-]?in|privacy[_-]?policy|gdpr|casl)\b/i,
-    contentTypes: ["CODE", "DIFF", "FREETEXT"],
-  },
-  {
-    id: "PIPEDA-006",
-    regulation: "PIPEDA",
-    severity: "High",
-    disposition: "HUMAN_REQUIRED",
-    description:
-      "Health or medical data reference detected — sensitive personal information under PIPEDA s.4.3.4",
-    pattern:
-      /\b(health[_\s]?record|medical[_\s]?data|diagnosis|prescription|patient[_\s]?id|dob|date[_\s]?of[_\s]?birth)\b/i,
+      "Email address in plaintext — personal information that should be handled per privacy policy",
+    citation: "PIPEDA Principle 4.3",
+    pattern: /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/,
   },
   {
     id: "PIPEDA-007",
     regulation: "PIPEDA",
-    severity: "Low",
-    disposition: "ADVISORY",
+    severity: "Critical",
+    disposition: "AUTO_BLOCK",
     description:
-      "Data retention policy not referenced — PIPEDA Principle 5 requires defined retention schedules",
-    pattern: /\b(retention|purge|delete[_\s]?after|expire[_\s]?at|ttl)\b/i,
-    contentTypes: ["CODE", "DIFF", "FREETEXT"],
+      "Credit card number unmasked — payment card data must be encrypted or tokenized",
+    citation: "PIPEDA s.4.7",
+    // Matches 13-19 digit card numbers (Visa, MC, Amex patterns)
+    pattern: /\b(?:4\d{3}|5[1-5]\d{2}|3[47]\d{2}|6(?:011|5\d{2}))[- ]?\d{4}[- ]?\d{4}[- ]?\d{1,7}\b/,
+  },
+  {
+    id: "PIPEDA-008",
+    regulation: "PIPEDA",
+    severity: "Critical",
+    disposition: "AUTO_BLOCK",
+    description:
+      "Health or medical information detected — sensitive personal information requiring explicit consent",
+    citation: "PIPEDA s.4.3.4",
+    pattern:
+      /\b(health[_\s]?record|medical[_\s]?data|diagnosis|prescription|patient[_\s]?id)\b/i,
   },
 
   // ── FINTRAC rules ─────────────────────────────────────────────────────────
@@ -180,7 +171,8 @@ const RULES: Rule[] = [
     severity: "High",
     disposition: "HUMAN_REQUIRED",
     description:
-      "Large cash transaction exceeding $10,000 threshold — mandatory reporting under Proceeds of Crime Act s.9",
+      "Large transaction exceeding $10,000 threshold without reporting flag — mandatory reporting required",
+    citation: "Proceeds of Crime Act s.9",
     matcher: (_content, lines) =>
       matchLine(
         lines,
@@ -193,69 +185,31 @@ const RULES: Rule[] = [
   {
     id: "FINTRAC-002",
     regulation: "FINTRAC",
-    severity: "High",
-    disposition: "HUMAN_REQUIRED",
-    description:
-      "Missing KYC (Know Your Customer) reference in transaction context — FINTRAC requires identity verification",
-    matcher: (_content, lines) =>
-      matchLine(
-        lines,
-        (line) =>
-          VERIFICATION_TERM.test(line) &&
-          NEGATIVE_COMPLIANCE_MARKER.test(line)
-      ),
-  },
-  {
-    id: "FINTRAC-003",
-    regulation: "FINTRAC",
-    severity: "High",
+    severity: "Critical",
     disposition: "AUTO_BLOCK",
     description:
-      "Suspicious transaction pattern: structured splitting to avoid reporting threshold (structuring)",
-    matcher: (_content, lines) =>
-      matchLine(
-        lines,
-        (line) =>
-          TRANSACTION_CONTEXT.test(line) &&
-          STRUCTURING_AMOUNT.test(line) &&
-          STRUCTURING_HINT.test(line)
-      ),
-  },
-  {
-    id: "FINTRAC-004",
-    regulation: "FINTRAC",
-    severity: "Medium",
-    disposition: "ADVISORY",
-    description:
-      "Wire transfer reference without beneficiary identification — FINTRAC requires beneficiary data on international transfers",
-    pattern: /\b(wire[_\s]?transfer|swift|iban|beneficiary|remittance|cross[_\s]?border)\b/i,
+      "Suspicious Activity Report (SAR) bypass — explicit circumvention of reporting obligations",
+    citation: "PCMLTFA s.7",
+    pattern:
+      /\b(skip[_\s]?sar|bypass[_\s]?report|disable[_\s]?alert|suppress[_\s]?suspicious|no[_\s]?sar)\b/i,
   },
   {
     id: "FINTRAC-005",
     regulation: "FINTRAC",
-    severity: "Critical",
-    disposition: "AUTO_BLOCK",
-    description:
-      "Cryptocurrency transaction without FINTRAC registration — virtual asset service providers must register",
-    pattern: /\b(bitcoin|btc|ethereum|eth|crypto[_\s]?currency|virtual[_\s]?asset|vasp|wallet[_\s]?address|0x[0-9a-fA-F]{40})\b/i,
-  },
-  {
-    id: "FINTRAC-006",
-    regulation: "FINTRAC",
     severity: "High",
     disposition: "HUMAN_REQUIRED",
     description:
-      "Politically Exposed Person (PEP) reference without enhanced due diligence — FINTRAC requires EDD for PEPs",
-    pattern: /\b(pep|politically[_\s]?exposed|beneficial[_\s]?owner|ultimate[_\s]?beneficial)\b/i,
-  },
-  {
-    id: "FINTRAC-007",
-    regulation: "FINTRAC",
-    severity: "Low",
-    disposition: "ADVISORY",
-    description:
-      "Anti-money laundering (AML) keyword detected — verify FINTRAC compliance program documentation",
-    pattern: /\b(money[_\s]?laundering|terrorist[_\s]?financing|sanctions[_\s]?list|ofac|fintrac[_\s]?report)\b/i,
+      "Cash transaction without Currency Transaction Report (CTR) reference — requires mandatory filing",
+    citation: "PCMLTFA s.9(1)",
+    matcher: (_content, lines) =>
+      matchLine(
+        lines,
+        (line) =>
+          /\bcash\b/i.test(line) &&
+          TRANSACTION_CONTEXT.test(line) &&
+          !/\bctr\b/i.test(line) &&
+          !REPORTING_MARKERS.test(line)
+      ),
   },
 ];
 
@@ -287,6 +241,7 @@ export function scanContent(
           disposition: rule.disposition,
           ruleId: rule.id,
           description: rule.description,
+          citation: rule.citation,
           ...(match.lineNumber != null ? { lineNumber: match.lineNumber } : {}),
           ...(match.codeSnippet ? { codeSnippet: match.codeSnippet } : {}),
         });
@@ -312,6 +267,7 @@ export function scanContent(
             disposition: rule.disposition,
             ruleId: rule.id,
             description: rule.description,
+            citation: rule.citation,
             lineNumber: i + 1,
             codeSnippet: clippedLine(lines[i]),
           });
@@ -331,6 +287,7 @@ export function scanContent(
         disposition: rule.disposition,
         ruleId: rule.id,
         description: rule.description,
+        citation: rule.citation,
       });
     }
   }

@@ -134,7 +134,7 @@ function NewSnippetForm({
   onSave,
   onCancel,
 }: {
-  onSave: (data: Omit<import("./store").Snippet, "id" | "createdAt">) => void;
+  onSave: (data: Omit<import("./store").Snippet, "id" | "createdAt" | "description"> & { description?: string }) => void;
   onCancel: () => void;
 }) {
   const [form, setForm] = useState<NewSnippetFormData>({
@@ -254,7 +254,7 @@ export default function App() {
     setExpandedId((prev) => (prev === id ? null : id));
   }
 
-  function handleSave(data: Omit<Snippet, "id" | "createdAt">) {
+  function handleSave(data: Omit<Snippet, "id" | "createdAt" | "description"> & { description?: string }) {
     addSnippet(data);
     setShowForm(false);
   }

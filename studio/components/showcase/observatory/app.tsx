@@ -23,7 +23,7 @@ const NODE_W = 130;
 const NODE_H = 48;
 const NODE_Y = SVG_H / 2 - NODE_H / 2;
 
-// Evenly distribute 5 nodes horizontally with padding
+// Evenly distribute nodes horizontally with padding
 const NODE_PADDING = 24;
 const NODE_STEP = (SVG_W - 2 * NODE_PADDING - NODE_W) / (PIPELINE_NODES.length - 1);
 

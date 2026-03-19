@@ -11,8 +11,8 @@ export interface PipelineNode {
 
 export const PIPELINE_NODES: PipelineNode[] = [
   {
-    id: "decompose",
-    label: "Decompose",
+    id: "decomposer",
+    label: "PRD Decomposer",
     description:
       "Reads the PRD issue and breaks it into discrete, implementable child issues. Each child issue maps to one feature with acceptance criteria the build agent can verify.",
     triggers: ["Issue labeled pipeline", "PRD issue body"],
@@ -20,8 +20,8 @@ export const PIPELINE_NODES: PipelineNode[] = [
     status: "active",
   },
   {
-    id: "build",
-    label: "Build",
+    id: "repo-assist",
+    label: "Repo Assist",
     description:
       "Picks up the next open pipeline issue, reads the repo context, and writes the implementation. Opens a PR against main with passing tests.",
     triggers: ["Open pipeline issue", "Repo memory checkpoint"],
@@ -29,8 +29,8 @@ export const PIPELINE_NODES: PipelineNode[] = [
     status: "active",
   },
   {
-    id: "review",
-    label: "Review",
+    id: "pr-reviewer",
+    label: "PR Reviewer",
     description:
       "Reviews the PR against the acceptance criteria in the linked issue. Approves if all criteria pass; requests changes with a specific remediation plan if not.",
     triggers: ["PR opened with pipeline label", "Linked issue criteria"],
@@ -38,20 +38,11 @@ export const PIPELINE_NODES: PipelineNode[] = [
     status: "active",
   },
   {
-    id: "gate",
-    label: "Gate",
-    description:
-      "Human decision point. Compliance-affecting changes are blocked here until an operator approves via the console. Non-compliance PRs auto-advance.",
-    triggers: ["Approved review", "Autonomy policy glob match"],
-    outputs: ["Operator decision (Approved/Rejected)", "Audit log entry"],
-    status: "idle",
-  },
-  {
-    id: "ship",
-    label: "Ship",
+    id: "auto-merge",
+    label: "Auto-Merge",
     description:
       "Squash-merges the approved PR, closes the linked issue, and triggers a Vercel deploy. The pipeline then picks up the next open issue.",
-    triggers: ["Operator approval or policy pass-through", "CI green"],
+    triggers: ["Approved review", "CI green"],
     outputs: ["Merged commit", "Closed issue", "Deploy URL"],
     status: "idle",
   },
@@ -201,5 +192,75 @@ export const FAILURE_EVENTS: FailureEvent[] = [
       "Gave close-issues its own concurrency group `close-issues-${{ github.event.pull_request.number }}` isolated from the reviewer group.",
     pr: "PR #56",
     category: "race-condition",
+  },
+  {
+    id: "fail-05",
+    severity: "high",
+    error:
+      "TypeScript strict-mode error: Octokit response types not fully mapped — `any` leaked into strict mode, failing the build on PR #42's data loading layer.",
+    resolution:
+      "Added explicit Octokit response type annotations to all GitHub API calls. Narrowed `data` return types to match actual payload shapes.",
+    pr: "PR #43",
+    category: "api",
+  },
+  {
+    id: "fail-06",
+    severity: "medium",
+    error:
+      "Fixture JSON import failed at build time — Next.js 14 App Router requires `import` for JSON files but the data layer used `require()` with a relative path.",
+    resolution:
+      "Switched from `require('./fixtures/issues.json')` to ESM `import` with TypeScript `resolveJsonModule` enabled. Added `assert { type: 'json' }` where needed.",
+    pr: "PR #44",
+    category: "config",
+  },
+  {
+    id: "fail-07",
+    severity: "high",
+    error:
+      "Framer Motion `layoutId` collision: two components used the same `layoutId` string, causing React to unmount the wrong element during tab transitions and crash the Simulator.",
+    resolution:
+      "Prefixed all `layoutId` values with their parent component name (`sim-` vs `replay-`). Added a lint rule to prevent duplicate layoutId strings.",
+    pr: "PR #49",
+    category: "config",
+  },
+  {
+    id: "fail-08",
+    severity: "medium",
+    error:
+      "Timeline dot positions overflowed on mobile — percentage-based positioning assumed a minimum container width of 600px, causing dots to overlap at 375px.",
+    resolution:
+      "Added horizontal scroll to the timeline track below 640px and clamped dot spacing to a minimum of 24px. Touch-friendly hit targets increased to 44px.",
+    pr: "PR #59",
+    category: "config",
+  },
+  {
+    id: "fail-09",
+    severity: "high",
+    error:
+      "Auto-merge race condition: PR reviewer approval and CI status check completed simultaneously, triggering two merge attempts. Second attempt failed with 'merge conflict' after first succeeded.",
+    resolution:
+      "Added a mutex via GitHub Actions concurrency group keyed to PR number. Only one merge attempt can run at a time per PR.",
+    pr: "PR #61",
+    category: "race-condition",
+  },
+  {
+    id: "fail-10",
+    severity: "low",
+    error:
+      "Vercel preview deploy URL was logged but not posted as a PR comment — reviewers had to dig through deployment logs to find the preview.",
+    resolution:
+      "Added a post-deploy step that uses `gh pr comment` to post the preview URL. Skips if comment already exists (idempotent).",
+    pr: "PR #63",
+    category: "workflow",
+  },
+  {
+    id: "fail-11",
+    severity: "medium",
+    error:
+      "GitHub API rate limit hit during fixture data loading — the fallback API path made unauthenticated requests, hitting the 60 req/hour limit during development.",
+    resolution:
+      "Added `GITHUB_TOKEN` header to API fallback requests and implemented exponential backoff with retry. Static fixtures used as primary source, API as fallback only.",
+    pr: "PR #45",
+    category: "api",
   },
 ];

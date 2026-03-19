@@ -301,6 +301,14 @@
   border: 1px solid var(--card-border);
 }
 
+.repoInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  flex: 1;
+  min-width: 0;
+}
+
 .repoName {
   font-size: 0.8125rem;
   font-weight: 500;
@@ -309,8 +317,15 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  flex: 1;
-  min-width: 0;
+}
+
+.repoDesc {
+  font-size: 0.6875rem;
+  color: var(--card-muted);
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .repoMeta {
@@ -330,6 +345,39 @@
   font-size: 0.6875rem;
   color: var(--card-muted);
   white-space: nowrap;
+}
+
+.repoForks {
+  font-size: 0.6875rem;
+  color: var(--card-muted);
+  white-space: nowrap;
+}
+
+/* ── Export actions ────────────────────────────────────────────────────── */
+
+.exportActions {
+  display: flex;
+  gap: 0.5rem;
+  padding-top: 0.75rem;
+}
+
+.exportBtn,
+.copyLinkBtn {
+  padding: 0.375rem 0.75rem;
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+  border: 1px solid var(--rule);
+  background: var(--warm-white);
+  color: var(--ink);
+}
+
+.exportBtn:hover,
+.copyLinkBtn:hover {
+  background: var(--surface);
 }
 
 /* ── Theme selector ────────────────────────────────────────────────────── */

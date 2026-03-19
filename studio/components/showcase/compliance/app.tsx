@@ -170,6 +170,9 @@ function FindingCard({
       <div className={styles.findingHeader}>
         <span className={styles.findingRuleId}>{finding.ruleId}</span>
         <p className={styles.findingDescription}>{finding.description}</p>
+        {finding.citation && (
+          <span className={styles.findingCitation}>{finding.citation}</span>
+        )}
       </div>
       <div className={styles.findingMeta}>
         <span className={`${styles.badge} ${regulationClass(finding.regulation)}`}>
