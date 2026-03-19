@@ -6,7 +6,7 @@
 
 **Architecture:** Shared data layer reads `showcase/*/manifest.json` + `showcase/*/README.md` at build time. A carousel strip component on the landing page links to `/showcase`. The gallery page renders all 5 apps as cards. Each `/showcase/[slug]` page uses a split-view layout (260px sidebar + app area). All 5 apps are client-side React components using localStorage for persistence.
 
-**Tech Stack:** Next.js 15 (App Router), React 19, TypeScript, CSS Modules, localStorage
+**Tech Stack:** Next.js 16 (App Router), React 19, TypeScript, CSS Modules, localStorage
 
 **Spec:** `docs/superpowers/specs/2026-03-18-showcase-gallery-design.md`
 
@@ -19,12 +19,16 @@
 **Files:**
 - Create: `studio/lib/showcase-data.ts`
 
-This is the single source of truth for showcase metadata. It reads the manifest.json files at build time (or import time — they're static JSON in the repo) and exposes typed data for all showcase components.
+This is the single source of truth for showcase metadata. It reads `showcase/*/manifest.json` at build time using `fs.readFileSync` (safe in Next.js server context — runs at build, not runtime). Curated fields (slug, description, originalStack, extra metrics) are defined in a separate map.
+
+**Important:** `showcase/` is a sibling of `studio/`, not inside it. Use `path.resolve(__dirname, '../../showcase')` or `process.cwd()` + `../showcase` to resolve paths.
 
 - [ ] **Step 1: Write the type definitions and data loader**
 
 ```typescript
 // studio/lib/showcase-data.ts
+import fs from "fs";
+import path from "path";
 
 export interface ShowcaseApp {
   slug: string;
@@ -32,103 +36,100 @@ export interface ShowcaseApp {
   name: string;
   tag: string;
   techStack: string;
-  originalStack: string | null; // non-null for ported apps, e.g., "ASP.NET Core + C#"
+  originalStack: string | null;
   date: string;
   prdPath: string;
-  prdUrl: string; // GitHub blob URL at tagged commit
+  prdUrl: string;
   issueCount: number;
   prCount: number;
   description: string;
-  // Optional metrics — only when explicitly present in README
   linesAdded?: number;
   filesChanged?: number;
   testsWritten?: number;
   themes?: number;
 }
 
-// Static data derived from showcase/*/manifest.json and showcase/*/README.md
-// This avoids runtime file reads — all data is known at build time
-export const SHOWCASE_APPS: ShowcaseApp[] = [
-  {
+// Curated fields not in manifests — slug, description, originalStack, extra metrics
+const CURATED: Record<string, {
+  slug: string;
+  description: string;
+  originalStack: string | null;
+  linesAdded?: number;
+  filesChanged?: number;
+  testsWritten?: number;
+  themes?: number;
+}> = {
+  "01-code-snippet-manager": {
     slug: "code-snippets",
-    run: 1,
-    name: "Code Snippet Manager",
-    tag: "v1.0.0",
-    techStack: "Express + TS",
-    originalStack: null,
-    date: "2026-02",
-    prdPath: "docs/prd/sample-prd.md",
-    prdUrl: "https://github.com/samuelkahessay/prd-to-prod/blob/v1.0.0/docs/prd/sample-prd.md",
-    issueCount: 8,
-    prCount: 7,
     description: "Save, tag, and search code snippets with full-text search",
-  },
-  {
-    slug: "observatory",
-    run: 2,
-    name: "Pipeline Observatory",
-    tag: "v2.0.0",
-    techStack: "Next.js 14 + TS",
     originalStack: null,
-    date: "2026-02",
-    prdPath: "docs/prd/pipeline-observatory-prd.md",
-    prdUrl: "https://github.com/samuelkahessay/prd-to-prod/blob/v2.0.0/docs/prd/pipeline-observatory-prd.md",
-    issueCount: 12,
-    prCount: 19,
+  },
+  "02-pipeline-observatory": {
+    slug: "observatory",
     description: "Interactive pipeline visualizer with timeline replay and forensic inspection",
+    originalStack: null,
     testsWritten: 32,
   },
-  {
+  "03-devcard": {
     slug: "devcard",
-    run: 3,
-    name: "DevCard",
-    tag: "v3.0.0",
-    techStack: "Next.js 14 + Framer",
-    originalStack: null,
-    date: "2026-02",
-    prdPath: "docs/prd/devcard-prd.md",
-    prdUrl: "https://github.com/samuelkahessay/prd-to-prod/blob/v3.0.0/docs/prd/devcard-prd.md",
-    issueCount: 17,
-    prCount: 22,
     description: "GitHub profile card generator with 6 themes and PNG export",
+    originalStack: null,
     themes: 6,
   },
-  {
+  "04-ticket-deflection": {
     slug: "ticket-deflection",
-    run: 4,
-    name: "Ticket Deflection",
-    tag: "v4.0.0",
-    techStack: "Next.js (showcase)",
-    originalStack: "ASP.NET Core + C#",
-    date: "2026-02",
-    prdPath: "docs/prd/ticket-deflection-prd.md",
-    prdUrl: "https://github.com/samuelkahessay/prd-to-prod/blob/v4.0.0/docs/prd/ticket-deflection-prd.md",
-    issueCount: 52,
-    prCount: 37,
     description: "Support ticket classifier that auto-resolves common issues and escalates complex cases",
+    originalStack: "ASP.NET Core + C#",
     linesAdded: 3987,
     filesChanged: 119,
   },
-  {
+  "05-compliance-scan": {
     slug: "compliance",
-    run: 5,
-    name: "Compliance Scanner",
-    tag: "v5.0.0",
-    techStack: "Next.js (showcase)",
-    originalStack: "ASP.NET Core + C#",
-    date: "2026-03",
-    prdPath: "docs/prd/run-07-compliance-scan-service-prd.md",
-    prdUrl: "https://github.com/samuelkahessay/prd-to-prod/blob/v5.0.0/docs/prd/run-07-compliance-scan-service-prd.md",
-    issueCount: 8,
-    prCount: 8,
     description: "PIPEDA + FINTRAC regulatory scanner with auto-block and human escalation",
+    originalStack: "ASP.NET Core + C#",
   },
-];
+};
+
+const REPO = "https://github.com/samuelkahessay/prd-to-prod";
+
+function loadShowcaseApps(): ShowcaseApp[] {
+  const showcaseDir = path.resolve(process.cwd(), "../showcase");
+  const dirs = Object.keys(CURATED);
+
+  return dirs.map((dir) => {
+    const manifest = JSON.parse(
+      fs.readFileSync(path.join(showcaseDir, dir, "manifest.json"), "utf-8")
+    );
+    const curated = CURATED[dir];
+    return {
+      slug: curated.slug,
+      run: manifest.run.number,
+      name: manifest.run.name,
+      tag: manifest.run.tag,
+      techStack: curated.originalStack ? "Next.js (showcase)" : manifest.run.tech_stack,
+      originalStack: curated.originalStack,
+      date: manifest.run.date,
+      prdPath: manifest.run.prd,
+      prdUrl: `${REPO}/blob/${manifest.run.tag}/${manifest.run.prd}`,
+      issueCount: manifest.issues.length,
+      prCount: manifest.pull_requests.length,
+      description: curated.description,
+      ...(curated.linesAdded && { linesAdded: curated.linesAdded }),
+      ...(curated.filesChanged && { filesChanged: curated.filesChanged }),
+      ...(curated.testsWritten && { testsWritten: curated.testsWritten }),
+      ...(curated.themes && { themes: curated.themes }),
+    };
+  });
+}
+
+export const SHOWCASE_APPS: ShowcaseApp[] = loadShowcaseApps();
 
 export function getShowcaseApp(slug: string): ShowcaseApp | undefined {
   return SHOWCASE_APPS.find((app) => app.slug === slug);
 }
 ```
+
+**Note:** This loader runs at build time in server components. Client components import `SHOWCASE_APPS` which gets serialized. The `fs` import is tree-shaken from client bundles by Next.js.
 
 - [ ] **Step 2: Write test for data loader**
 
@@ -141,7 +142,7 @@ describe("showcase-data", () => {
     expect(SHOWCASE_APPS).toHaveLength(5);
   });
 
-  it("all apps have required fields", () => {
+  it("all apps have required fields derived from manifests", () => {
     for (const app of SHOWCASE_APPS) {
       expect(app.slug).toBeTruthy();
       expect(app.run).toBeGreaterThan(0);
@@ -150,6 +151,17 @@ describe("showcase-data", () => {
       expect(app.prCount).toBeGreaterThan(0);
       expect(app.prdUrl).toMatch(/^https:\/\/github\.com/);
     }
+  });
+
+  it("counts match actual manifest arrays", () => {
+    // Verify loader reads from manifests, not hardcoded values
+    const run01 = getShowcaseApp("code-snippets")!;
+    expect(run01.issueCount).toBe(8);  // manifest has 8 issues
+    expect(run01.prCount).toBe(7);     // manifest has 7 PRs
+
+    const run03 = getShowcaseApp("devcard")!;
+    expect(run03.issueCount).toBe(18); // manifest has 18 issues
+    expect(run03.prCount).toBe(28);    // manifest has 28 PRs
   });
 
   it("ported apps have originalStack", () => {
@@ -163,7 +175,12 @@ describe("showcase-data", () => {
     expect(getShowcaseApp("nonexistent")).toBeUndefined();
   });
 
-  it("optional metrics only present when source has them", () => {
+  it("preserves manifest name exactly", () => {
+    // Run 05 name is "Compliance Scan Service" in manifest, not shortened
+    expect(getShowcaseApp("compliance")?.name).toBe("Compliance Scan Service");
+  });
+
+  it("optional metrics only present when curated map has them", () => {
     const observatory = getShowcaseApp("observatory")!;
     expect(observatory.testsWritten).toBe(32);
 
@@ -176,7 +193,7 @@ describe("showcase-data", () => {
 
 - [ ] **Step 3: Run tests**
 
-Run: `cd studio && npm test -- --testPathPattern showcase-data`
+Run: `cd studio && npm test -- test/showcase-data.test.ts`
 Expected: PASS
 
 - [ ] **Step 4: Commit**
@@ -343,16 +360,17 @@ git commit -m "feat: add /showcase gallery page"
 `page.tsx` is a client component that:
 - Reads `slug` from params
 - Renders the correct showcase app component based on slug
-- Uses a simple switch/map pattern:
+- Uses a simple switch/map pattern
+- Exports `generateStaticParams` so all 5 slugs are statically generated at build time
 
 ```tsx
 "use client";
 
 import { use } from "react";
+import dynamic from "next/dynamic";
+import { SHOWCASE_APPS } from "@/lib/showcase-data";
 
 // Lazy-load each app to avoid bundling all 5 in every page
-import dynamic from "next/dynamic";
-
 const APPS: Record<string, ReturnType<typeof dynamic>> = {
   "code-snippets": dynamic(() => import("@/components/showcase/code-snippets/app")),
   "observatory": dynamic(() => import("@/components/showcase/observatory/app")),
@@ -361,6 +379,11 @@ const APPS: Record<string, ReturnType<typeof dynamic>> = {
   "compliance": dynamic(() => import("@/components/showcase/compliance/app")),
 };
 
+// Static generation for all 5 showcase slugs
+export function generateStaticParams() {
+  return SHOWCASE_APPS.map((app) => ({ slug: app.slug }));
+}
+
 export default function ShowcaseAppPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
   const AppComponent = APPS[slug];
@@ -368,6 +391,8 @@ export default function ShowcaseAppPage({ params }: { params: Promise<{ slug: st
   return <AppComponent />;
 }
 ```
+
+**Note:** `generateStaticParams` must be exported from a page, not a layout. If it conflicts with `"use client"`, move it to a separate `generateStaticParams.ts` or restructure the page as a server component wrapper around a client component.
 
 - [ ] **Step 3: Create placeholder app components**
 
@@ -423,7 +448,7 @@ git commit -m "feat: add showcase app shell with sidebar layout"
 - Create: `studio/components/showcase/code-snippets/app.module.css`
 - Create: `studio/components/showcase/code-snippets/store.ts`
 
-**Behavioral source of truth:** `git show v1.0.0` — Express + TypeScript CRUD app with EJS templates.
+**Behavioral source of truth:** Restore with `git checkout v1.0.0 -- src/ package.json tsconfig.json` to inspect the Express + TypeScript CRUD app with EJS templates. Read `showcase/01-code-snippet-manager/README.md` for feature inventory.
 
 **Core user journey to reproduce:**
 1. Landing view: list of snippets with tags, search bar
@@ -493,7 +518,7 @@ git commit -m "feat: add Code Snippet Manager showcase app"
 - Create: `studio/components/showcase/observatory/app.module.css`
 - Create: `studio/components/showcase/observatory/fixtures.ts`
 
-**Behavioral source of truth:** `git show v2.0.0` — Next.js 14 dashboard with SVG node graph, timeline, forensics.
+**Behavioral source of truth:** Restore with `git checkout v2.0.0 -- src/ package.json tsconfig.json tailwind.config.ts postcss.config.js next.config.js vitest.config.ts vercel.json next-env.d.ts`. Read `showcase/02-pipeline-observatory/README.md` for feature inventory.
 
 **Core user journey to reproduce:**
 1. Landing: three view cards (Simulator, Replay, Forensics) with descriptions
@@ -546,7 +571,7 @@ git commit -m "feat: add Pipeline Observatory showcase app"
 - Create: `studio/components/showcase/devcard/fixtures.ts`
 - Create: `studio/components/showcase/devcard/themes.ts`
 
-**Behavioral source of truth:** `git show v3.0.0` — Next.js 14 + Framer Motion dev card generator.
+**Behavioral source of truth:** Restore with `git checkout v3.0.0 -- src/ package.json tsconfig.json tailwind.config.ts postcss.config.js next.config.js vitest.config.ts`. Read `showcase/03-devcard/README.md` for feature inventory.
 
 **Core user journey to reproduce:**
 1. Landing: username input form + gallery of notable developers
@@ -608,7 +633,7 @@ git commit -m "feat: add DevCard showcase app"
 - Create: `studio/components/showcase/ticket-deflection/classifier.ts`
 - Create: `studio/components/showcase/ticket-deflection/seed-data.ts`
 
-**Behavioral source of truth:** `git show v4.0.0` — ASP.NET Core ticket deflection service.
+**Behavioral source of truth:** Restore with `git checkout v4.0.0 -- TicketDeflection/ TicketDeflection.sln`. Read `showcase/04-ticket-deflection/README.md` for feature inventory and C# source structure.
 
 **Core user journey to reproduce:**
 1. Dashboard: metrics overview (total tickets, deflection rate, category breakdown as doughnut chart)
@@ -712,7 +737,7 @@ git commit -m "feat: add Ticket Deflection showcase app (ported from ASP.NET)"
 - Create: `studio/components/showcase/compliance/seed-data.ts`
 - Create: `studio/components/showcase/compliance/store.ts`
 
-**Behavioral source of truth:** `git show v5.0.0` — ASP.NET Core compliance scanner.
+**Behavioral source of truth:** Restore with `git checkout v5.0.0 -- TicketDeflection/ TicketDeflection.sln`. Read `showcase/05-compliance-scan/README.md` for feature inventory and C# source structure.
 
 **Core user journey to reproduce:**
 1. Scan input: text area to paste code/diff/log/freetext, select content type, submit for scanning
@@ -821,7 +846,7 @@ git commit -m "feat: add Compliance Scanner showcase app (ported from ASP.NET)"
 
 - [ ] **Step 1: Capture screenshots**
 
-With the dev server running at `localhost:3000`, capture each app's landing state. Use the `/browse` skill or take manual screenshots at 1200×800 viewport.
+With the dev server running at `localhost:3000`, capture each app's landing state. Use the Playwright MCP `browser_take_screenshot` tool (navigate to each URL, take screenshot at 1200×800 viewport) or take manual screenshots.
 
 Save to `studio/public/showcase/`:
 - `code-snippets.png`
@@ -880,6 +905,56 @@ git commit -m "feat: add showcase screenshots and final gallery integration"
 
 ---
 
+## Chunk 10: Test Coverage
+
+### Task 11: Tests for showcase components and logic
+
+**Files:**
+- Create: `studio/test/showcase-strip.test.tsx`
+- Create: `studio/test/showcase-gallery.test.tsx`
+- Create: `studio/test/showcase-classifier.test.ts`
+- Create: `studio/test/showcase-scanner.test.ts`
+
+Per AGENTS.md: "Write tests for all new functionality."
+
+- [ ] **Step 1: ShowcaseStrip render test**
+
+Test that `ShowcaseStrip` renders 5 app cards + 1 CTA card, each with correct names and links.
+
+- [ ] **Step 2: Gallery page render test**
+
+Test that `/showcase` page renders all 5 app cards with correct metadata from manifests.
+
+- [ ] **Step 3: [slug] routing test**
+
+Test that `getShowcaseApp` returns correct app for valid slugs and `undefined` for invalid ones. Test that `generateStaticParams` returns all 5 slugs.
+
+- [ ] **Step 4: Ticket Deflection classifier unit tests**
+
+Test `classifyTicket` returns correct categories for known keywords. Test `matchKnowledgeBase` returns match scores. Test `processTicket` auto-resolves above threshold and escalates below.
+
+- [ ] **Step 5: Compliance scanner unit tests**
+
+Test scanner detects PIPEDA patterns (PII in logs). Test FINTRAC patterns (unreported transactions). Test disposition classification (critical → AUTO_BLOCK, ambiguous → HUMAN_REQUIRED).
+
+- [ ] **Step 6: Store SSR safety tests**
+
+For each store (snippets, tickets, compliance): verify that importing the store module does not throw when `localStorage` is undefined (simulating SSR).
+
+- [ ] **Step 7: Run all tests**
+
+Run: `cd studio && npm test`
+Expected: All tests pass including new showcase tests.
+
+- [ ] **Step 8: Commit**
+
+```bash
+git add studio/test/showcase-*.test.*
+git commit -m "test: add showcase component, classifier, and scanner tests"
+```
+
+---
+
 ## Task Dependencies
 
 ```
@@ -894,4 +969,5 @@ Task 1 (data layer) ──┬── Task 2 (carousel strip)
 Tasks 5-9 are independent of each other and can be parallelized.
 
 Task 10 (screenshots + integration) depends on all of Tasks 5-9.
+Task 11 (tests) depends on Tasks 2, 3, 8, 9. Can run in parallel with Task 10.
 ```
