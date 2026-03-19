@@ -1,6 +1,3 @@
-import fs from "fs";
-import path from "path";
-
 export interface ShowcaseApp {
   slug: string;
   run: number;
@@ -20,88 +17,86 @@ export interface ShowcaseApp {
   themes?: number;
 }
 
-const CURATED: Record<string, {
-  slug: string;
-  description: string;
-  originalStack: string | null;
-  linesAdded?: number;
-  filesChanged?: number;
-  testsWritten?: number;
-  themes?: number;
-}> = {
-  "01-code-snippet-manager": {
+const REPO = "https://github.com/samuelkahessay/prd-to-prod";
+
+// Derived from showcase/*/manifest.json — counts match the arrays in each manifest.
+// Curated fields (slug, description, originalStack, extra metrics) are added manually.
+export const SHOWCASE_APPS: ShowcaseApp[] = [
+  {
     slug: "code-snippets",
+    run: 1,
+    name: "Code Snippet Manager",
+    tag: "v1.0.0",
+    techStack: "Express + TypeScript",
+    originalStack: null,
+    date: "2026-02",
+    prdPath: "docs/prd/sample-prd.md",
+    prdUrl: `${REPO}/blob/v1.0.0/docs/prd/sample-prd.md`,
+    issueCount: 8,
+    prCount: 7,
     description: "Save, tag, and search code snippets with full-text search",
-    originalStack: null,
   },
-  "02-pipeline-observatory": {
+  {
     slug: "observatory",
-    description: "Interactive pipeline visualizer with timeline replay and forensic inspection",
+    run: 2,
+    name: "Pipeline Observatory",
+    tag: "v2.0.0",
+    techStack: "Next.js 14 + TypeScript",
     originalStack: null,
+    date: "2026-02",
+    prdPath: "docs/prd/pipeline-observatory-prd.md",
+    prdUrl: `${REPO}/blob/v2.0.0/docs/prd/pipeline-observatory-prd.md`,
+    issueCount: 12,
+    prCount: 14,
+    description: "Interactive pipeline visualizer with timeline replay and forensic inspection",
     testsWritten: 32,
   },
-  "03-devcard": {
+  {
     slug: "devcard",
-    description: "GitHub profile card generator with 6 themes and PNG export",
+    run: 3,
+    name: "DevCard",
+    tag: "v3.0.0",
+    techStack: "Next.js 14 + Framer Motion",
     originalStack: null,
+    date: "2026-02",
+    prdPath: "docs/prd/devcard-prd.md",
+    prdUrl: `${REPO}/blob/v3.0.0/docs/prd/devcard-prd.md`,
+    issueCount: 18,
+    prCount: 28,
+    description: "GitHub profile card generator with 6 themes and PNG export",
     themes: 6,
   },
-  "04-ticket-deflection": {
+  {
     slug: "ticket-deflection",
-    description: "Support ticket classifier that auto-resolves common issues and escalates complex cases",
+    run: 4,
+    name: "Ticket Deflection",
+    tag: "v4.0.0",
+    techStack: "Next.js (showcase)",
     originalStack: "ASP.NET Core + C#",
+    date: "2026-02",
+    prdPath: "docs/prd/ticket-deflection-prd.md",
+    prdUrl: `${REPO}/blob/v4.0.0/docs/prd/ticket-deflection-prd.md`,
+    issueCount: 52,
+    prCount: 37,
+    description: "Support ticket classifier that auto-resolves common issues and escalates complex cases",
     linesAdded: 3987,
     filesChanged: 119,
   },
-  "05-compliance-scan": {
+  {
     slug: "compliance",
-    description: "PIPEDA + FINTRAC regulatory scanner with auto-block and human escalation",
+    run: 5,
+    name: "Compliance Scan Service",
+    tag: "v5.0.0",
+    techStack: "Next.js (showcase)",
     originalStack: "ASP.NET Core + C#",
+    date: "2026-03",
+    prdPath: "docs/prd/run-07-compliance-scan-service-prd.md",
+    prdUrl: `${REPO}/blob/v5.0.0/docs/prd/run-07-compliance-scan-service-prd.md`,
+    issueCount: 8,
+    prCount: 8,
+    description: "PIPEDA + FINTRAC regulatory scanner with auto-block and human escalation",
   },
-};
-
-const REPO = "https://github.com/samuelkahessay/prd-to-prod";
-
-function resolveShowcaseDir(): string {
-  // In Next.js (dev/build), process.cwd() is the repo root.
-  // In Jest, process.cwd() is studio/. Use __dirname (studio/lib/) to navigate up.
-  const fromCwd = path.resolve(process.cwd(), "showcase");
-  if (fs.existsSync(fromCwd)) return fromCwd;
-  // Fallback: resolve relative to this source file (studio/lib/ → ../../showcase)
-  return path.resolve(__dirname, "../../showcase");
-}
-
-function loadShowcaseApps(): ShowcaseApp[] {
-  const showcaseDir = resolveShowcaseDir();
-  const dirs = Object.keys(CURATED);
-
-  return dirs.map((dir) => {
-    const manifest = JSON.parse(
-      fs.readFileSync(path.join(showcaseDir, dir, "manifest.json"), "utf-8")
-    );
-    const curated = CURATED[dir];
-    return {
-      slug: curated.slug,
-      run: manifest.run.number,
-      name: manifest.run.name,
-      tag: manifest.run.tag,
-      techStack: curated.originalStack ? "Next.js (showcase)" : manifest.run.tech_stack,
-      originalStack: curated.originalStack,
-      date: manifest.run.date,
-      prdPath: manifest.run.prd,
-      prdUrl: `${REPO}/blob/${manifest.run.tag}/${manifest.run.prd}`,
-      issueCount: manifest.issues.length,
-      prCount: manifest.pull_requests.length,
-      description: curated.description,
-      ...(curated.linesAdded && { linesAdded: curated.linesAdded }),
-      ...(curated.filesChanged && { filesChanged: curated.filesChanged }),
-      ...(curated.testsWritten && { testsWritten: curated.testsWritten }),
-      ...(curated.themes && { themes: curated.themes }),
-    };
-  });
-}
-
-export const SHOWCASE_APPS: ShowcaseApp[] = loadShowcaseApps();
+];
 
 export function getShowcaseApp(slug: string): ShowcaseApp | undefined {
   return SHOWCASE_APPS.find((app) => app.slug === slug);
