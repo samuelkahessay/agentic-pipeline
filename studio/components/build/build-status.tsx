@@ -14,6 +14,7 @@ import type {
   BuildSession,
   BuildSessionStatus,
 } from "@/lib/types";
+import { PrdToProdAnimation } from "@/components/shared/prd-to-prod-animation";
 import styles from "../../app/build/[id]/page.module.css";
 
 interface BuildStatusProps {
@@ -27,6 +28,7 @@ export function BuildStatus({
   initialSession,
   initialEvents,
 }: BuildStatusProps) {
+  const isDemo = !!initialSession.is_demo;
   const [session, setSession] = useState(initialSession);
   const [events, setEvents] = useState(initialEvents);
   const [installUrl, setInstallUrl] = useState(() =>
@@ -123,6 +125,17 @@ export function BuildStatus({
     void startBuild();
   }, [pendingAction, session.status, startBuild]);
 
+  // 200ms show-delay: prevents animation flicker on fast responses (Vercel guideline)
+  const [showAnimation, setShowAnimation] = useState(false);
+  useEffect(() => {
+    if (!pendingAction) {
+      setShowAnimation(false);
+      return;
+    }
+    const timer = setTimeout(() => setShowAnimation(true), 200);
+    return () => clearTimeout(timer);
+  }, [pendingAction]);
+
   const activityEvents = useMemo(
     () => events.filter((event) => event.category !== "chat"),
     [events]
@@ -143,6 +156,7 @@ export function BuildStatus({
           Session {session.id} · created{" "}
           {new Date(session.created_at).toLocaleString()}
         </p>
+        {isDemo && <span className={styles.demoPill}>Demo</span>}
       </header>
 
       <section className={styles.statusGrid}>
@@ -153,13 +167,21 @@ export function BuildStatus({
         <article className={styles.card}>
           <span className={styles.label}>Repository</span>
           <div className={styles.value}>
-            {session.github_repo || "Not provisioned yet"}
+            {session.github_repo
+              ? isDemo
+                ? <span className={styles.simulated}>{session.github_repo} (simulated)</span>
+                : session.github_repo
+              : "Not provisioned yet"}
           </div>
         </article>
         <article className={styles.card}>
           <span className={styles.label}>Deployment</span>
           <div className={styles.value}>
-            {session.deploy_url || "No deployment URL yet"}
+            {session.deploy_url
+              ? isDemo
+                ? <span className={styles.simulated}>{session.deploy_url} (simulated)</span>
+                : session.deploy_url
+              : "No deployment URL yet"}
           </div>
         </article>
       </section>
@@ -172,6 +194,12 @@ export function BuildStatus({
       <section className={styles.section}>
         <h2 className={styles.sectionTitle}>Next step</h2>
         <div className={styles.card}>
+          {pendingAction && showAnimation ? (
+            <div style={{ margin: "8px 0 16px" }}>
+              <PrdToProdAnimation size={28} amplitude="tight" />
+            </div>
+          ) : null}
+
           <p className={styles.copy}>
             {describeSessionState(session.status, pendingAction)}
           </p>
@@ -181,6 +209,7 @@ export function BuildStatus({
           <div className={styles.actions}>
             {renderActions({
               installUrl,
+              isDemo,
               pendingAction,
               session,
               onProvision: provisionRepo,
@@ -251,12 +280,14 @@ export function BuildStatus({
 
 function renderActions({
   installUrl,
+  isDemo,
   pendingAction,
   session,
   onProvision,
   onStartBuild,
 }: {
   installUrl: string | null;
+  isDemo: boolean;
   pendingAction: PendingAction;
   session: BuildSession;
   onProvision: () => void;
@@ -316,6 +347,13 @@ function renderActions({
   }
 
   if (session.status === "complete" && session.deploy_url) {
+    if (isDemo) {
+      return (
+        <span className={styles.demoAction}>
+          Demo — not a real deployment
+        </span>
+      );
+    }
     return (
       <a
         className={styles.linkButton}
