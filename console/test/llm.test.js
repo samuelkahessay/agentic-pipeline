@@ -43,7 +43,7 @@ describe("createLLMClient", () => {
     const request = JSON.parse(global.fetch.mock.calls[0][1].body);
 
     expect(content).toContain('"status":"needs_input"');
-    expect(request.model).toBe("z-ai/glm-5");
+    expect(request.model).toBe("anthropic/claude-haiku-4.5");
     expect(request.response_format).toMatchObject({
       type: "json_schema",
       json_schema: {

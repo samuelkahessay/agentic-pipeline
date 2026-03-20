@@ -1,5 +1,5 @@
 const DEFAULT_URL = "https://openrouter.ai/api/v1/chat/completions";
-const DEFAULT_MODEL = "z-ai/glm-5";
+const DEFAULT_MODEL = "anthropic/claude-haiku-4.5";
 const MAX_TOKENS = 2048;
 
 const SYSTEM_PROMPT = `You are a product requirements analyst. Your job is to help users refine vague ideas into specific, actionable PRDs (Product Requirements Documents).

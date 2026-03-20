@@ -142,8 +142,19 @@ function registerBuildSessionRoutes(app, { db, buildSessionStore, serviceResolve
         res.write(`data: ${JSON.stringify({ type: "chunk", content: chunk })}\n\n`);
       });
 
-      // Parse structured response
-      const parsed = llmClient.parseResponse(fullContent);
+      // Parse structured response — fall back gracefully if model returns prose
+      let parsed;
+      try {
+        parsed = llmClient.parseResponse(fullContent);
+      } catch (parseErr) {
+        console.warn("LLM response parse fallback:", parseErr.message);
+        parsed = {
+          status: "needs_input",
+          message: fullContent.trim(),
+          question: fullContent.trim().split("\n").pop() || "Could you tell me more?",
+          prd: null,
+        };
+      }
 
       // Persist complete assistant message
       buildSessionStore.appendEvent(session.id, {
