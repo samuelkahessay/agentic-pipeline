@@ -58,10 +58,12 @@ safe-outputs:
     title-prefix: "[Pipeline] "
     labels: [automation, pipeline]
     max: 4
+    protected-files: fallback-to-issue
   push-to-pull-request-branch:
     target: "*"
     title-prefix: "[Pipeline] "
     max: 4
+    protected-files: fallback-to-issue
   add-comment:
     discussions: false
     max: 10
