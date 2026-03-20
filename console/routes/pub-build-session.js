@@ -16,10 +16,18 @@ function resolveSessionAccess(db, buildSessionStore, req) {
   if (session.is_demo) return { session, allowed: true };
 
   const userId = resolveUserId(db, req);
-  if (!userId) return { status: 401, error: "Authentication required" };
+  if (!userId) return { status: 404, error: "Session not found" };
   if (session.user_id !== userId) return { status: 404, error: "Session not found" };
 
   return { session, allowed: true, userId };
+}
+
+function resolveGitHubUserId(db, req) {
+  const userId = resolveUserId(db, req);
+  if (!userId) return null;
+  const user = db.prepare("SELECT github_id FROM users WHERE id = ?").get(userId);
+  if (!user || user.github_id === 0) return null;
+  return userId;
 }
 
 function registerBuildSessionRoutes(app, { db, buildSessionStore, serviceResolver }) {
@@ -59,22 +67,31 @@ function registerBuildSessionRoutes(app, { db, buildSessionStore, serviceResolve
       return res.status(201).json({ sessionId: session.id });
     }
 
-    const userId = resolveUserId(db, req);
+    const userId = resolveGitHubUserId(db, req);
     if (!userId) {
-      return res.status(401).json({ error: "Authentication required" });
+      return res.status(401).json({ error: "GitHub authentication required" });
     }
     const session = buildSessionStore.createSession(userId);
     res.status(201).json({ sessionId: session.id });
   });
 
   // Get a build session with its persisted events
+  // Session ID (UUID) serves as the access token for reads — required for
+  // server-rendered status page which cannot forward browser cookies.
+  // Chat events are excluded for non-owner requests to protect PRD content.
   app.get("/pub/build-session/:id", (req, res) => {
-    const access = resolveSessionAccess(db, buildSessionStore, req);
-    if (!access.allowed) {
-      return res.status(access.status).json({ error: access.error });
+    const session = buildSessionStore.getSession(req.params.id);
+    if (!session) {
+      return res.status(404).json({ error: "Session not found" });
     }
-    const messages = buildSessionStore.getEvents(access.session.id);
-    res.json({ session: access.session, messages });
+
+    const userId = resolveUserId(db, req);
+    const isOwner = session.is_demo || (userId && session.user_id === userId);
+    const messages = isOwner
+      ? buildSessionStore.getEvents(session.id)
+      : buildSessionStore.getEvents(session.id).filter((e) => e.category !== "chat");
+
+    res.json({ session, messages });
   });
 
   // Send a message and get LLM response (streaming SSE)

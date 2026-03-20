@@ -73,7 +73,7 @@ function registerProvisionRoutes(app, { db, serviceResolver }) {
     } catch (err) {
       console.error("Provisioning error:", err);
       if (err.message.includes("OAuth grant") || err.message.includes("re-authenticate")) {
-        return res.status(401).json({
+        return res.status(409).json({
           error: "oauth_grant_expired",
           message: "Your GitHub authorization has expired. Please re-authenticate.",
           action: "re_auth",
