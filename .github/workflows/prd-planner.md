@@ -35,7 +35,9 @@ tools:
   bash: true
   github:
     toolsets: [issues, labels]
-  repo-memory: true
+  repo-memory:
+    max-file-size: 524288   # 512KB — architecture JSON artifacts can be large
+    max-patch-size: 102400  # 100KB
 
 ---
 

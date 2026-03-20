@@ -63,7 +63,20 @@ if ! git ls-remote --heads origin memory/repo-assist | grep -q memory/repo-assis
   rm -rf "$TEMP_DIR"
   echo "Repo-memory branch created."
 else
-  echo "Repo-memory branch already exists, skipping."
+  echo "Repo-memory branch already exists, validating..."
+  # Validate: memory branch should only contain lightweight state files.
+  # If template files leaked onto it (e.g. setup.sh, CLAUDE.md), the
+  # push_repo_memory step will fail validation on every agent run.
+  REPO_NWO="$(gh repo view --json nameWithOwner -q .nameWithOwner)"
+  BAD_FILES=$(gh api "repos/${REPO_NWO}/git/trees/memory/repo-assist?recursive=1" \
+    --jq '[.tree[] | select(.type == "blob" and .size > 10240)] | length' 2>/dev/null || echo "0")
+  if [ "$BAD_FILES" -gt 0 ]; then
+    echo "WARNING: memory/repo-assist has $BAD_FILES file(s) over 10KB."
+    echo "         These will block push_repo_memory unless max-file-size is raised in workflow frontmatter."
+    echo "         To fix: delete oversized files from the branch, or delete and re-seed the branch."
+  else
+    echo "Repo-memory branch is clean."
+  fi
 fi
 
 # Configure repo settings for pipeline

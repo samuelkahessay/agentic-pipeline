@@ -25,7 +25,7 @@
 # Also maintains its own PRs by fixing CI failures and resolving merge conflicts.
 # Can be triggered on-demand via /repo-assist <instructions>.
 #
-# gh-aw-metadata: {"schema_version":"v2","frontmatter_hash":"519e3ca6e51d6c50b8eee0ed593e5cbe2add72a17b767cc4f6be5ab15f3dcc2f","compiler_version":"v0.62.2","strict":true}
+# gh-aw-metadata: {"schema_version":"v2","frontmatter_hash":"9adf01aea5af34876f46848ec7edac08550c4df536908d7dd4af7a9359cd7dbe","compiler_version":"v0.62.2","strict":true}
 
 name: "Pipeline Repo Assist"
 "on":
@@ -291,7 +291,7 @@ jobs:
           GH_AW_GITHUB_WORKSPACE: ${{ github.workspace }}
           GH_AW_IS_PR_COMMENT: ${{ github.event.issue.pull_request && 'true' || '' }}
           GH_AW_MEMORY_BRANCH_NAME: 'memory/repo-assist'
-          GH_AW_MEMORY_CONSTRAINTS: "\n\n**Constraints:**\n- **Max File Size**: 10240 bytes (0.01 MB) per file\n- **Max File Count**: 100 files per commit\n- **Max Patch Size**: 10240 bytes (10 KB) total per push (max: 100 KB)\n"
+          GH_AW_MEMORY_CONSTRAINTS: "\n\n**Constraints:**\n- **Max File Size**: 524288 bytes (0.50 MB) per file\n- **Max File Count**: 100 files per commit\n- **Max Patch Size**: 102400 bytes (100 KB) total per push (max: 100 KB)\n"
           GH_AW_MEMORY_DESCRIPTION: ''
           GH_AW_MEMORY_DIR: '/tmp/gh-aw/repo-memory/default/'
           GH_AW_MEMORY_TARGET_REPO: ' of the current repository'
@@ -439,7 +439,7 @@ jobs:
           mkdir -p /tmp/gh-aw/safeoutputs
           mkdir -p /tmp/gh-aw/mcp-logs/safeoutputs
           cat > ${RUNNER_TEMP}/gh-aw/safeoutputs/config.json << 'GH_AW_SAFE_OUTPUTS_CONFIG_EOF'
-          {"add_comment":{"max":10,"target":"*"},"add_labels":{"allowed":["feature","test","infra","docs","bug","pipeline","blocked","ready","in-progress","completed","agentic-workflows"],"max":20,"target":"*"},"create_issue":{"max":2},"create_project_status_update":{"max":1},"create_pull_request":{"max":4,"title_prefix":"[Pipeline] "},"missing_data":{},"missing_tool":{},"noop":{"max":1},"push_repo_memory":{"memories":[{"dir":"/tmp/gh-aw/repo-memory/default","id":"default","max_file_count":100,"max_file_size":10240,"max_patch_size":10240}]},"push_to_pull_request_branch":{"max":4,"target":"*"},"remove_labels":{"allowed":["ready","in-progress","blocked"],"max":10}}
+          {"add_comment":{"max":10,"target":"*"},"add_labels":{"allowed":["feature","test","infra","docs","bug","pipeline","blocked","ready","in-progress","completed","agentic-workflows"],"max":20,"target":"*"},"create_issue":{"max":2},"create_project_status_update":{"max":1},"create_pull_request":{"max":4,"title_prefix":"[Pipeline] "},"missing_data":{},"missing_tool":{},"noop":{"max":1},"push_repo_memory":{"memories":[{"dir":"/tmp/gh-aw/repo-memory/default","id":"default","max_file_count":100,"max_file_size":524288,"max_patch_size":102400}]},"push_to_pull_request_branch":{"max":4,"target":"*"},"remove_labels":{"allowed":["ready","in-progress","blocked"],"max":10}}
           GH_AW_SAFE_OUTPUTS_CONFIG_EOF
       - name: Write Safe Outputs Tools
         run: |
@@ -1391,9 +1391,9 @@ jobs:
           MEMORY_ID: default
           TARGET_REPO: ${{ github.repository }}
           BRANCH_NAME: memory/repo-assist
-          MAX_FILE_SIZE: 10240
+          MAX_FILE_SIZE: 524288
           MAX_FILE_COUNT: 100
-          MAX_PATCH_SIZE: 10240
+          MAX_PATCH_SIZE: 102400
           ALLOWED_EXTENSIONS: '[]'
         with:
           script: |

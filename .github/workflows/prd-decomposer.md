@@ -49,7 +49,9 @@ tools:
     toolsets: [issues, labels]
     repos: all
     min-integrity: none
-  repo-memory: true
+  repo-memory:
+    max-file-size: 524288   # 512KB — architecture artifacts can exceed 10KB default
+    max-patch-size: 102400  # 100KB
 
 ---
 
