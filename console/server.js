@@ -26,6 +26,7 @@ const { registerProvisionRoutes } = require("./routes/pub-provision");
 const { registerInternalBuildRoutes } = require("./routes/internal-build");
 
 const app = express();
+app.set("trust proxy", 1);
 const port = Number(process.env.CONSOLE_PORT || 3000);
 app.locals.projectRoot = path.resolve(__dirname, "..");
 

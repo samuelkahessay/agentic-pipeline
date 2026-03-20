@@ -275,8 +275,11 @@ function validateParsedResponse(parsed) {
   }
 
   if (parsed.status === "needs_input") {
-    if (typeof parsed.question !== "string" || parsed.prd !== null) {
-      throw new Error("Structured LLM response did not match needs_input schema");
+    if (typeof parsed.question !== "string") {
+      throw new Error("Structured LLM response did not match needs_input schema: missing question");
+    }
+    if (parsed.prd != null) {
+      throw new Error("Structured LLM response did not match needs_input schema: prd should be null");
     }
     return;
   }
