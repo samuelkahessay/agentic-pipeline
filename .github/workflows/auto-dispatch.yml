@@ -166,10 +166,17 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_AW_GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
           WORKFLOW_FILE: ${{ steps.classify.outputs.workflow_file }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
         run: |
           DISPATCHED_AT=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-          gh workflow run "$WORKFLOW_FILE" \
-            --repo "$REPO"
+          if [ "$WORKFLOW_FILE" = "repo-assist.lock.yml" ]; then
+            gh workflow run "$WORKFLOW_FILE" \
+              --repo "$REPO" \
+              -f issue_number="$ISSUE_NUMBER"
+          else
+            gh workflow run "$WORKFLOW_FILE" \
+              --repo "$REPO"
+          fi
 
           AGENT_RUN_ID=""
           AGENT_RUN_URL=""

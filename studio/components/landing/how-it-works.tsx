@@ -2,12 +2,14 @@ import { PipelineAnimation } from "./pipeline-animation";
 import styles from "./how-it-works.module.css";
 
 const STEPS = [
-  { num: "01", title: "Decompose", body: "PRD to scoped GitHub issues with acceptance criteria", color: "accent" },
-  { num: "02", title: "Build", body: "Agents implement each issue, open PRs with tests", color: "accent" },
-  { num: "03", title: "Review", body: "Automated code review verifies against the spec. Policy gates enforce human boundaries.", color: "policy" },
-  { num: "04", title: "Ship", body: "Approved PRs deploy to production", color: "good" },
-  { num: "05", title: "Heal", body: "CI failures are detected and routed back through the pipeline as new issues", color: "good" },
+  { num: "01", title: "Unlock", body: "Manual $1 entitlement, GitHub auth, and BYOK credentials", color: "accent" },
+  { num: "02", title: "Decompose", body: "PRD to scoped GitHub issues with acceptance criteria", color: "accent" },
+  { num: "03", title: "Build", body: "Agents implement each issue and open PRs with tests", color: "accent" },
+  { num: "04", title: "Review", body: "Automated review checks the spec while policy gates keep control with humans", color: "policy" },
+  { num: "05", title: "Handoff", body: "Repo link always. Deployment validation when Vercel credentials are configured", color: "good" },
 ];
+const HUMAN_BOUNDARY_URL =
+  "https://github.com/samuelkahessay/prd-to-prod/blob/main/autonomy-policy.yml";
 
 const STEP_CLASS: Record<string, string> = {
   policy: styles.stepPolicy,
@@ -29,12 +31,11 @@ export function HowItWorks() {
         <span className={styles.labelGhaw}>Powered by GitHub Agentic Workflows</span>
       </div>
       <h2 className={styles.heading}>
-        Agents build the app. Policy controls the boundaries.
+        Agents build inside a human-owned boundary.
       </h2>
       <p className={styles.subtitle}>
-        Your PRD is decomposed into scoped issues. Agents implement each one,
-        open PRs, pass automated review. Human approval gates enforce where
-        the boundary is.
+        The beta flow is explicit: entitlement, GitHub auth, BYOK, repo
+        provisioning, then bounded agent execution inside policy.
       </p>
 
       <div className={styles.animation}>
@@ -62,6 +63,36 @@ export function HowItWorks() {
           from GitHub for autonomous development workflows. 31 upstream findings
           filed, 17 fixes shipped across 7 releases.
         </p>
+      </div>
+
+      <div className={styles.boundaryCard}>
+        <div className={styles.boundaryHeader}>
+          <p className={styles.boundaryLabel}>Human boundary</p>
+          <a
+            className={styles.boundaryLink}
+            href={HUMAN_BOUNDARY_URL}
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            Read the autonomy policy
+          </a>
+        </div>
+        <div className={styles.boundaryGrid}>
+          <div className={styles.boundaryBlock}>
+            <p className={styles.boundaryTitle}>Humans own</p>
+            <p className={styles.boundaryBody}>
+              Access codes, workflow authority, secrets, deploy routing, and
+              any expansion of scope.
+            </p>
+          </div>
+          <div className={styles.boundaryBlock}>
+            <p className={styles.boundaryTitle}>Agents own</p>
+            <p className={styles.boundaryBody}>
+              Bounded implementation inside the repo once the beta gates are
+              satisfied.
+            </p>
+          </div>
+        </div>
       </div>
     </section>
   );

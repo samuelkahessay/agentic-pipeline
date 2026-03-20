@@ -325,16 +325,29 @@ function handleWorkflowRunEvent(buildSessionStore, session, action, payload) {
   }
 
   const stalledStage = workflowStage(run.name);
+  const failureCount = buildSessionStore
+    .getRefs(session.id, { type: "workflow_run", key: run.name })
+    .filter((ref) =>
+      ["failure", "cancelled", "timed_out"].includes(ref.metadata?.conclusion)
+    ).length;
+
   if (run.conclusion === "failure" || run.conclusion === "cancelled" || run.conclusion === "timed_out") {
     buildSessionStore.updateSession(session.id, { status: "stalled" });
     buildSessionStore.appendEvent(session.id, {
       category: stalledStage === "deploy" ? "delivery" : "build",
-      kind: "pipeline_stalled",
+      kind:
+        stalledStage === "implementation" && failureCount >= 3
+          ? "provider_retry_exhausted"
+          : "pipeline_stalled",
       data: {
         stage: stalledStage,
         workflowRunId: run.id,
         workflowRunUrl: run.html_url,
-        detail: `${run.name} completed with ${run.conclusion}.`,
+        attemptCount: failureCount,
+        detail:
+          stalledStage === "implementation" && failureCount >= 3
+            ? `${run.name} exhausted the beta retry budget after ${failureCount} failed attempts.`
+            : `${run.name} completed with ${run.conclusion}.`,
       },
     });
     return;
@@ -345,18 +358,43 @@ function handleWorkflowRunEvent(buildSessionStore, session, action, payload) {
       buildSessionStore.getRefs(session.id, { type: "vercel_project", key: "production_url" }).at(-1)?.ref_value ||
       session.deploy_url;
 
+    if (productionUrl) {
+      buildSessionStore.updateSession(session.id, {
+        status: "complete",
+        deploy_url: productionUrl,
+      });
+      buildSessionStore.appendEvent(session.id, {
+        category: "delivery",
+        kind: "complete",
+        data: {
+          deploy_url: productionUrl,
+          workflowRunId: run.id,
+          workflowRunUrl: run.html_url,
+          detail: "Deployment validated. The beta run is complete.",
+        },
+      });
+      return;
+    }
+
+    buildSessionStore.appendEvent(session.id, {
+      category: "delivery",
+      kind: "deployment_skipped",
+      data: {
+        workflowRunId: run.id,
+        workflowRunUrl: run.html_url,
+        detail: "Deployment validation skipped because no deployment URL is configured for this beta run.",
+      },
+    });
     buildSessionStore.updateSession(session.id, {
-      status: "complete",
-      ...(productionUrl ? { deploy_url: productionUrl } : {}),
+      status: "handoff_ready",
     });
     buildSessionStore.appendEvent(session.id, {
       category: "delivery",
       kind: "handoff_ready",
       data: {
-        deploy_url: productionUrl,
         workflowRunId: run.id,
         workflowRunUrl: run.html_url,
-        detail: "Deployment validated. Repo handoff is ready.",
+        detail: "Repo handoff is ready. Deployment was not configured for this beta run.",
       },
     });
   }
@@ -379,7 +417,7 @@ function handlePushEvent(buildSessionStore, session, payload) {
 
 function workflowStage(name) {
   if (name === "PRD Decomposer") return "decompose";
-  if (name === "Pipeline Repo Assist") return "implementation";
+  if (name === "Pipeline Repo Assist" || name === "Frontend Agent") return "implementation";
   if (name === "Pipeline Review Agent") return "review";
   if (name === "Deploy to Vercel" || name === "Validate Deployment") return "deploy";
   return "pipeline";

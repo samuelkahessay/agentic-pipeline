@@ -23,6 +23,8 @@ interface BuildStatusProps {
 }
 
 type PendingAction = "provision" | "start_build" | null;
+const HUMAN_BOUNDARY_URL =
+  "https://github.com/samuelkahessay/prd-to-prod/blob/main/autonomy-policy.yml";
 
 export function BuildStatus({
   initialSession,
@@ -40,15 +42,23 @@ export function BuildStatus({
   const autoBuildStartedRef = useRef(false);
   const [codeRedeemed, setCodeRedeemed] = useState(isDemo);
   const [credentialsSubmitted, setCredentialsSubmitted] = useState(isDemo);
+  const [deployConfigured, setDeployConfigured] = useState(isDemo);
   const [gatesHydrated, setGatesHydrated] = useState(isDemo);
 
   useEffect(() => {
     if (isDemo) return;
     buildApi.getSession(session.id).then((data) => {
-      const gates = (data as { gates?: { codeRedeemed: boolean; credentialsSubmitted: boolean } }).gates;
+      const gates = (data as {
+        gates?: {
+          codeRedeemed: boolean;
+          credentialsSubmitted: boolean;
+          deployConfigured: boolean;
+        };
+      }).gates;
       if (gates) {
         setCodeRedeemed(gates.codeRedeemed);
         setCredentialsSubmitted(gates.credentialsSubmitted);
+        setDeployConfigured(gates.deployConfigured);
       }
       setGatesHydrated(true);
     }).catch(() => setGatesHydrated(true));
@@ -64,6 +74,8 @@ export function BuildStatus({
       }
 
       if (
+        event.kind === "access_code_redeemed" ||
+        event.kind === "credentials_submitted" ||
         event.kind === "app_installed" ||
         event.kind === "bootstrap_started" ||
         event.kind === "bootstrap_complete" ||
@@ -74,6 +86,15 @@ export function BuildStatus({
         event.kind === "complete"
       ) {
         setInstallUrl(null);
+      }
+
+      if (event.kind === "access_code_redeemed") {
+        setCodeRedeemed(true);
+      }
+
+      if (event.kind === "credentials_submitted") {
+        setCredentialsSubmitted(true);
+        setDeployConfigured(Boolean(event.data.deployConfigured));
       }
     });
   }, [session.id]);
@@ -172,6 +193,10 @@ export function BuildStatus({
     () => events.filter((event) => event.category === "chat"),
     [events]
   );
+  const runEvidence = useMemo(() => deriveRunEvidence(events, session), [events, session]);
+  const stalledEvent = useMemo(() => readLatestStalledEvent(events), [events]);
+  const stalledStage =
+    typeof stalledEvent?.data?.stage === "string" ? stalledEvent.data.stage : null;
 
   return (
     <div className={styles.detail}>
@@ -198,7 +223,18 @@ export function BuildStatus({
             {session.github_repo
               ? isDemo
                 ? <span className={styles.simulated}>{session.github_repo} (simulated)</span>
-                : session.github_repo
+                : session.github_repo_url
+                  ? (
+                    <a
+                      className={styles.inlineLink}
+                      href={session.github_repo_url}
+                      rel="noreferrer"
+                      target="_blank"
+                    >
+                      {session.github_repo}
+                    </a>
+                  )
+                  : session.github_repo
               : "Not provisioned yet"}
           </div>
         </article>
@@ -209,14 +245,78 @@ export function BuildStatus({
               ? isDemo
                 ? <span className={styles.simulated}>{session.deploy_url} (simulated)</span>
                 : session.deploy_url
-              : "No deployment URL yet"}
+              : deployConfigured
+                ? "Configured — waiting for validated URL"
+                : "Optional — this run can finish at repo handoff"}
           </div>
         </article>
+        <article className={styles.card}>
+          <span className={styles.label}>Beta flow</span>
+          <div className={styles.value}>
+            {isDemo
+              ? "Simulation"
+              : deployConfigured
+                ? "BYOK build + deploy validation"
+                : "BYOK build + repo handoff"}
+          </div>
+        </article>
+        {session.status === "stalled" ? (
+          <article className={styles.card}>
+            <span className={styles.label}>Stalled at</span>
+            <div className={styles.value}>
+              {stalledStage ? formatStageName(stalledStage) : "Pipeline"}
+            </div>
+            <p className={styles.inlineNote}>
+              {stalledEvent?.kind === "provider_retry_exhausted"
+                ? "The retry budget is exhausted for this stage. Inspect the repo activity before retrying."
+                : "Use the retry action below if the repo has no open pipeline PR yet."}
+            </p>
+          </article>
+        ) : null}
       </section>
+
+      {!isDemo ? (
+        <section className={styles.section}>
+          <h2 className={styles.sectionTitle}>Human boundary</h2>
+          <div className={styles.card}>
+            <p className={styles.copy}>
+              Humans still own policy, workflow authority, secrets, deployment routing, and any expansion of scope.
+              Agents only execute inside those guardrails.
+            </p>
+            <div className={styles.actions}>
+              <a
+                className={styles.linkButton}
+                href={HUMAN_BOUNDARY_URL}
+                rel="noreferrer"
+                target="_blank"
+              >
+                Read autonomy policy
+              </a>
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       <section className={styles.section}>
         <h2 className={styles.sectionTitle}>Factory floor</h2>
         <FactoryScene events={events} key={session.id} />
+      </section>
+
+      <section className={styles.section}>
+        <h2 className={styles.sectionTitle}>Run evidence</h2>
+        <div className={styles.card}>
+          <div className={styles.evidenceList}>
+            {runEvidence.map((item) => (
+              <div key={item.label} className={styles.evidenceItem}>
+                <span className={`${styles.evidenceDot} ${item.complete ? styles.evidenceDone : ""}`} />
+                <div>
+                  <div className={styles.evidenceLabel}>{item.label}</div>
+                  <div className={styles.evidenceDetail}>{item.detail}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </section>
 
       <section className={styles.section}>
@@ -231,6 +331,11 @@ export function BuildStatus({
           <p className={styles.copy}>
             {describeSessionState(session.status, pendingAction)}
           </p>
+          {session.status === "stalled" && stalledStage ? (
+            <p className={styles.inlineNote}>
+              Latest stalled stage: {formatStageName(stalledStage)}.
+            </p>
+          ) : null}
 
           {error ? <p className={styles.error}>{error}</p> : null}
 
@@ -245,8 +350,12 @@ export function BuildStatus({
               onStartBuild: startBuild,
               codeRedeemed,
               credentialsSubmitted,
+              deployConfigured,
               onCodeRedeemed: () => setCodeRedeemed(true),
-              onCredentialsSubmitted: () => setCredentialsSubmitted(true),
+              onCredentialsSubmitted: (nextDeployConfigured) => {
+                setCredentialsSubmitted(true);
+                setDeployConfigured(nextDeployConfigured);
+              },
             })}
           </div>
         </div>
@@ -321,6 +430,7 @@ function renderActions({
   onStartBuild,
   codeRedeemed,
   credentialsSubmitted,
+  deployConfigured,
   onCodeRedeemed,
   onCredentialsSubmitted,
 }: {
@@ -333,8 +443,9 @@ function renderActions({
   onStartBuild: () => void;
   codeRedeemed: boolean;
   credentialsSubmitted: boolean;
+  deployConfigured: boolean;
   onCodeRedeemed: () => void;
-  onCredentialsSubmitted: () => void;
+  onCredentialsSubmitted: (deployConfigured: boolean) => void;
 }) {
   if (session.status === "ready") {
     if (!isDemo && !codeRedeemed) {
@@ -466,19 +577,43 @@ function renderActions({
       return (
         <div className={styles.conversionNudge}>
           <p className={styles.nudgeText}>
-            That was a simulation. Ready for the real thing?
+            That was a simulation. Ready for the invite-only beta?
           </p>
           <a
             className={styles.button}
             href="mailto:kahessay@icloud.com?subject=PRD%20Submission"
           >
-            Send your PRD — $1
+            Request beta access — $1
           </a>
         </div>
       );
     }
     if (session.deploy_url) {
-      return (
+      return renderSuccessLinks(session, true);
+    }
+  }
+
+  if (session.status === "handoff_ready") {
+    return renderSuccessLinks(session, deployConfigured);
+  }
+
+  return null;
+}
+
+function renderSuccessLinks(session: BuildSession, deployConfigured: boolean) {
+  return (
+    <>
+      {session.github_repo_url ? (
+        <a
+          className={styles.linkButton}
+          href={session.github_repo_url}
+          rel="noreferrer"
+          target="_blank"
+        >
+          Open repo
+        </a>
+      ) : null}
+      {session.deploy_url ? (
         <a
           className={styles.linkButton}
           href={session.deploy_url}
@@ -487,11 +622,19 @@ function renderActions({
         >
           Open deployed app
         </a>
-      );
-    }
-  }
-
-  return null;
+      ) : null}
+      {!session.deploy_url && !deployConfigured ? (
+        <span className={styles.inlineNote}>
+          Deployment was skipped. Add Vercel credentials on a future run if you want validated deploy output.
+        </span>
+      ) : null}
+      {!session.deploy_url && deployConfigured ? (
+        <span className={styles.inlineNote}>
+          Deployment credentials were present, but no validated URL was reported. Inspect the repo workflows for the missing deployment output.
+        </span>
+      ) : null}
+    </>
+  );
 }
 
 function AccessCodeForm({ sessionId, onRedeemed }: { sessionId: string; onRedeemed: () => void }) {
@@ -514,7 +657,7 @@ function AccessCodeForm({ sessionId, onRedeemed }: { sessionId: string; onRedeem
 
   return (
     <div className={styles.gateForm}>
-      <p className={styles.gateLabel}>Enter your access code to continue</p>
+      <p className={styles.gateLabel}>Enter your single-use access code</p>
       <div className={styles.gateRow}>
         <input
           className={styles.gateInput}
@@ -538,19 +681,35 @@ function AccessCodeForm({ sessionId, onRedeemed }: { sessionId: string; onRedeem
   );
 }
 
-function ByokForm({ sessionId, onSubmitted }: { sessionId: string; onSubmitted: () => void }) {
+function ByokForm({
+  sessionId,
+  onSubmitted,
+}: {
+  sessionId: string;
+  onSubmitted: (deployConfigured: boolean) => void;
+}) {
   const [copilotToken, setCopilotToken] = useState("");
+  const [vercelToken, setVercelToken] = useState("");
+  const [vercelOrgId, setVercelOrgId] = useState("");
+  const [vercelProjectId, setVercelProjectId] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async () => {
     setSubmitting(true);
     setError(null);
+    const nextDeployConfigured =
+      vercelToken.trim().length > 0 &&
+      vercelOrgId.trim().length > 0 &&
+      vercelProjectId.trim().length > 0;
     try {
       await buildApi.submitCredentials(sessionId, {
         COPILOT_GITHUB_TOKEN: copilotToken.trim(),
+        ...(vercelToken.trim() ? { VERCEL_TOKEN: vercelToken.trim() } : {}),
+        ...(vercelOrgId.trim() ? { VERCEL_ORG_ID: vercelOrgId.trim() } : {}),
+        ...(vercelProjectId.trim() ? { VERCEL_PROJECT_ID: vercelProjectId.trim() } : {}),
       });
-      onSubmitted();
+      onSubmitted(nextDeployConfigured);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to store credentials");
     } finally {
@@ -562,10 +721,10 @@ function ByokForm({ sessionId, onSubmitted }: { sessionId: string; onSubmitted: 
     <div className={styles.gateForm}>
       <p className={styles.gateLabel}>Configure your pipeline</p>
       <p className={styles.copy}>
-        Paste a GitHub personal access token with Copilot scope.
-        This token powers the AI agents that build your app.
+        Paste a GitHub personal access token with Copilot scope. This token powers the AI agents that build your app.
+        Vercel credentials are optional; without them, the run still finishes in repo handoff mode.
       </p>
-      <div className={styles.gateRow}>
+      <div className={styles.gateFormFields}>
         <input
           className={styles.gateInput}
           type="password"
@@ -574,6 +733,34 @@ function ByokForm({ sessionId, onSubmitted }: { sessionId: string; onSubmitted: 
           onChange={(e) => setCopilotToken(e.target.value)}
           disabled={submitting}
         />
+      </div>
+      <div className={styles.gateGrid}>
+        <input
+          className={styles.gateInput}
+          type="password"
+          placeholder="VERCEL_TOKEN (optional)"
+          value={vercelToken}
+          onChange={(e) => setVercelToken(e.target.value)}
+          disabled={submitting}
+        />
+        <input
+          className={styles.gateInput}
+          type="text"
+          placeholder="VERCEL_ORG_ID (optional)"
+          value={vercelOrgId}
+          onChange={(e) => setVercelOrgId(e.target.value)}
+          disabled={submitting}
+        />
+        <input
+          className={styles.gateInput}
+          type="text"
+          placeholder="VERCEL_PROJECT_ID (optional)"
+          value={vercelProjectId}
+          onChange={(e) => setVercelProjectId(e.target.value)}
+          disabled={submitting}
+        />
+      </div>
+      <div className={styles.actions}>
         <button
           className={styles.button}
           disabled={submitting || copilotToken.trim().length < 10}
@@ -582,6 +769,11 @@ function ByokForm({ sessionId, onSubmitted }: { sessionId: string; onSubmitted: 
         >
           {submitting ? "Saving..." : "Continue"}
         </button>
+        <span className={styles.inlineNote}>
+          {vercelToken || vercelOrgId || vercelProjectId
+            ? "All three Vercel values are required for deployment validation."
+            : "Leave the Vercel fields blank to run in repo handoff mode."}
+        </span>
       </div>
       {error && <p className={styles.error}>{error}</p>}
     </div>
@@ -600,6 +792,16 @@ function applyEventToSession(
   session: BuildSession,
   event: BuildEvent
 ): BuildSession {
+  if (session.status === "complete") {
+    return session;
+  }
+
+  if (session.status === "handoff_ready") {
+    if (event.category !== "delivery" || event.kind !== "complete") {
+      return session;
+    }
+  }
+
   if (event.category === "provision" && event.kind === "repo_created") {
     return {
       ...session,
@@ -666,7 +868,7 @@ function applyEventToSession(
   if (event.category === "delivery" && (event.kind === "handoff_ready" || event.kind === "complete")) {
     return {
       ...session,
-      status: "complete",
+      status: event.kind === "complete" ? "complete" : "handoff_ready",
       deploy_url:
         typeof event.data.deploy_url === "string"
           ? event.data.deploy_url
@@ -676,7 +878,7 @@ function applyEventToSession(
 
   if (
     (event.category === "build" || event.category === "delivery" || event.category === "provision") &&
-    (event.kind === "agent_error" || event.kind === "pipeline_stalled")
+    (event.kind === "agent_error" || event.kind === "pipeline_stalled" || event.kind === "provider_retry_exhausted")
   ) {
     return {
       ...session,
@@ -696,6 +898,7 @@ function parseBuildStatus(value: string): BuildSessionStatus {
     value === "ready_to_launch" ||
     value === "awaiting_capacity" ||
     value === "building" ||
+    value === "handoff_ready" ||
     value === "complete" ||
     value === "stalled" ||
     value === "failed"
@@ -742,8 +945,12 @@ function describeSessionState(
     return "The target repo is running the pipeline. New events will appear here as GitHub reports progress.";
   }
 
+  if (status === "handoff_ready") {
+    return "The beta run finished successfully and the repo is ready for handoff. Deployment was skipped or left unvalidated for this run.";
+  }
+
   if (status === "complete") {
-    return "The build finished successfully. Use the deployment link if one was reported.";
+    return "The beta run finished successfully and the deployment URL was validated.";
   }
 
   if (status === "stalled") {
@@ -822,11 +1029,31 @@ function formatMessage(data: Record<string, unknown>): string {
   return typeof data.content === "string" ? data.content : "";
 }
 
+function readLatestStalledEvent(events: BuildEvent[]): BuildEvent | null {
+  return (
+    [...events]
+      .reverse()
+      .find(
+        (event) =>
+          event.kind === "pipeline_stalled" ||
+          event.kind === "provider_retry_exhausted"
+      ) || null
+  );
+}
+
 function readLatestStalledStage(events: BuildEvent[]): string | null {
-  const stalled = [...events]
-    .reverse()
-    .find((event) => event.kind === "pipeline_stalled");
+  const stalled = readLatestStalledEvent(events);
   return typeof stalled?.data?.stage === "string" ? stalled.data.stage : null;
+}
+
+function formatStageName(stage: string): string {
+  if (stage === "decompose") return "Decomposition";
+  if (stage === "implementation") return "Implementation";
+  if (stage === "review") return "Review";
+  if (stage === "deploy") return "Deployment";
+  if (stage === "bootstrap") return "Bootstrap";
+  if (stage === "provision") return "Provisioning";
+  return stage.charAt(0).toUpperCase() + stage.slice(1);
 }
 
 function readSupportEmail(): string {
@@ -840,4 +1067,79 @@ function hasParsedMessage(value: unknown): value is { message: string } {
       "message" in value &&
       typeof value.message === "string"
   );
+}
+
+function deriveRunEvidence(events: BuildEvent[], session: BuildSession) {
+  return [
+    {
+      label: "Access code redeemed",
+      complete: events.some((event) => event.kind === "access_code_redeemed"),
+      detail: events.some((event) => event.kind === "access_code_redeemed")
+        ? "Entitlement recorded for this beta session."
+        : "Required before provisioning a real run.",
+    },
+    {
+      label: "BYOK credentials submitted",
+      complete: events.some((event) => event.kind === "credentials_submitted"),
+      detail: events.some((event) => event.kind === "credentials_submitted")
+        ? "Agent credentials are stored for this run."
+        : "Copilot token required. Vercel credentials optional.",
+    },
+    {
+      label: "Repo created",
+      complete: events.some((event) => event.kind === "repo_created"),
+      detail: session.github_repo || "Waiting for provisioning.",
+    },
+    {
+      label: "App installed",
+      complete: events.some((event) => event.kind === "app_installed"),
+      detail: events.some((event) => event.kind === "app_installed")
+        ? "GitHub App access confirmed."
+        : "Bootstrap cannot continue until the app is installed.",
+    },
+    {
+      label: "Bootstrap complete",
+      complete: events.some((event) => event.kind === "bootstrap_complete"),
+      detail: events.some((event) => event.kind === "bootstrap_complete")
+        ? "Labels, secrets, variables, and repo memory are configured."
+        : "Preparing the target repo for the pipeline.",
+    },
+    {
+      label: "Decomposer started",
+      complete: events.some((event) => event.kind === "pipeline_started"),
+      detail: events.some((event) => event.kind === "pipeline_started")
+        ? "Root PRD issue created and dispatched."
+        : "Waiting to launch decomposition.",
+    },
+    {
+      label: "Child issues created",
+      complete: events.some((event) => event.kind === "child_issue_tracked"),
+      detail: readEvidenceCount(events, "child_issue_tracked", "issue"),
+    },
+    {
+      label: "First PR opened",
+      complete: events.some((event) => event.kind === "first_pr_opened" || event.kind === "pr_opened"),
+      detail: events.some((event) => event.kind === "first_pr_opened" || event.kind === "pr_opened")
+        ? "Implementation reached pull-request stage."
+        : "No pipeline PR has opened yet.",
+    },
+    {
+      label: "Delivery outcome",
+      complete: session.status === "handoff_ready" || session.status === "complete",
+      detail:
+        session.status === "complete"
+          ? "Deployment validated and ready to open."
+          : events.some((event) => event.kind === "deployment_skipped")
+            ? "Deployment skipped; repo handoff is ready."
+            : "Run still in progress.",
+    },
+  ];
+}
+
+function readEvidenceCount(events: BuildEvent[], kind: string, noun: string) {
+  const total = events.filter((event) => event.kind === kind).length;
+  if (total === 0) {
+    return `No ${noun}s recorded yet.`;
+  }
+  return `${total} ${noun}${total === 1 ? "" : "s"} recorded.`;
 }

@@ -125,6 +125,60 @@
   color: var(--ink-mid);
 }
 
+.boundaryCard {
+  margin-top: 20px;
+  padding: 20px;
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  background: var(--warm-white);
+  max-width: 720px;
+}
+
+.boundaryHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.boundaryLabel {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.boundaryLink {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
+.boundaryGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.boundaryBlock {
+  display: grid;
+  gap: 6px;
+}
+
+.boundaryTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.boundaryBody {
+  font-size: 13px;
+  color: var(--ink-muted);
+  line-height: 1.6;
+}
+
 @media (max-width: 768px) {
   .section {
     padding: 60px 24px 0;
@@ -132,5 +186,12 @@
   .steps {
     grid-template-columns: 1fr 1fr;
     gap: 16px;
+  }
+  .boundaryHeader {
+    align-items: start;
+    flex-direction: column;
+  }
+  .boundaryGrid {
+    grid-template-columns: 1fr;
   }
 }

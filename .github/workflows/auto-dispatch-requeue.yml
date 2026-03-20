@@ -45,6 +45,133 @@ jobs:
             echo "Autonomous healing is paused via PIPELINE_HEALING_ENABLED."
           fi
 
+      - name: Retry transient provider failure for the same issue
+        if: |
+          steps.healing.outputs.skip != 'true' &&
+          github.event_name == 'workflow_run' &&
+          github.event.workflow_run.name == 'Pipeline Repo Assist' &&
+          (github.event.workflow_run.conclusion == 'failure' ||
+           github.event.workflow_run.conclusion == 'timed_out')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_AW_GITHUB_TOKEN: ${{ secrets.GH_AW_GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
+          WORKFLOW_NAME: ${{ github.event.workflow_run.name }}
+        run: |
+          set -euo pipefail
+
+          DISPATCH_MARKER='<!-- self-healing-dispatch:v1'
+          RETRY_MARKER='<!-- provider-retry:v1'
+          WORKFLOW_FILE='repo-assist.lock.yml'
+          MAX_RETRIES=2
+
+          read_marker_field() {
+            local body=$1
+            local field=$2
+            printf '%s\n' "$body" | sed -n "s/^${field}=//p" | head -1
+          }
+
+          find_marker_comments() {
+            local issue_number=$1
+            local marker=$2
+            gh api "/repos/${REPO}/issues/${issue_number}/comments?per_page=100" 2>/dev/null \
+              | jq -c --arg marker "$marker" '[.[] | select(.body | contains($marker))]' || echo '[]'
+          }
+
+          if [ -z "${GH_AW_GITHUB_TOKEN:-}" ]; then
+            echo "::warning::GH_AW_GITHUB_TOKEN is unavailable; cannot retry transient provider failures."
+            exit 0
+          fi
+
+          LOGS=$(gh run view "$RUN_ID" --repo "$REPO" --log-failed 2>/dev/null || gh run view "$RUN_ID" --repo "$REPO" --log 2>/dev/null || true)
+          LOGS_LOWER=$(printf '%s' "$LOGS" | tr '[:upper:]' '[:lower:]')
+          if ! printf '%s' "$LOGS_LOWER" | grep -Eq 'request failed due to a transient api error|timed out after 60 minutes|streamable http error: session not found|rate limit|429|service unavailable'; then
+            echo "Run ${RUN_ID} does not match the transient provider failure signature."
+            exit 0
+          fi
+
+          OPEN_PRS=$(gh pr list --repo "$REPO" --state open --limit 100 --json body 2>/dev/null || echo '[]')
+          LINKED_ISSUES=$(printf '%s' "$OPEN_PRS" | jq -r '.[].body // empty' 2>/dev/null \
+            | bash scripts/extract-linked-issue-numbers.sh "$REPO" || true)
+          PIPELINE_ISSUES=$(gh issue list --repo "$REPO" --label pipeline --state open --limit 200 --json number 2>/dev/null || echo '[]')
+
+          ISSUE_NUMBER=""
+          while IFS= read -r ISSUE_ROW; do
+            [ -z "$ISSUE_ROW" ] && continue
+            CANDIDATE=$(printf '%s' "$ISSUE_ROW" | jq -r '.number')
+            COMMENTS_JSON=$(find_marker_comments "$CANDIDATE" "$DISPATCH_MARKER")
+            MATCH_COUNT=$(printf '%s' "$COMMENTS_JSON" | jq --arg run_id "$RUN_ID" '[.[] | select((.body | contains("agent_run_id=" + $run_id)) or (.body | contains("repo_assist_run_id=" + $run_id)))] | length')
+            if [ "${MATCH_COUNT:-0}" -gt 0 ]; then
+              ISSUE_NUMBER="$CANDIDATE"
+              break
+            fi
+          done < <(printf '%s' "$PIPELINE_ISSUES" | jq -c '.[]')
+
+          if [ -z "$ISSUE_NUMBER" ]; then
+            echo "No open pipeline issue is linked to failed run ${RUN_ID}."
+            exit 0
+          fi
+
+          if printf '%s\n' "$LINKED_ISSUES" | grep -q "^${ISSUE_NUMBER}$"; then
+            echo "Issue #${ISSUE_NUMBER} already has an open linked PR; skip automatic re-dispatch."
+            exit 0
+          fi
+
+          RETRY_COMMENTS=$(find_marker_comments "$ISSUE_NUMBER" "$RETRY_MARKER")
+          ALREADY_RETRIED=$(printf '%s' "$RETRY_COMMENTS" | jq --arg run_id "$RUN_ID" '[.[] | select(.body | contains("failed_run_id=" + $run_id))] | length')
+          if [ "${ALREADY_RETRIED:-0}" -gt 0 ]; then
+            echo "Run ${RUN_ID} already triggered a retry marker on issue #${ISSUE_NUMBER}."
+            exit 0
+          fi
+
+          RETRY_COUNT=$(printf '%s' "$RETRY_COMMENTS" | jq --arg workflow_name "$WORKFLOW_NAME" '[.[] | select(.body | contains("workflow_name=" + $workflow_name))] | length')
+          if [ "${RETRY_COUNT:-0}" -ge "$MAX_RETRIES" ]; then
+            echo "Issue #${ISSUE_NUMBER} already used the transient retry budget."
+            exit 0
+          fi
+
+          DISPATCHED_AT=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          GH_TOKEN="$GH_AW_GITHUB_TOKEN" gh workflow run "$WORKFLOW_FILE" \
+            --repo "$REPO" \
+            -f issue_number="$ISSUE_NUMBER"
+
+          AGENT_RUN_ID=""
+          AGENT_RUN_URL=""
+          for attempt in $(seq 1 12); do
+            RUN_JSON=$(gh run list --repo "$REPO" \
+              --workflow "$WORKFLOW_FILE" \
+              --event workflow_dispatch \
+              --limit 20 \
+              --json databaseId,createdAt,url \
+              | jq --arg dispatched_at "$DISPATCHED_AT" '[.[] | select(.createdAt >= $dispatched_at)] | sort_by(.createdAt) | last // {}')
+            AGENT_RUN_ID=$(printf '%s' "$RUN_JSON" | jq -r '.databaseId // ""')
+            AGENT_RUN_URL=$(printf '%s' "$RUN_JSON" | jq -r '.url // ""')
+            if [ -n "$AGENT_RUN_ID" ]; then
+              break
+            fi
+            sleep 5
+          done
+
+          RETRY_NUMBER=$((RETRY_COUNT + 1))
+          BODY=$(printf '%s\n' \
+            '<!-- provider-retry:v1' \
+            'dispatch_origin_workflow=Auto-Dispatch Requeue' \
+            "workflow_name=${WORKFLOW_NAME}" \
+            "workflow_file=${WORKFLOW_FILE}" \
+            "failed_run_id=${RUN_ID}" \
+            "failed_run_url=${RUN_URL}" \
+            "retry_number=${RETRY_NUMBER}" \
+            "agent_run_id=${AGENT_RUN_ID}" \
+            "agent_run_url=${AGENT_RUN_URL}" \
+            "dispatched_at=${DISPATCHED_AT}" \
+            '-->' \
+            '' \
+            "Auto-retrying issue #${ISSUE_NUMBER} after a transient provider failure in ${WORKFLOW_NAME}.")
+          gh issue comment "$ISSUE_NUMBER" --repo "$REPO" --body "$BODY" >/dev/null || \
+            echo "::warning::Could not record transient retry marker on issue #${ISSUE_NUMBER}"
+
       - name: Re-dispatch deferred actionable issue
         if: steps.healing.outputs.skip != 'true'
         env:
@@ -162,8 +289,14 @@ jobs:
 
           echo "Re-dispatching issue #${SELECTED_ISSUE} via ${SELECTED_WORKFLOW} (route: ${SELECTED_ROUTE})."
           DISPATCHED_AT=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-          GH_TOKEN="$GH_AW_GITHUB_TOKEN" gh workflow run "$SELECTED_WORKFLOW" \
-            --repo "$REPO"
+          if [ "$SELECTED_WORKFLOW" = "repo-assist.lock.yml" ]; then
+            GH_TOKEN="$GH_AW_GITHUB_TOKEN" gh workflow run "$SELECTED_WORKFLOW" \
+              --repo "$REPO" \
+              -f issue_number="$SELECTED_ISSUE"
+          else
+            GH_TOKEN="$GH_AW_GITHUB_TOKEN" gh workflow run "$SELECTED_WORKFLOW" \
+              --repo "$REPO"
+          fi
 
           AGENT_RUN_ID=""
           AGENT_RUN_URL=""

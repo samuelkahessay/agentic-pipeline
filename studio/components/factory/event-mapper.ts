@@ -182,7 +182,11 @@ export function mapBuildEvent(event: BuildEvent): FactoryAction[] {
       });
     }
 
-    if (kind === "pipeline_stalled" || kind === "capacity_waitlisted") {
+    if (
+      kind === "pipeline_stalled" ||
+      kind === "provider_retry_exhausted" ||
+      kind === "capacity_waitlisted"
+    ) {
       actions.push({
         type: "AGENT_BLOCKED",
         agent,

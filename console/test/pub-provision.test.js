@@ -5,6 +5,7 @@ const os = require("os");
 const path = require("path");
 
 const { createDatabase } = require("../lib/db");
+const { createAccessCodeStore } = require("../lib/access-codes");
 const { registerProvisionRoutes } = require("../routes/pub-provision");
 
 function wrapAsServiceResolver({ provisioner, buildRunner }) {
@@ -41,8 +42,11 @@ function makeUrl(server, pathname) {
 
 let db;
 let tmpDir;
+const originalEncryptionKey = process.env.ENCRYPTION_KEY;
 
 beforeEach(() => {
+  process.env.ENCRYPTION_KEY =
+    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
   tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "ptp-provision-"));
   db = createDatabase(tmpDir);
 
@@ -62,6 +66,10 @@ beforeEach(() => {
     `INSERT INTO build_sessions (id, user_id, status, app_installation_id, created_at, updated_at)
      VALUES
      ('owned-build', 'user-1', 'ready_to_launch', 101, '2026-03-14T00:00:00Z', '2026-03-14T00:00:00Z'),
+     ('redeem-build', 'user-1', 'ready', NULL, '2026-03-14T00:00:00Z', '2026-03-14T00:00:00Z'),
+     ('credentials-build', 'user-1', 'ready', NULL, '2026-03-14T00:00:00Z', '2026-03-14T00:00:00Z'),
+     ('bootstrapping-build', 'user-1', 'bootstrapping', NULL, '2026-03-14T00:00:00Z', '2026-03-14T00:00:00Z'),
+     ('building-build', 'user-1', 'building', 303, '2026-03-14T00:00:00Z', '2026-03-14T00:00:00Z'),
      ('foreign-ready', 'user-2', 'ready', NULL, '2026-03-14T00:00:00Z', '2026-03-14T00:00:00Z'),
      ('foreign-build', 'user-2', 'ready_to_launch', 202, '2026-03-14T00:00:00Z', '2026-03-14T00:00:00Z')`
   ).run();
@@ -80,6 +88,11 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  if (originalEncryptionKey === undefined) {
+    delete process.env.ENCRYPTION_KEY;
+  } else {
+    process.env.ENCRYPTION_KEY = originalEncryptionKey;
+  }
   db.close();
   fs.rmSync(tmpDir, { recursive: true, force: true });
 });
@@ -165,5 +178,147 @@ test("start-build launches the target repo pipeline for real sessions", async ()
   });
 
   expect(provisioner.launchPipeline).toHaveBeenCalledWith("owned-build");
+  expect(buildRunner.dispatchBuild).not.toHaveBeenCalled();
+});
+
+test("redeem writes an access_code_redeemed audit event", async () => {
+  const provisioner = {
+    provisionRepo: jest.fn(),
+    createPrdIssue: jest.fn(),
+    launchPipeline: jest.fn(),
+  };
+  const buildRunner = {
+    dispatchBuild: jest.fn(),
+  };
+  const code = createAccessCodeStore(db).generate({ issuer: "test" })[0];
+
+  await withServer(db, { provisioner, buildRunner }, async (server) => {
+    const response = await fetch(makeUrl(server, "/pub/build-session/redeem-build/redeem"), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Cookie: "build_session=session-1",
+      },
+      body: JSON.stringify({ code }),
+    });
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({ redeemed: true });
+  });
+
+  const event = db
+    .prepare(
+      `SELECT kind, data
+       FROM build_events
+       WHERE build_session_id = 'redeem-build'
+       ORDER BY id DESC
+       LIMIT 1`
+    )
+    .get();
+  expect(event.kind).toBe("access_code_redeemed");
+  expect(JSON.parse(event.data).detail).toMatch(/entitled to provision one run/i);
+});
+
+test("credential submission writes an audit event with deployConfigured", async () => {
+  const provisioner = {
+    provisionRepo: jest.fn(),
+    createPrdIssue: jest.fn(),
+    launchPipeline: jest.fn(),
+  };
+  const buildRunner = {
+    dispatchBuild: jest.fn(),
+  };
+
+  await withServer(db, { provisioner, buildRunner }, async (server) => {
+    const response = await fetch(makeUrl(server, "/pub/build-session/credentials-build/credentials"), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Cookie: "build_session=session-1",
+      },
+      body: JSON.stringify({
+        COPILOT_GITHUB_TOKEN: "ghp_1234567890",
+        VERCEL_TOKEN: "vercel-token",
+        VERCEL_ORG_ID: "team_123",
+        VERCEL_PROJECT_ID: "prj_123",
+      }),
+    });
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({ stored: true });
+  });
+
+  const event = db
+    .prepare(
+      `SELECT kind, data
+       FROM build_events
+       WHERE build_session_id = 'credentials-build'
+       ORDER BY id DESC
+       LIMIT 1`
+    )
+    .get();
+  expect(event.kind).toBe("credentials_submitted");
+  expect(JSON.parse(event.data)).toEqual(
+    expect.objectContaining({
+      deployConfigured: true,
+    })
+  );
+});
+
+test("provision is idempotent for a bootstrapping session", async () => {
+  const provisioner = {
+    provisionRepo: jest.fn(),
+    createPrdIssue: jest.fn(),
+    launchPipeline: jest.fn(),
+  };
+  const buildRunner = {
+    dispatchBuild: jest.fn(),
+  };
+
+  await withServer(db, { provisioner, buildRunner }, async (server) => {
+    const response = await fetch(makeUrl(server, "/pub/build-session/bootstrapping-build/provision"), {
+      method: "POST",
+      headers: {
+        Cookie: "build_session=session-1",
+      },
+    });
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      sessionId: "bootstrapping-build",
+      status: "bootstrapping",
+      installRequired: false,
+    });
+  });
+
+  expect(provisioner.provisionRepo).not.toHaveBeenCalled();
+});
+
+test("start-build is idempotent for an active build session", async () => {
+  const provisioner = {
+    provisionRepo: jest.fn(),
+    createPrdIssue: jest.fn(),
+    launchPipeline: jest.fn(),
+  };
+  const buildRunner = {
+    dispatchBuild: jest.fn(),
+  };
+
+  await withServer(db, { provisioner, buildRunner }, async (server) => {
+    const response = await fetch(makeUrl(server, "/pub/build-session/building-build/start-build"), {
+      method: "POST",
+      headers: {
+        Cookie: "build_session=session-1",
+      },
+    });
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      sessionId: "building-build",
+      status: "building",
+    });
+  });
+
+  expect(provisioner.launchPipeline).not.toHaveBeenCalled();
   expect(buildRunner.dispatchBuild).not.toHaveBeenCalled();
 });

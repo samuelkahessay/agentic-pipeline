@@ -63,7 +63,15 @@ export const buildApi = {
     post<{ sessionId: string }>("/pub/build-session", demo ? { demo: true } : undefined),
 
   getSession: (id: string) =>
-    get<{ session: BuildSession; messages: BuildEvent[] }>(
+    get<{
+      session: BuildSession;
+      messages: BuildEvent[];
+      gates?: {
+        codeRedeemed: boolean;
+        credentialsSubmitted: boolean;
+        deployConfigured: boolean;
+      };
+    }>(
       `/pub/build-session/${id}`
     ),
 

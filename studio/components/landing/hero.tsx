@@ -8,19 +8,20 @@ export function Hero() {
       <p className={styles.eyebrow}>Powered by GitHub Agentic Workflows</p>
       <h1 className={styles.headline}>
         Send a PRD.<br />
-        Get a deployed app for $1.
+        Get one beta run for $1.
       </h1>
       <p className={styles.subtitle}>
-        Autonomous agents decompose your PRD into issues, implement each one,
-        pass automated review, and deploy to Vercel. You get a GitHub repo you
-        own with the full agentic CI/CD pipeline wired in.
+        Invite-only beta: we manually issue a single-use access code, you sign
+        in with GitHub, bring a Copilot token, and the pipeline provisions a
+        private repo you own. Add Vercel credentials if you want deployment
+        validation on the run.
       </p>
       <div className={styles.actions}>
-        <a href={MAILTO} className={styles.ctaPrimary}>Send your PRD</a>
+        <a href={MAILTO} className={styles.ctaPrimary}>Request beta access</a>
         <a href="/build?demo=true" className={styles.ctaSecondary}>Watch it build</a>
       </div>
       <p className={styles.scope}>
-        Web apps only. Next.js, Express, Node.
+        Invite-only beta. Greenfield web apps on the nextjs-vercel lane.
       </p>
     </section>
   );

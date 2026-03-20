@@ -8,12 +8,16 @@
 ./setup.sh
 ```
 
+The default `nextjs-vercel` scaffold ships the web app in `studio/`. Start feature
+work there unless your PRD explicitly changes the app foundation.
+
 ## How It Works
 
 1. Create an issue with your product requirements
 2. Comment `/decompose` to break it into implementation tasks
-3. The pipeline implements, reviews, and deploys autonomously
-4. Human approval required for policy-sensitive changes
+3. The pipeline implements and reviews autonomously
+4. Deployment validation runs when deployment credentials are configured
+5. Human approval required for policy-sensitive changes
 
 ## Architecture
 

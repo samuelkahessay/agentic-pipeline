@@ -80,7 +80,7 @@ jobs:
             ISSUE_NUM=$(printf '%s' "$ISSUE_NUM" | xargs)
             [ -n "$ISSUE_NUM" ] || continue
             gh issue comment "$ISSUE_NUM" --repo "$REPO" \
-              --body "Post-deploy validation skipped: no deployment URL is configured for profile \`$PROFILE\`."
+              --body "Post-deploy validation skipped: no deployment URL is configured for profile \`$PROFILE\`. This beta run remains in repo handoff mode."
           done
 
       - name: Run deployment validation

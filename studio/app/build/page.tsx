@@ -241,8 +241,9 @@ export default function BuildPage() {
       <header className={styles.header}>
         <h1 className={styles.title}>Build something</h1>
         <p className={styles.subtitle}>
-          Describe what you want to build. We&apos;ll refine it together, then
-          our agents will build it for you.
+          Describe what you want to build. We&apos;ll refine the PRD together,
+          then move it into the invite-only beta flow with GitHub auth, a
+          single-use access code, and your BYOK agent token.
         </p>
         {demo && <span className={styles.demoPill}>Demo</span>}
       </header>

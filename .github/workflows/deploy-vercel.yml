@@ -2,9 +2,12 @@
 # Deploy to Vercel — Builds and deploys a Next.js app to Vercel.
 # Called by deploy-router.yml when the active profile is nextjs-vercel.
 #
-# Prerequisites:
+# Prerequisites for deploy mode:
 #   - VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID secrets
 #   - Vercel project linked to the repo
+#
+# If those credentials are absent, the job exits successfully in repo-handoff
+# mode so downstream validation can classify the run as no-deploy beta output.
 #
 
 name: Deploy to Vercel
@@ -24,16 +27,46 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      - name: Check Vercel credentials
+        id: creds
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          MISSING=()
+          [ -n "${VERCEL_TOKEN:-}" ] || MISSING+=("VERCEL_TOKEN")
+          [ -n "${VERCEL_ORG_ID:-}" ] || MISSING+=("VERCEL_ORG_ID")
+          [ -n "${VERCEL_PROJECT_ID:-}" ] || MISSING+=("VERCEL_PROJECT_ID")
+
+          if [ "${#MISSING[@]}" -gt 0 ]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "missing=$(IFS=,; printf '%s' "${MISSING[*]}")" >> "$GITHUB_OUTPUT"
+            echo "::notice::Skipping deploy-vercel because these beta deploy credentials are missing: ${MISSING[*]}"
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: actions/checkout@v4
+        if: steps.creds.outputs.configured == 'true'
+
+      - name: Resolve app root
+        id: app-root
+        if: steps.creds.outputs.configured == 'true'
+        run: echo "path=$(bash scripts/resolve-nextjs-app-root.sh)" >> "$GITHUB_OUTPUT"
 
       - uses: actions/setup-node@v4
+        if: steps.creds.outputs.configured == 'true'
         with:
           node-version: '20'
 
       - name: Install Vercel CLI
+        if: steps.creds.outputs.configured == 'true'
         run: npm install -g vercel
 
       - name: Pull Vercel config
+        if: steps.creds.outputs.configured == 'true'
+        working-directory: ${{ steps.app-root.outputs.path }}
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -41,11 +74,21 @@ jobs:
         run: vercel pull --yes --environment=production --token=$VERCEL_TOKEN
 
       - name: Build
+        if: steps.creds.outputs.configured == 'true'
+        working-directory: ${{ steps.app-root.outputs.path }}
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: vercel build --prod --token=$VERCEL_TOKEN
 
       - name: Deploy
+        if: steps.creds.outputs.configured == 'true'
+        working-directory: ${{ steps.app-root.outputs.path }}
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN
+
+      - name: Finish in repo handoff mode
+        if: steps.creds.outputs.configured != 'true'
+        run: |
+          echo "Deploy skipped intentionally for this beta run."
+          echo "Missing credentials: ${{ steps.creds.outputs.missing }}"

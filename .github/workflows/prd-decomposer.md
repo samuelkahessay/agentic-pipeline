@@ -163,8 +163,11 @@ If the PRD is an enhancement to the existing app:
 
 If the PRD creates a new app or intentionally changes the app foundation:
 
-1. Create a bootstrap/scaffold issue first.
-2. Include the selected deploy profile and setup commands in that issue's Technical Notes.
+1. Check whether the repo already contains a compilable scaffold for the selected deploy profile.
+2. If the repo already contains the provisioned public beta scaffold for `nextjs-vercel`, **do NOT create a framework/bootstrap issue**. Treat that scaffold as the existing app foundation.
+3. In that scaffolded greenfield case, the first issue should adapt the app shell to the PRD (routes, domain model, state, layout, and placeholder replacement), not recreate Next.js, `package.json`, or the base repo wiring.
+4. Only create a bootstrap/scaffold issue first when the repo is genuinely missing the app foundation for the selected lane or the PRD explicitly requires replacing it.
+5. When you do create a bootstrap/scaffold issue, include the selected deploy profile and setup commands in that issue's Technical Notes.
 
 ## Tech Stack Detection
 
@@ -181,7 +184,7 @@ Before creating issues, determine the target tech stack and deploy profile:
 
 4. **Read the selected deploy profile** from `.github/deploy-profiles/{profile-name}.yml` to understand the build, test, and deploy configuration.
 
-5. **In greenfield or migration mode**, the FIRST issue must be a bootstrap/scaffold issue that includes in its Technical Notes:
+5. **In greenfield or migration mode**, create a bootstrap/scaffold issue first only when the repo does not already contain a compilable scaffold for the selected deploy profile. If the provisioned repo already has that scaffold, the FIRST issue must adapt the existing app shell instead. Any bootstrap issue must include in its Technical Notes:
    - The selected deploy profile (e.g., "Deploy profile: `nextjs-vercel`")
    - Instruction: "Update `.deploy-profile` to `{profile-name}`"
    - Build, test, and deploy commands from the profile

@@ -1,8 +1,10 @@
 # PRD to Prod
 
-Send a PRD, get a deployed app. Autonomous agents build, review, and deploy
-your app from a product spec. You get a live URL, a real repo with CI/CD, and
-code you own.
+Send a PRD, get an invite-only beta run. The current public path is manual
+$1 entitlement -> single-use access code -> GitHub auth -> BYOK Copilot token
+-> private repo provisioned from the public scaffold. Runs finish at repo
+handoff by default, with deployment validation when Vercel credentials are
+configured.
 
 Open source. MIT licensed. Powered by [gh-aw](https://github.com/github/gh-aw)
 (GitHub Agentic Workflows).
@@ -16,22 +18,24 @@ Open source. MIT licensed. Powered by [gh-aw](https://github.com/github/gh-aw)
 3. `repo-assist` picks up each issue, writes the code, and opens a PR.
 4. `pr-review-agent` reviews the diff against the spec and policy.
 5. `pr-review-submit` merges if everything passes, or stops and flags a human.
-6. `deploy-router` ships to production. If CI breaks, the system fixes it — or escalates.
+6. `deploy-router` ships when deployment credentials are configured. Otherwise
+   the run exits cleanly at repo handoff after validation confirms there is no
+   deployment URL to check.
 
 Every step is visible in GitHub: issues, PRs, reviews, and workflow runs.
 
 ## Use it
 
-### We run it for you
+### Invite-only beta
 
-Send a PRD through the [landing page](https://prd-to-prod.vercel.app). All LLM
-compute included. First run free.
+Request access through the [landing page](https://prd-to-prod.vercel.app).
+Today, `$1` is a manual entitlement, not a checkout flow.
 
-| Complexity | Price |
-|---|---|
-| Simple app / internal tool | $99 |
-| Multi-feature with integrations | $249 |
-| Complex (auth, multiple APIs) | $499 |
+- We email a single-use access code
+- You authenticate with GitHub
+- You paste a BYOK Copilot token
+- Vercel credentials are optional; include them if you want validated deployment
+- Supported lane: greenfield `nextjs-vercel` only
 
 ### Run it yourself
 
@@ -51,7 +55,7 @@ git push
 Then create an issue with your product spec and comment `/decompose`.
 
 **You'll need:** a GitHub repo with Actions, an LLM license (~$19/mo), and
-hosting (Vercel free tier works). Optional support available at $299/mo.
+hosting when you want deployment. Vercel free tier works for the default lane.
 
 See [`llms.txt`](llms.txt) for a machine-readable overview of the pipeline,
 agents, and architecture — useful for pointing your own AI tools at this repo.
@@ -117,7 +121,7 @@ by name in release notes.
 ### Required secrets
 
 - `GH_AW_GITHUB_TOKEN` — PAT for issue creation and auto-merge
-- `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` — for Vercel deploys
+- `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` — optional, for Vercel deploy validation
 
 ### Required repo settings
 

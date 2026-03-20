@@ -71,7 +71,8 @@ export function ShowcaseStrip() {
         <div className={`${styles.card} ${styles.ctaCard}`}>
           <h3 className={styles.ctaHeading}>Your PRD could be next</h3>
           <p className={styles.ctaDesc}>
-            Send us a product spec. Get back a deployed app.
+            Send us a product spec. Get back a real repo handoff in the
+            invite-only beta.
           </p>
           <a href="/build" className={styles.ctaLink}>
             Get started →

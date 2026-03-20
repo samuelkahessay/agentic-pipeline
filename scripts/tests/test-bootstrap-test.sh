@@ -23,10 +23,16 @@ case "$1" in
     case "$2" in
       --help) exit 0 ;;
       compile)
+        mkdir -p .github/aw
+        printf '{"generated_by":"test-stub"}\n' > .github/aw/actions-lock.json
         for source in .github/workflows/*.md; do
           [ -f "$source" ] || continue
           lock="${source%.md}.lock.yml"
-          printf 'compiled-from:%s\n' "$source" > "$lock"
+          checksum=$(shasum "$source" | awk '{print $1}')
+          {
+            printf 'compiled-from:%s\n' "$source"
+            printf 'checksum:%s\n' "$checksum"
+          } > "$lock"
         done
         exit 0
         ;;

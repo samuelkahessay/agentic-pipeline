@@ -6,12 +6,12 @@ const DELIVERABLES = [
     body: "Your own GitHub repository with clean commit history, PR-reviewed code, and full version control. Not locked in a platform.",
   },
   {
-    title: "CI/CD from day one",
-    body: "Every project ships with automated builds, tests, and deployment. Not a prototype you still need to operationalize.",
+    title: "An inspectable beta run",
+    body: "The public build page records the entitlement gate, BYOK gate, provisioning, issue creation, PR activity, and delivery outcome.",
   },
   {
-    title: "It stays healthy",
-    body: "CI failures are detected, diagnosed, and fixed through the same pipeline. The system treats its own failures as work items.",
+    title: "Optional deploy validation",
+    body: "Repo handoff is the default finish line. Add Vercel credentials when you want a validated production URL on the same run.",
   },
 ];
 
@@ -19,10 +19,11 @@ export function WhatYouGet() {
   return (
     <section className={styles.section}>
       <span className={styles.label}>What you get</span>
-      <h2 className={styles.heading}>Not a prototype. A deployed product.</h2>
+      <h2 className={styles.heading}>Not a demo. A real repo handoff.</h2>
       <p className={styles.subtitle}>
-        Tools like Bolt and Lovable help you prototype quickly. This gives you
-        a deployed app, a real repo, and CI/CD from day one.
+        The current beta gets you through entitlement, GitHub auth, BYOK,
+        provisioning, and pipeline execution in a repo you own. Deployment is
+        validated when you configure it.
       </p>
       <div className={styles.grid}>
         {DELIVERABLES.map((d) => (

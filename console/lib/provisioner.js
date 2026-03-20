@@ -46,9 +46,33 @@ const REPO_BOOTSTRAP_LABELS = [
 function createProvisioner({ db, buildSessionStore, githubClient }) {
   async function provisionRepo(sessionId) {
     const session = getProvisionableSession(sessionId);
+    if (!session.github_repo && session.status === "bootstrapping") {
+      return {
+        sessionId,
+        status: "bootstrapping",
+        installRequired: false,
+      };
+    }
+
+    const claimedRepoCreation =
+      !session.github_repo && (session.status === "ready" || session.status === "stalled");
+    if (claimedRepoCreation) {
+      buildSessionStore.updateSession(sessionId, { status: "bootstrapping" });
+    }
+
     let repoContext = session.github_repo
       ? parseRepo(session.github_repo)
-      : await createTargetRepo(sessionId, session);
+      : await createTargetRepo(sessionId, session).catch((error) => {
+          const current = buildSessionStore.getSession(sessionId);
+          if (claimedRepoCreation && !current?.github_repo) {
+            buildSessionStore.updateSession(sessionId, { status: "stalled" });
+            emitEvent(sessionId, "provision", "pipeline_stalled", {
+              stage: "provision",
+              detail: `Repository provisioning failed: ${error.message}`,
+            });
+          }
+          throw error;
+        });
 
     const appState = await ensureAppInstallation(sessionId, repoContext);
     if (!appState.installed) {
@@ -89,6 +113,18 @@ function createProvisioner({ db, buildSessionStore, githubClient }) {
     if (!session) {
       throw new Error("Session not found");
     }
+    if (["building", "handoff_ready", "complete"].includes(session.status)) {
+      const existingRootIssueNumber = Number(
+        buildSessionStore.getRefs(sessionId, { type: "issue", key: "root" }).at(-1)?.ref_value
+      );
+      return {
+        sessionId,
+        status: session.status,
+        ...(Number.isFinite(existingRootIssueNumber) && existingRootIssueNumber > 0
+          ? { rootIssueNumber: existingRootIssueNumber }
+          : {}),
+      };
+    }
     if (!session.github_repo || !session.app_installation_id) {
       throw new Error("Repository bootstrap is incomplete");
     }
@@ -96,7 +132,37 @@ function createProvisioner({ db, buildSessionStore, githubClient }) {
       throw new Error(`Session is not launchable from status ${session.status}`);
     }
 
-    const rootIssue = await createPrdIssue(sessionId, session.app_installation_id);
+    const claimedLaunch = db
+      .prepare(
+        `UPDATE build_sessions
+         SET status = 'building', updated_at = ?
+         WHERE id = ? AND status IN ('ready_to_launch', 'awaiting_capacity', 'stalled')`
+      )
+      .run(new Date().toISOString(), sessionId).changes;
+    if (claimedLaunch === 0) {
+      const existingRootIssueNumber = Number(
+        buildSessionStore.getRefs(sessionId, { type: "issue", key: "root" }).at(-1)?.ref_value
+      );
+      return {
+        sessionId,
+        status: buildSessionStore.getSession(sessionId)?.status || "building",
+        ...(Number.isFinite(existingRootIssueNumber) && existingRootIssueNumber > 0
+          ? { rootIssueNumber: existingRootIssueNumber }
+          : {}),
+      };
+    }
+
+    let rootIssue;
+    try {
+      rootIssue = await createPrdIssue(sessionId, session.app_installation_id);
+    } catch (error) {
+      buildSessionStore.updateSession(sessionId, { status: "stalled" });
+      emitEvent(sessionId, "build", "pipeline_stalled", {
+        stage: "decompose",
+        detail: `Failed to create root PRD issue: ${error.message}`,
+      });
+      throw error;
+    }
     const rootIssueNumber = Number(rootIssue.number);
 
     if (!hasAvailableCapacity(sessionId)) {
@@ -132,7 +198,6 @@ function createProvisioner({ db, buildSessionStore, githubClient }) {
       throw error;
     }
 
-    buildSessionStore.updateSession(sessionId, { status: "building" });
     emitEvent(sessionId, "build", "pipeline_started", {
       detail: `Dispatched prd-decomposer for issue #${rootIssueNumber}`,
       workflow: "prd-decomposer.lock.yml",
@@ -380,18 +445,18 @@ function createProvisioner({ db, buildSessionStore, githubClient }) {
         });
       }
 
-      const productionUrl = derivePublicBetaProductionUrl(repo);
+      const deployConfigured = hasDeployCredentials(vercelCreds);
+      const productionUrl = deployConfigured ? derivePublicBetaProductionUrl(repo) : null;
       if (productionUrl) {
         await githubClient.upsertActionsVariable(token, owner, repo, {
           name: "VERCEL_PROJECT_PRODUCTION_URL",
           value: productionUrl,
         });
-        buildSessionStore.updateSession(sessionId, { deploy_url: productionUrl });
         buildSessionStore.upsertRef(sessionId, {
           type: "vercel_project",
           key: "production_url",
           value: productionUrl,
-          metadata: { source: "template" },
+          metadata: { source: "template", validated: false },
         });
       }
 
@@ -454,7 +519,7 @@ function createProvisioner({ db, buildSessionStore, githubClient }) {
       .get()?.total || 0;
     const session = buildSessionStore.getSession(sessionId);
     if (session?.status === "building") {
-      return true;
+      return active <= Math.max(1, PUBLIC_BETA_CAPACITY);
     }
     return active < Math.max(1, PUBLIC_BETA_CAPACITY);
   }
@@ -522,6 +587,12 @@ function normalizeUrl(value) {
     return null;
   }
   return /^https?:\/\//.test(value) ? value : `https://${value}`;
+}
+
+function hasDeployCredentials(creds) {
+  return ["VERCEL_TOKEN", "VERCEL_ORG_ID", "VERCEL_PROJECT_ID"].every(
+    (key) => typeof creds[key] === "string" && creds[key].length > 0
+  );
 }
 
 function extractPrdTitle(prdMarkdown) {

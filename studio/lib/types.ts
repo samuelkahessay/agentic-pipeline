@@ -91,6 +91,7 @@ export type BuildSessionStatus =
   | "ready_to_launch"
   | "awaiting_capacity"
   | "building"
+  | "handoff_ready"
   | "complete"
   | "stalled"
   | "failed";

@@ -100,9 +100,19 @@ function registerBuildSessionRoutes(app, { db, buildSessionStore, serviceResolve
       const credRow = db.prepare(
         "SELECT 1 FROM build_session_refs WHERE build_session_id = ? AND ref_type = 'credential' AND ref_key = 'COPILOT_GITHUB_TOKEN' LIMIT 1"
       ).get(session.id);
+      const deployConfigured = [
+        "VERCEL_TOKEN",
+        "VERCEL_ORG_ID",
+        "VERCEL_PROJECT_ID",
+      ].every((key) =>
+        db.prepare(
+          "SELECT 1 FROM build_session_refs WHERE build_session_id = ? AND ref_type = 'credential' AND ref_key = ? LIMIT 1"
+        ).get(session.id, key)
+      );
       response.gates = {
         codeRedeemed: !!codeRow,
         credentialsSubmitted: !!credRow,
+        deployConfigured,
       };
     }
 

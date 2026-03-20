@@ -38,6 +38,7 @@ include:
   - scripts/log-decision.sh
   - scripts/monitor-pipeline.sh
   - scripts/demo-preflight.sh
+  - scripts/resolve-nextjs-app-root.sh
   - scripts/tests/
 
   # ── Docs (stable, exported) ──

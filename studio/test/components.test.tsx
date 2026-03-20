@@ -5,6 +5,7 @@ import { Hero } from "@/components/landing/hero";
 import { StickyNav } from "@/components/landing/sticky-nav";
 import { Pricing } from "@/components/landing/pricing";
 import { WhatYouGet } from "@/components/landing/what-you-get";
+import { HowItWorks } from "@/components/landing/how-it-works";
 import { EvidenceLedger } from "@/components/landing/evidence-ledger";
 import { BottomCta } from "@/components/landing/bottom-cta";
 import { Credibility } from "@/components/landing/credibility";
@@ -19,9 +20,9 @@ describe("Hero", () => {
     render(<Hero />);
     expect(screen.getByText("Powered by GitHub Agentic Workflows")).toBeInTheDocument();
     expect(screen.getByText(/Send a PRD/)).toBeInTheDocument();
-    expect(screen.getByText(/Get a deployed app/)).toBeInTheDocument();
+    expect(screen.getByText(/Get one beta run/)).toBeInTheDocument();
     expect(screen.getByText(/\$1\./)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Send your PRD" })).toHaveAttribute("href", MAILTO);
+    expect(screen.getByRole("link", { name: "Request beta access" })).toHaveAttribute("href", MAILTO);
     expect(screen.getByRole("link", { name: "Watch it build" })).toHaveAttribute("href", "/build?demo=true");
   });
 });
@@ -58,11 +59,11 @@ describe("StickyNav", () => {
 describe("Pricing", () => {
   it("renders the $1 offer and self-hosted option", () => {
     render(<Pricing />);
-    expect(screen.getByRole("heading", { name: "$1. One PRD. One deployed app." })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "$1. One access code. One beta run." })).toBeInTheDocument();
     expect(screen.getByText("Early adopter")).toBeInTheDocument();
     expect(screen.getByText("Run it yourself")).toBeInTheDocument();
     expect(screen.getByText("Scope")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Send your PRD" })).toHaveAttribute("href", MAILTO);
+    expect(screen.getByRole("link", { name: "Request beta access" })).toHaveAttribute("href", MAILTO);
     expect(screen.getByRole("link", { name: "View on GitHub" })).toHaveAttribute(
       "href",
       "https://github.com/samuelkahessay/prd-to-prod",
@@ -73,10 +74,22 @@ describe("Pricing", () => {
 describe("WhatYouGet", () => {
   it("renders the core deliverables", () => {
     render(<WhatYouGet />);
-    expect(screen.getByRole("heading", { name: "Not a prototype. A deployed product." })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Not a demo. A real repo handoff." })).toBeInTheDocument();
     expect(screen.getByText("A real repo")).toBeInTheDocument();
-    expect(screen.getByText("CI/CD from day one")).toBeInTheDocument();
-    expect(screen.getByText("It stays healthy")).toBeInTheDocument();
+    expect(screen.getByText("An inspectable beta run")).toBeInTheDocument();
+    expect(screen.getByText("Optional deploy validation")).toBeInTheDocument();
+  });
+});
+
+describe("HowItWorks", () => {
+  it("renders the human boundary link", () => {
+    render(<HowItWorks />);
+    expect(screen.getByRole("heading", { name: "Agents build inside a human-owned boundary." })).toBeInTheDocument();
+    expect(screen.getByText("Human boundary")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Read the autonomy policy" })).toHaveAttribute(
+      "href",
+      "https://github.com/samuelkahessay/prd-to-prod/blob/main/autonomy-policy.yml",
+    );
   });
 });
 
@@ -138,8 +151,8 @@ describe("Pipeline animation queues", () => {
 describe("BottomCta", () => {
   it("renders the final call to action", () => {
     render(<BottomCta />);
-    expect(screen.getByRole("heading", { name: "Send a PRD. Get a deployed app. $1." })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Send your PRD" })).toHaveAttribute("href", MAILTO);
+    expect(screen.getByRole("heading", { name: "Request beta access. One run. $1." })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Request an access code" })).toHaveAttribute("href", MAILTO);
     expect(screen.getByRole("link", { name: "View on GitHub" })).toHaveAttribute(
       "href",
       "https://github.com/samuelkahessay/prd-to-prod",

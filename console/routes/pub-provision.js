@@ -1,6 +1,7 @@
 const { getActiveUserSession } = require("../lib/auth-store");
 const { encrypt } = require("../lib/crypto");
 const { createAccessCodeStore } = require("../lib/access-codes");
+const { createBuildSessionStore } = require("../lib/build-session-store");
 
 const BYOK_CREDENTIALS = [
   { key: "COPILOT_GITHUB_TOKEN", required: true },
@@ -11,6 +12,7 @@ const BYOK_CREDENTIALS = [
 
 function registerProvisionRoutes(app, { db, serviceResolver }) {
   const accessCodes = createAccessCodeStore(db);
+  const buildSessionStore = createBuildSessionStore(db);
 
   // Redeem an access code (binds to user account, not session)
   app.post("/pub/build-session/:id/redeem", (req, res) => {
@@ -46,6 +48,14 @@ function registerProvisionRoutes(app, { db, serviceResolver }) {
       });
     }
 
+    buildSessionStore.appendEvent(session.id, {
+      category: "provision",
+      kind: "access_code_redeemed",
+      data: {
+        detail: "Access code redeemed. This beta session is now entitled to provision one run.",
+      },
+    });
+
     res.json({ redeemed: true });
   });
   // Store BYOK credentials for a build session
@@ -73,9 +83,6 @@ function registerProvisionRoutes(app, { db, serviceResolver }) {
       return res.status(400).json({ error: "COPILOT_GITHUB_TOKEN is required" });
     }
 
-    const { createBuildSessionStore } = require("../lib/build-session-store");
-    const buildSessionStore = createBuildSessionStore(db);
-
     for (const { key } of BYOK_CREDENTIALS) {
       const value = credentials[key];
       if (typeof value === "string" && value.length > 0) {
@@ -86,6 +93,17 @@ function registerProvisionRoutes(app, { db, serviceResolver }) {
         });
       }
     }
+
+    buildSessionStore.appendEvent(session.id, {
+      category: "provision",
+      kind: "credentials_submitted",
+      data: {
+        deployConfigured: hasDeployCredentials(db, session.id),
+        detail: hasDeployCredentials(db, session.id)
+          ? "Copilot and Vercel credentials saved. This run can provision and validate deployment."
+          : "Copilot credentials saved. This run can build and hand off the repo without deployment validation.",
+      },
+    });
 
     res.json({ stored: true });
   });
@@ -103,6 +121,30 @@ function registerProvisionRoutes(app, { db, serviceResolver }) {
 
     if (!enforceSessionBoundary(db, userSession.user_id, session, res)) {
       return;
+    }
+
+    if (session.status === "awaiting_install") {
+      return res.json({
+        sessionId: session.id,
+        status: "awaiting_install",
+        installRequired: true,
+      });
+    }
+
+    if (session.status === "bootstrapping") {
+      return res.json({
+        sessionId: session.id,
+        status: "bootstrapping",
+        installRequired: false,
+      });
+    }
+
+    if (session.status === "ready_to_launch") {
+      return res.json({
+        sessionId: session.id,
+        status: "ready_to_launch",
+        installRequired: false,
+      });
     }
 
     // Real sessions require a redeemed access code
@@ -151,6 +193,27 @@ function registerProvisionRoutes(app, { db, serviceResolver }) {
     if (session.status === "ready") {
       return res.status(400).json({
         error: "Repository provisioning has not started yet.",
+      });
+    }
+
+    if (session.status === "building") {
+      return res.json({
+        sessionId: session.id,
+        status: "building",
+      });
+    }
+
+    if (session.status === "handoff_ready") {
+      return res.json({
+        sessionId: session.id,
+        status: "handoff_ready",
+      });
+    }
+
+    if (session.status === "complete") {
+      return res.json({
+        sessionId: session.id,
+        status: "complete",
       });
     }
 
@@ -230,6 +293,15 @@ function getOwnedBuildSession(db, buildSessionId, userId) {
 
 function isStartableStatus(status) {
   return status === "ready_to_launch" || status === "awaiting_capacity" || status === "stalled";
+}
+
+function hasDeployCredentials(db, sessionId) {
+  return ["VERCEL_TOKEN", "VERCEL_ORG_ID", "VERCEL_PROJECT_ID"].every((key) =>
+    db.prepare(
+      `SELECT 1 FROM build_session_refs
+       WHERE build_session_id = ? AND ref_type = 'credential' AND ref_key = ?`
+    ).get(sessionId, key)
+  );
 }
 
 function enforceSessionBoundary(db, userId, session, res) {

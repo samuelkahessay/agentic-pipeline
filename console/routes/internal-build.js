@@ -39,12 +39,34 @@ function registerInternalBuildRoutes(app, { buildSessionStore }) {
       data: data || {},
     });
 
+    if (session.status === "complete" && kind !== "complete") {
+      return res.json({ ok: true, eventId: event.id });
+    }
+
+    if (
+      session.status === "handoff_ready" &&
+      kind !== "complete" &&
+      kind !== "handoff_ready"
+    ) {
+      return res.json({ ok: true, eventId: event.id });
+    }
+
     // Update session status on terminal events
     if (category === "delivery" && kind === "complete") {
       const deployUrl = data?.deploy_url;
       buildSessionStore.updateSession(session_id, {
         status: "complete",
         ...(deployUrl ? { deploy_url: deployUrl } : {}),
+      });
+    }
+
+    if (
+      category === "delivery" &&
+      kind === "handoff_ready" &&
+      session.status !== "complete"
+    ) {
+      buildSessionStore.updateSession(session_id, {
+        status: "handoff_ready",
       });
     }
 

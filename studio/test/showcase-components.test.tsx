@@ -16,7 +16,9 @@ describe("ShowcaseStrip", () => {
   it("renders the CTA card with correct text", () => {
     render(<ShowcaseStrip />);
     expect(screen.getByText("Your PRD could be next")).toBeInTheDocument();
-    expect(screen.getByText("Send us a product spec. Get back a deployed app.")).toBeInTheDocument();
+    expect(
+      screen.getByText("Send us a product spec. Get back a real repo handoff in the invite-only beta.")
+    ).toBeInTheDocument();
   });
 
   it("renders an 'Open showcase →' link for each app card", () => {

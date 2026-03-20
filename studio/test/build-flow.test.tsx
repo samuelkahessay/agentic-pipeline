@@ -278,7 +278,7 @@ describe("BuildStatusPage", () => {
     });
 
     expect(
-      await screen.findByText("That was a simulation. Ready for the real thing?")
+      await screen.findByText("That was a simulation. Ready for the invite-only beta?")
     ).toBeInTheDocument();
   });
 
@@ -320,5 +320,43 @@ describe("BuildStatusPage", () => {
     await waitFor(() => {
       expect(mockedBuildApi.startBuild).toHaveBeenCalledWith("session-1");
     });
+  });
+
+  it("shows repo handoff success when deployment is skipped", async () => {
+    mockedBuildApi.getSession.mockResolvedValue({
+      session: {
+        ...makeSession("handoff_ready"),
+        is_demo: 0,
+        github_repo: "octocat/customer-portal",
+        github_repo_url: "https://github.com/octocat/customer-portal",
+      },
+      messages: [
+        makeAssistantEvent(makeParsedResponse("ready")),
+        makeBuildEvent({
+          id: 4,
+          category: "delivery",
+          kind: "deployment_skipped",
+          data: {
+            detail: "Deployment validation skipped because no deployment URL is configured for this beta run.",
+          },
+        }),
+      ],
+      gates: {
+        codeRedeemed: true,
+        credentialsSubmitted: true,
+        deployConfigured: false,
+      },
+    });
+
+    render(await BuildStatusPage({ params: Promise.resolve({ id: "session-1" }) }));
+
+    expect(await screen.findByText("handoff_ready")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Open repo" })).toHaveAttribute(
+      "href",
+      "https://github.com/octocat/customer-portal",
+    );
+    expect(
+      screen.getByText(/Deployment was skipped\. Add Vercel credentials on a future run/i)
+    ).toBeInTheDocument();
   });
 });

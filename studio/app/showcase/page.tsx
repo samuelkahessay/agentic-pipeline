@@ -137,8 +137,8 @@ export default function ShowcasePage() {
             <div className={styles.ctaInner}>
               <h2 className={styles.ctaHeading}>Your PRD could be next</h2>
               <p className={styles.ctaDesc}>
-                Send a product spec. Get back a deployed app, a real repo, and a complete
-                audit trail — built autonomously by the pipeline.
+                Send a product spec. Get back a real repo handoff, optional
+                deploy validation, and a complete audit trail.
               </p>
               <a href="/build" className={styles.ctaLink}>
                 Start a build →

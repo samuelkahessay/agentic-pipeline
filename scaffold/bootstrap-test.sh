@@ -58,6 +58,20 @@ PROFILE=$(tr -d '[:space:]' < "$OUTPUT_DIR/.deploy-profile" 2>/dev/null || true)
 [ -n "$PROFILE" ] || report_failure ".deploy-profile is empty"
 [ -f "$OUTPUT_DIR/.github/deploy-profiles/$PROFILE.yml" ] || report_failure "deploy profile '$PROFILE' is missing from scaffold"
 
+if [ "$PROFILE" = "nextjs-vercel" ]; then
+  if ! APP_ROOT=$(bash "$OUTPUT_DIR/scripts/resolve-nextjs-app-root.sh" "$OUTPUT_DIR" 2>/dev/null); then
+    report_failure "nextjs-vercel scaffold could not resolve an app root"
+  elif [ "$APP_ROOT" != "studio" ] && [ "$APP_ROOT" != "." ]; then
+    report_failure "nextjs-vercel scaffold resolved unexpected app root: $APP_ROOT"
+  fi
+
+  if [ ! -d "$OUTPUT_DIR/console" ] && \
+    grep -F 'working-directory: console' "$OUTPUT_DIR/.github/workflows/ci-node.yml" >/dev/null && \
+    ! grep -F "hashFiles('console/package.json')" "$OUTPUT_DIR/.github/workflows/ci-node.yml" >/dev/null; then
+    report_failure "ci-node.yml assumes console/ exists even when scaffold omits it"
+  fi
+fi
+
 if [ -f "$OUTPUT_DIR/autonomy-policy.yml" ] && grep -q "# Replace with your" "$OUTPUT_DIR/autonomy-policy.yml"; then
   report_failure "autonomy-policy.yml still contains placeholder guidance"
 fi

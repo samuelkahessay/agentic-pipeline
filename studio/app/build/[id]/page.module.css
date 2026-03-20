@@ -57,6 +57,13 @@
   letter-spacing: -0.02em;
 }
 
+.inlineLink {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  text-underline-offset: 0.18em;
+}
+
 .copy {
   color: var(--ink-muted);
   line-height: 1.6;
@@ -184,6 +191,11 @@
   gap: 12px;
 }
 
+.gateFormFields {
+  display: grid;
+  gap: 10px;
+}
+
 .gateLabel {
   font-weight: 600;
   font-size: 15px;
@@ -213,6 +225,11 @@
   border-color: var(--accent);
 }
 
+.gateGrid {
+  display: grid;
+  gap: 10px;
+}
+
 .conversionNudge {
   display: grid;
   gap: 16px;
@@ -223,4 +240,48 @@
   font-weight: 600;
   letter-spacing: -0.02em;
   line-height: 1.3;
+}
+
+.inlineNote {
+  color: var(--ink-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.evidenceList {
+  display: grid;
+  gap: 12px;
+}
+
+.evidenceItem {
+  display: grid;
+  grid-template-columns: 14px 1fr;
+  gap: 12px;
+  align-items: start;
+}
+
+.evidenceDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink-muted) 35%, white);
+  border: 1px solid color-mix(in srgb, var(--line) 80%, white);
+  margin-top: 5px;
+}
+
+.evidenceDone {
+  background: var(--good);
+  border-color: transparent;
+}
+
+.evidenceLabel {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.evidenceDetail {
+  margin-top: 4px;
+  color: var(--ink-muted);
+  line-height: 1.5;
 }

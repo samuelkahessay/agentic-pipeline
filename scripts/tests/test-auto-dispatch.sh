@@ -21,5 +21,7 @@ grep -F 'steps.classify.outputs.workflow_file' "$WORKFLOW" >/dev/null
 grep -F 'sleep "${{ steps.classify.outputs.backoff_seconds }}"' "$WORKFLOW" >/dev/null
 grep -F 'blocking_repo_assist_run_id=${BLOCKING_RUN_ID}' "$WORKFLOW" >/dev/null
 grep -F 'repo_assist_run_id=${AGENT_RUN_ID}' "$WORKFLOW" >/dev/null
+grep -F 'if [ "$WORKFLOW_FILE" = "repo-assist.lock.yml" ]; then' "$WORKFLOW" >/dev/null
+grep -F -- '-f issue_number="$ISSUE_NUMBER"' "$WORKFLOW" >/dev/null
 
 echo "auto-dispatch.yml tests passed"
