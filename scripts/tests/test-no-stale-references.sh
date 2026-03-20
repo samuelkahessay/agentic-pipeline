@@ -4,9 +4,10 @@ set -euo pipefail
 ROOT_DIR=$(cd "$(dirname "$0")/../.." && pwd)
 ERRORS=0
 
-# Check for stale references to old repos in active code
-# prd-to-prod-template references are stale everywhere
-for file in trigger/*.sh README.md docs/ARCHITECTURE.md; do
+# Template repo references are intentional in console provisioning, publication
+# automation, and current docs. They should not leak into exported scaffold
+# sources or local trigger scripts.
+for file in scaffold/*.sh scaffold/template-manifest.yml trigger/*.sh README.template.md setup.sh setup-verify.sh; do
   filepath="$ROOT_DIR/$file"
   [ -f "$filepath" ] || continue
   if grep -qF "prd-to-prod-template" "$filepath"; then
@@ -16,9 +17,9 @@ for file in trigger/*.sh README.md docs/ARCHITECTURE.md; do
 done
 
 # meeting-to-main references are stale in trigger/ and ARCHITECTURE.md
-# but acceptable in README.md (product description)
+# but acceptable in internal historical docs
 for pattern in "meeting-to-main"; do
-  for file in trigger/*.sh docs/ARCHITECTURE.md; do
+  for file in scaffold/*.sh scaffold/template-manifest.yml trigger/*.sh docs/ARCHITECTURE.md README.template.md setup.sh setup-verify.sh; do
     filepath="$ROOT_DIR/$file"
     [ -f "$filepath" ] || continue
     if rg -n -P "${pattern}(?!:)" "$filepath" >/dev/null 2>&1; then

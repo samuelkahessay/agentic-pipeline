@@ -13,7 +13,7 @@ model is not a flat count. It is a set of routing/safety workflows plus AI agent
 
 ## Consolidation Target State
 
-prd-to-prod is consolidating from three repos into one source repo with an exported scaffold artifact. The system supports two operating modes:
+prd-to-prod is consolidating from three repos into one source repo with an exported scaffold artifact and a generated template publication target. The system supports two operating modes:
 
 ### Operating Modes
 
@@ -39,8 +39,9 @@ The scaffold is a build artifact generated from `template-manifest.yml`, not a h
 1. `export-scaffold.sh` — copies allowlisted paths, renders templates, compiles workflows
 2. `leak-test.sh` — verifies no forbidden paths (extraction/, trigger/, product code) leak into scaffold
 3. `bootstrap-test.sh` — smoke-tests the exported scaffold (file completeness, config validity)
+4. `publish-scaffold-template.yml` — mirrors `dist/scaffold/` into the generated template repo used by `/build`
 
-Output goes to `dist/scaffold/`, which is `.gitignore`d.
+Output goes to `dist/scaffold/`, which is `.gitignore`d. The published template repo at `PUBLIC_BETA_TEMPLATE_OWNER/PUBLIC_BETA_TEMPLATE_REPO` is generated output, not a maintained source repo.
 
 ### Trigger Layer (`trigger/`)
 
@@ -49,10 +50,13 @@ Output goes to `dist/scaffold/`, which is `.gitignore`d.
 | `push-to-pipeline.sh` | Greenfield — provisions new repo from `dist/scaffold/` |
 | `push-to-existing.sh` | Existing — creates `[Pipeline]` issues in `TARGET_REPO` |
 
+The local greenfield trigger provisions directly from `dist/scaffold/`. The self-serve console provisions from the published generated template repo using the same scaffold contents.
+
 ### Key Invariants
 
 - `TARGET_REPO` is required when `--mode existing` is set; omitting it fails fast
 - The scaffold never contains `extraction/`, `trigger/`, `PRDtoProd/`, or product-specific files
+- All hand edits happen in `prd-to-prod`; the published template repo is regenerated from `dist/scaffold/`
 - `classify.sh` is deterministic: same input always produces same output
 - Schema validation gates all inter-script data (JSON Schema files in `extraction/schemas/`)
 

@@ -19,6 +19,51 @@ gh aw --help >/dev/null 2>&1 || { echo "FAIL: gh-aw extension is required for sc
 rm -rf "$OUTPUT_DIR"
 mkdir -p "$OUTPUT_DIR"
 
+FORBIDDEN_PATHS=()
+while IFS= read -r path; do
+  [ -n "$path" ] || continue
+  FORBIDDEN_PATHS+=("$(printf '%s' "$path" | xargs)")
+done < <(yq -r '.forbidden_paths[]' "$MANIFEST" 2>/dev/null)
+
+EXCEPTION_PATHS=()
+while IFS= read -r path; do
+  [ -n "$path" ] || continue
+  EXCEPTION_PATHS+=("$(printf '%s' "$path" | xargs)")
+done < <(yq -r '.exception_paths[]' "$MANIFEST" 2>/dev/null)
+
+is_excepted() {
+  local path="$1"
+  local exc
+  for exc in "${EXCEPTION_PATHS[@]}"; do
+    if [[ "$path" == "$exc" || "$path" == "$exc/"* ]]; then
+      return 0
+    fi
+  done
+  return 1
+}
+
+is_forbidden() {
+  local path="$1"
+  local forbidden
+  for forbidden in "${FORBIDDEN_PATHS[@]}"; do
+    if [[ "$path" == "$forbidden" || "$path" == "$forbidden/"* ]]; then
+      return 0
+    fi
+  done
+  return 1
+}
+
+should_skip_path() {
+  local path="$1"
+  if is_excepted "$path"; then
+    return 1
+  fi
+  if is_forbidden "$path"; then
+    return 0
+  fi
+  return 1
+}
+
 copy_path() {
   local src="$1"
   local dest="$OUTPUT_DIR/$src"
@@ -32,6 +77,9 @@ copy_path() {
       ! -path "*/.git/*" \
       ! -name ".DS_Store" \
       | while IFS= read -r file; do
+        if should_skip_path "$file"; then
+          continue
+        fi
         mkdir -p "$OUTPUT_DIR/$(dirname "$file")"
         cp "$REPO_ROOT/$file" "$OUTPUT_DIR/$file"
       done)
@@ -39,6 +87,9 @@ copy_path() {
   fi
 
   [ -f "$REPO_ROOT/$src" ] || return 0
+  if should_skip_path "$src"; then
+    return 0
+  fi
   mkdir -p "$(dirname "$dest")"
   cp "$REPO_ROOT/$src" "$dest"
 }

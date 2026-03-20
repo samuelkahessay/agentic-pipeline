@@ -66,6 +66,10 @@ if [ -d "$OUTPUT_DIR/PRDtoProd" ]; then
   echo "FAIL: Test 2: PRDtoProd/ should not appear in scaffold" >&2
   exit 1
 fi
+if [ -f "$OUTPUT_DIR/.github/workflows/publish-scaffold-template.yml" ]; then
+  echo "FAIL: Test 2: publish-scaffold-template.yml should not appear in scaffold" >&2
+  exit 1
+fi
 echo "Test 2 passed: forbidden paths absent"
 
 # ── Test 3: Exception paths present ─────────────────────────────

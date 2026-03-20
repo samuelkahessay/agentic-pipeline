@@ -202,7 +202,7 @@ function createProvisioner({ db, buildSessionStore, githubClient }) {
     const repoName = deriveRepoName(session.prd_final);
 
     emitEvent(sessionId, "provision", "repo_creating", {
-      detail: `Creating ${user.github_login}/${repoName} from scaffold`,
+      detail: `Creating ${user.github_login}/${repoName} from generated scaffold template`,
     });
 
     let repoData;

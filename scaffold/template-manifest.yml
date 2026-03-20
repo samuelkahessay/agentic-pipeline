@@ -58,6 +58,7 @@ include:
   - README.template.md
 
 forbidden_paths:
+  - .github/workflows/publish-scaffold-template.yml
   - console/
   - docs/plans/
   - extraction/

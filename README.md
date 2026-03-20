@@ -125,6 +125,16 @@ by name in release notes.
 - Delete branch on merge enabled
 - Active `Protect main` ruleset on `main`
 
+### Self-Serve Template Publication
+
+If you use the `/build` flow, keep the template coordinates aligned in both places:
+
+- Source repo Actions vars: `PUBLIC_BETA_TEMPLATE_OWNER`, `PUBLIC_BETA_TEMPLATE_REPO`
+- Console env vars: `PUBLIC_BETA_TEMPLATE_OWNER`, `PUBLIC_BETA_TEMPLATE_REPO`
+
+`publish-scaffold-template.yml` republishes `dist/scaffold/` into that template
+repo. Edit only `prd-to-prod`; the template repo is generated output.
+
 ### Emergency controls
 
 Set `PIPELINE_HEALING_ENABLED=false` as a repo variable to pause auto-repair.

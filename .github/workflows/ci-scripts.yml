@@ -21,6 +21,8 @@ jobs:
             bash scripts/tests/test-export-scaffold.sh
             bash scripts/tests/test-leak-test.sh
             bash scripts/tests/test-bootstrap-test.sh
+            bash scripts/tests/test-publish-scaffold-template.sh
+            bash scripts/tests/test-publish-scaffold-template-workflow.sh
             bash scripts/tests/test-validate-prd.sh
             bash scripts/tests/test-validate-schema.sh
             bash scripts/tests/test-classify-transcript.sh

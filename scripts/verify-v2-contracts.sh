@@ -16,6 +16,8 @@ V2_CHECKS=(
   "bash scripts/tests/test-export-scaffold.sh"
   "bash scripts/tests/test-leak-test.sh"
   "bash scripts/tests/test-bootstrap-test.sh"
+  "bash scripts/tests/test-publish-scaffold-template.sh"
+  "bash scripts/tests/test-publish-scaffold-template-workflow.sh"
   # Phase 3
   "bash scripts/tests/test-extract-prd-mock.sh"
   "bash scripts/tests/test-push-to-pipeline-dryrun.sh"
