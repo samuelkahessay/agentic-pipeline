@@ -18,7 +18,20 @@ on:
   reaction: "eyes"
 
 concurrency:
-  group: "gh-aw-${{ github.workflow }}-${{ github.event.issue.number || github.event.pull_request.number || github.event.inputs.issue_number || github.run_id }}"
+  # Passive issue_comment events (App-authored follow-up comments from safe_outputs)
+  # get a unique key so they don't cancel the primary run that spawned them.
+  # Real /repo-assist slash commands still serialize by issue number.
+  # See: docs/internal/gh-aw-upstream/findings/040-safe-outputs-self-cancellation-via-concurrency.md
+  group: >-
+    gh-aw-${{ github.workflow }}-${{
+      github.event_name == 'issue_comment' &&
+      !(startsWith(github.event.comment.body, '/repo-assist ') || github.event.comment.body == '/repo-assist') &&
+      format('passive-comment-{0}', github.run_id) ||
+      github.event.issue.number ||
+      github.event.pull_request.number ||
+      github.event.inputs.issue_number ||
+      github.run_id
+    }}
   cancel-in-progress: true
 
 timeout-minutes: 60

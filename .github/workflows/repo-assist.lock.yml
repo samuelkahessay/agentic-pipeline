@@ -25,7 +25,7 @@
 # Also maintains its own PRs by fixing CI failures and resolving merge conflicts.
 # Can be triggered on-demand via /repo-assist <instructions>.
 #
-# gh-aw-metadata: {"schema_version":"v2","frontmatter_hash":"9adf01aea5af34876f46848ec7edac08550c4df536908d7dd4af7a9359cd7dbe","compiler_version":"v0.62.2","strict":true}
+# gh-aw-metadata: {"schema_version":"v2","frontmatter_hash":"b8d278a80e751832f2c1fbf3bbd25b5371dbbac35c373beb7d2c13140bb6c8a1","compiler_version":"v0.62.2","strict":true}
 
 name: "Pipeline Repo Assist"
 "on":
@@ -62,7 +62,16 @@ permissions: {}
 
 concurrency:
   cancel-in-progress: true
-  group: gh-aw-${{ github.workflow }}-${{ github.event.issue.number || github.event.pull_request.number || github.event.inputs.issue_number || github.run_id }}
+  group: |-
+    gh-aw-${{ github.workflow }}-${{
+      github.event_name == 'issue_comment' &&
+      !(startsWith(github.event.comment.body, '/repo-assist ') || github.event.comment.body == '/repo-assist') &&
+      format('passive-comment-{0}', github.run_id) ||
+      github.event.issue.number ||
+      github.event.pull_request.number ||
+      github.event.inputs.issue_number ||
+      github.run_id
+    }}
 
 run-name: "Pipeline Repo Assist"
 
