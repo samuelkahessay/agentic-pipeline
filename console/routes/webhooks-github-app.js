@@ -1,4 +1,5 @@
 const crypto = require("crypto");
+const { deactivatePipeline } = require("../lib/pipeline-lifecycle");
 
 function verifySignature(secret, payload, signature) {
   if (!secret || !Buffer.isBuffer(payload) || typeof signature !== "string") {
@@ -13,21 +14,6 @@ function verifySignature(secret, payload, signature) {
     return false;
   }
   return crypto.timingSafeEqual(expectedBuffer, providedBuffer);
-}
-
-async function deactivatePipeline(serviceResolver, session) {
-  if (!session?.github_repo || !session?.app_installation_id) return;
-  try {
-    const [owner, repo] = session.github_repo.split("/");
-    const { githubClient } = serviceResolver.forSession(session.id);
-    const token = await githubClient.getInstallationToken(session.app_installation_id);
-    await githubClient.upsertActionsVariable(token, owner, repo, {
-      name: "PIPELINE_ACTIVE",
-      value: "false",
-    });
-  } catch (err) {
-    console.error("Failed to deactivate pipeline:", err.message);
-  }
 }
 
 function registerWebhookRoutes(app, { db, buildSessionStore, serviceResolver }) {

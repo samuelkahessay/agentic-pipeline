@@ -119,7 +119,7 @@ registerProvisionRoutes(app, { db, serviceResolver });
 
 // --- Internal routes (behind /internal auth middleware) ---
 
-registerInternalBuildRoutes(app, { buildSessionStore });
+registerInternalBuildRoutes(app, { buildSessionStore, serviceResolver });
 
 // --- Webhook routes ---
 

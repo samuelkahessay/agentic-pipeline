@@ -1,4 +1,6 @@
-function registerInternalBuildRoutes(app, { buildSessionStore }) {
+const { deactivatePipeline } = require("../lib/pipeline-lifecycle");
+
+function registerInternalBuildRoutes(app, { buildSessionStore, serviceResolver }) {
   // Builder agent fetches bootstrap data at runtime
   app.get("/internal/build-bootstrap/:id", (req, res) => {
     const session = buildSessionStore.getSession(req.params.id);
@@ -19,7 +21,7 @@ function registerInternalBuildRoutes(app, { buildSessionStore }) {
   });
 
   // Builder agent reports progress events
-  app.post("/internal/build-callback", (req, res) => {
+  app.post("/internal/build-callback", async (req, res) => {
     const { session_id, category, kind, data } = req.body;
 
     if (!session_id || !category || !kind) {
@@ -51,6 +53,8 @@ function registerInternalBuildRoutes(app, { buildSessionStore }) {
       return res.json({ ok: true, eventId: event.id });
     }
 
+    let reachedTerminalState = false;
+
     // Update session status on terminal events
     if (category === "delivery" && kind === "complete") {
       const deployUrl = data?.deploy_url;
@@ -58,6 +62,7 @@ function registerInternalBuildRoutes(app, { buildSessionStore }) {
         status: "complete",
         ...(deployUrl ? { deploy_url: deployUrl } : {}),
       });
+      reachedTerminalState = true;
     }
 
     if (
@@ -68,10 +73,18 @@ function registerInternalBuildRoutes(app, { buildSessionStore }) {
       buildSessionStore.updateSession(session_id, {
         status: "handoff_ready",
       });
+      reachedTerminalState = true;
     }
 
     if (category === "build" && kind === "agent_error") {
       buildSessionStore.updateSession(session_id, { status: "stalled" });
+    }
+
+    if (reachedTerminalState) {
+      await deactivatePipeline(
+        serviceResolver,
+        buildSessionStore.getSession(session_id) || session
+      );
     }
 
     res.json({ ok: true, eventId: event.id });
