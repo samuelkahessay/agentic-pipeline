@@ -4,6 +4,7 @@
 # archive cleanup use the same definition of app-owned files.
 
 RUN_LIFECYCLE_EPHEMERAL_DIRS=(
+  "studio"
   "src"
   "PRDtoProd"
   "PRDtoProd.Tests"

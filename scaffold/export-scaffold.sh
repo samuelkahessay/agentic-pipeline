@@ -99,6 +99,28 @@ while IFS= read -r path; do
   copy_path "$(printf '%s' "$path" | xargs)"
 done < <(yq -r '.include[]' "$MANIFEST")
 
+# Directory remaps: copy source dirs into scaffold under a different name
+while IFS=$'\t' read -r src dest; do
+  [ -n "${src:-}" ] || continue
+  [ -d "$REPO_ROOT/$src" ] || { echo "WARN: directory_remap source missing: $src" >&2; continue; }
+  mkdir -p "$OUTPUT_DIR/$dest"
+  (cd "$REPO_ROOT" && find "$src" -type f \
+    ! -path "*/node_modules/*" \
+    ! -path "*/.next/*" \
+    ! -path "*/.git/*" \
+    ! -name ".DS_Store" \
+    | while IFS= read -r file; do
+      rel="${file#$src/}"
+      dest_path="$dest/$rel"
+      if should_skip_path "$dest_path"; then
+        continue
+      fi
+      mkdir -p "$OUTPUT_DIR/$dest/$(dirname "$rel")"
+      cp "$REPO_ROOT/$file" "$OUTPUT_DIR/$dest/$rel"
+    done)
+done < <(yq -r '.directory_remap // {} | to_entries[] | "\(.key)\t\(.value)"' "$MANIFEST" 2>/dev/null || true)
+
+# File renames
 while IFS=$'\t' read -r src dest; do
   [ -n "${src:-}" ] || continue
   [ -f "$OUTPUT_DIR/$src" ] || continue

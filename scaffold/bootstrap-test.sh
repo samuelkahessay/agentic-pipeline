@@ -82,6 +82,27 @@ while IFS= read -r ref; do
   [ -f "$OUTPUT_DIR/$ref" ] || report_failure "workflow references missing scaffold script: $ref"
 done <<< "$SCRIPT_REFERENCES"
 
+# ── Build validation: prove the exported Next.js app installs, builds, and tests ──
+if [ "$PROFILE" = "nextjs-vercel" ] && [ -n "${APP_ROOT:-}" ]; then
+  APP_DIR="$OUTPUT_DIR/$APP_ROOT"
+  if [ -f "$APP_DIR/package.json" ]; then
+    echo "▸ Build validation: npm ci in $APP_ROOT/"
+    if ! (cd "$APP_DIR" && npm ci 2>&1); then
+      report_failure "npm ci failed in $APP_ROOT/"
+    else
+      echo "▸ Build validation: npm run build in $APP_ROOT/"
+      if ! (cd "$APP_DIR" && npm run build 2>&1); then
+        report_failure "npm run build failed in $APP_ROOT/"
+      fi
+      echo "▸ Build validation: npm test in $APP_ROOT/"
+      if ! (cd "$APP_DIR" && npm test 2>&1); then
+        report_failure "npm test failed in $APP_ROOT/"
+      fi
+      rm -rf "$APP_DIR/node_modules" "$APP_DIR/.next"
+    fi
+  fi
+fi
+
 TMP_REPO="$(mktemp -d)"
 cleanup() {
   rm -rf "$TMP_REPO"

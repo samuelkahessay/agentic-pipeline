@@ -47,7 +47,8 @@ showcase/                        # Completed run portfolios (PERMANENT)
   01-code-snippet-manager/       # Run 1 summary → tag v1.0.0
   02-pipeline-observatory/       # Run 2 summary → tag v2.0.0
 AGENTS.md                        # Coding standards for all agents
-src/                             # PRD implementation code (EPHEMERAL)
+studio/                          # PRD implementation code — Next.js app (EPHEMERAL)
+src/                             # PRD implementation code — alternative layout (EPHEMERAL)
 package.json, tsconfig.json ...  # PRD-specific configs (EPHEMERAL)
 ```
 
@@ -56,10 +57,10 @@ The pipeline follows a **drop → run → tag → showcase → reset** cycle.
 
 - **Permanent files** (`.github/`, `scripts/`, `docs/prd/`, `showcase/`,
   `AGENTS.md`, `README.md`) survive across runs
-- **Ephemeral files** (`src/`, `package.json`, config files, `docs/plans/`)
+- **Ephemeral files** (`studio/`, `src/`, `package.json`, config files, `docs/plans/`)
   are removed when archiving a completed run
 - After archive, the repo is a clean slate ready for the next PRD
-- All implementation code is recoverable via `git checkout <tag> -- src/`
+- All implementation code is recoverable via `git checkout <tag> -- studio/` (or `src/`)
 
 ## Agentic Workflows
 

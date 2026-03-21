@@ -10,11 +10,13 @@ TMPDIR=$(mktemp -d)
 trap 'rm -rf "$TMPDIR"' EXIT
 
 mkdir -p \
+  "$TMPDIR/studio/app" \
   "$TMPDIR/src" \
   "$TMPDIR/PRDtoProd" \
   "$TMPDIR/PRDtoProd.Tests" \
   "$TMPDIR/drills/reports"
 touch \
+  "$TMPDIR/studio/package.json" \
   "$TMPDIR/package.json" \
   "$TMPDIR/PRDtoProd.sln" \
   "$TMPDIR/Dockerfile" \
@@ -23,6 +25,7 @@ touch \
   "$TMPDIR/drills/reports/run-05.json"
 
 APP_PATHS=$(run_lifecycle_existing_app_paths "$TMPDIR")
+printf '%s\n' "$APP_PATHS" | grep -Fx "studio" >/dev/null
 printf '%s\n' "$APP_PATHS" | grep -Fx "src" >/dev/null
 printf '%s\n' "$APP_PATHS" | grep -Fx "PRDtoProd" >/dev/null
 printf '%s\n' "$APP_PATHS" | grep -Fx "PRDtoProd.Tests" >/dev/null
@@ -37,10 +40,12 @@ REPORT_PATHS=$(run_lifecycle_existing_report_paths "$TMPDIR")
 printf '%s\n' "$REPORT_PATHS" | grep -Fx "drills/reports/run-05.json" >/dev/null
 
 REMOVED_PATHS=$(run_lifecycle_remove_ephemeral_paths "$TMPDIR")
+printf '%s\n' "$REMOVED_PATHS" | grep -Fx "studio" >/dev/null
 printf '%s\n' "$REMOVED_PATHS" | grep -Fx "PRDtoProd" >/dev/null
 printf '%s\n' "$REMOVED_PATHS" | grep -Fx "PRDtoProd.sln" >/dev/null
 printf '%s\n' "$REMOVED_PATHS" | grep -Fx "drills/reports/run-05.json" >/dev/null
 
+[ ! -e "$TMPDIR/studio" ]
 [ ! -e "$TMPDIR/src" ]
 [ ! -e "$TMPDIR/PRDtoProd" ]
 [ ! -e "$TMPDIR/PRDtoProd.Tests" ]
