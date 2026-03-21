@@ -9,7 +9,7 @@ configured.
 Open source. MIT licensed. Powered by [gh-aw](https://github.com/github/gh-aw)
 (GitHub Agentic Workflows).
 
-**[prd-to-prod.vercel.app](https://prd-to-prod.vercel.app)**
+**[prdtoprod.com](https://prdtoprod.com)**
 
 ## How it works
 
