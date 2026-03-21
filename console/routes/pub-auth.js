@@ -23,6 +23,14 @@ function normalizeReturnTo(returnTo) {
   return returnTo;
 }
 
+function resolveOAuthGrantTtlMs() {
+  const parsed = Number.parseInt(process.env.GITHUB_OAUTH_GRANT_TTL_MS || "", 10);
+  if (Number.isFinite(parsed) && parsed > 0) {
+    return parsed;
+  }
+  return 60 * 60 * 1000;
+}
+
 function registerPubAuthRoutes(app, { db }) {
   const clientId = process.env.GITHUB_OAUTH_CLIENT_ID;
   const clientSecret = process.env.GITHUB_OAUTH_CLIENT_SECRET;
@@ -149,9 +157,11 @@ function registerPubAuthRoutes(app, { db }) {
         expiresAt,
       });
 
-      // Store OAuth token as temporary grant (10-minute TTL)
+      // Store OAuth token as a temporary provisioning grant.
+      // Manual beta runs can spend a while in PRD refinement before provision.
+      const grantTtlMs = resolveOAuthGrantTtlMs();
       const grantExpires = new Date(
-        Date.now() + 10 * 60 * 1000
+        Date.now() + grantTtlMs
       ).toISOString();
 
       replaceOAuthGrant(db, {
@@ -213,4 +223,4 @@ function registerPubAuthRoutes(app, { db }) {
   });
 }
 
-module.exports = { registerPubAuthRoutes };
+module.exports = { registerPubAuthRoutes, resolveOAuthGrantTtlMs };
