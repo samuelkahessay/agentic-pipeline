@@ -11,6 +11,14 @@ has_label() {
   printf '%s' "$LABELS_JSON" | jq -e --arg label "$label" 'index($label) != null' >/dev/null
 }
 
+has_type_label() {
+  has_label "feature" || \
+    has_label "test" || \
+    has_label "infra" || \
+    has_label "docs" || \
+    has_label "bug"
+}
+
 REASON="actionable"
 ACTIONABLE=true
 ROUTE="repo_assist"
@@ -36,6 +44,11 @@ elif has_label "needs-human" || has_label "ci-auth"; then
   ACTIONABLE=false
   REASON="needs_human_route"
   ROUTE="needs_human"
+elif ! has_type_label; then
+  # Provisioning creates the root PRD tracker with only the `pipeline` label.
+  # Only typed child issues should enter the implementation lanes.
+  ACTIONABLE=false
+  REASON="missing_issue_type"
 elif has_label "frontend"; then
   ROUTE="frontend_agent"
   WORKFLOW_FILE="frontend-agent.lock.yml"

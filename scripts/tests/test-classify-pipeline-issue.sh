@@ -38,6 +38,16 @@ TRACKER_ISSUE=$(cat <<'JSON'
 JSON
 )
 
+ROOT_PRD_ISSUE=$(cat <<'JSON'
+{
+  "title": "[Pipeline] Customer portal",
+  "labels": [
+    { "name": "pipeline" }
+  ]
+}
+JSON
+)
+
 AUTH_ISSUE=$(cat <<'JSON'
 {
   "title": "[Pipeline] CI Failure (auth): token expired",
@@ -65,6 +75,7 @@ JSON
 ACTIONABLE_JSON=$(printf '%s' "$ACTIONABLE_ISSUE" | "$SCRIPT")
 STATUS_JSON=$(printf '%s' "$STATUS_ISSUE" | "$SCRIPT")
 TRACKER_JSON=$(printf '%s' "$TRACKER_ISSUE" | "$SCRIPT")
+ROOT_PRD_JSON=$(printf '%s' "$ROOT_PRD_ISSUE" | "$SCRIPT")
 AUTH_JSON=$(printf '%s' "$AUTH_ISSUE" | "$SCRIPT")
 RETRY_JSON=$(printf '%s' "$RETRY_ISSUE" | "$SCRIPT")
 
@@ -77,6 +88,9 @@ printf '%s' "$STATUS_JSON" | jq -e '.reason == "status_issue"' >/dev/null
 
 printf '%s' "$TRACKER_JSON" | jq -e '.actionable == false' >/dev/null
 printf '%s' "$TRACKER_JSON" | jq -e '.reason == "prd_tracking_issue"' >/dev/null
+
+printf '%s' "$ROOT_PRD_JSON" | jq -e '.actionable == false' >/dev/null
+printf '%s' "$ROOT_PRD_JSON" | jq -e '.reason == "missing_issue_type"' >/dev/null
 
 printf '%s' "$AUTH_JSON" | jq -e '.actionable == false and .route == "needs_human"' >/dev/null
 printf '%s' "$RETRY_JSON" | jq -e '.actionable == true and .route == "retry_with_backoff" and .backoff_seconds == 60' >/dev/null
