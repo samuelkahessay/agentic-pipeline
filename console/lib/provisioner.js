@@ -411,6 +411,10 @@ function createProvisioner({ db, buildSessionStore, githubClient }) {
         throw new Error("PIPELINE_APP_ID and PIPELINE_APP_PRIVATE_KEY must be configured on the platform");
       }
       await githubClient.upsertActionsVariable(token, owner, repo, {
+        name: "PIPELINE_ACTIVE",
+        value: "true",
+      });
+      await githubClient.upsertActionsVariable(token, owner, repo, {
         name: "PIPELINE_APP_ID",
         value: PIPELINE_APP_ID,
       });

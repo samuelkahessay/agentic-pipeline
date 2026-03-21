@@ -32,7 +32,7 @@ concurrency:
 jobs:
   route-failure:
     runs-on: ubuntu-latest
-    if: github.event.workflow_run.conclusion == 'failure'
+    if: vars.PIPELINE_ACTIVE != 'false' && github.event.workflow_run.conclusion == 'failure'
     timeout-minutes: 15
     env:
       PIPELINE_HEALING_ENABLED: ${{ vars.PIPELINE_HEALING_ENABLED }}

@@ -21,6 +21,7 @@ jobs:
     # label is therefore the trusted ingress gate. Actionability is decided
     # inside the workflow via classify-pipeline-issue.sh.
     if: |
+      vars.PIPELINE_ACTIVE != 'false' &&
       !startsWith(github.event.issue.title, '[CI Incident]') &&
       github.event.issue.title != '[Pipeline] Status' &&
       !contains(github.event.issue.labels.*.name, 'report') &&

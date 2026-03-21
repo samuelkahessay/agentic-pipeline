@@ -15,6 +15,21 @@ function verifySignature(secret, payload, signature) {
   return crypto.timingSafeEqual(expectedBuffer, providedBuffer);
 }
 
+async function deactivatePipeline(serviceResolver, session) {
+  if (!session?.github_repo || !session?.app_installation_id) return;
+  try {
+    const [owner, repo] = session.github_repo.split("/");
+    const { githubClient } = serviceResolver.forSession(session.id);
+    const token = await githubClient.getInstallationToken(session.app_installation_id);
+    await githubClient.upsertActionsVariable(token, owner, repo, {
+      name: "PIPELINE_ACTIVE",
+      value: "false",
+    });
+  } catch (err) {
+    console.error("Failed to deactivate pipeline:", err.message);
+  }
+}
+
 function registerWebhookRoutes(app, { db, buildSessionStore, serviceResolver }) {
   const secret = process.env.GITHUB_APP_WEBHOOK_SECRET;
 
@@ -373,6 +388,7 @@ function handleWorkflowRunEvent(buildSessionStore, session, action, payload) {
           detail: "Deployment validated. The beta run is complete.",
         },
       });
+      deactivatePipeline(serviceResolver, session);
       return;
     }
 
@@ -397,6 +413,7 @@ function handleWorkflowRunEvent(buildSessionStore, session, action, payload) {
         detail: "Repo handoff is ready. Deployment was not configured for this beta run.",
       },
     });
+    deactivatePipeline(serviceResolver, session);
   }
 }
 

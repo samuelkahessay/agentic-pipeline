@@ -27,6 +27,7 @@ concurrency:
 
 jobs:
   watchdog:
+    if: vars.PIPELINE_ACTIVE != 'false'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
