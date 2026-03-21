@@ -8,6 +8,9 @@ export function BottomCta() {
         Email your PRD — a doc, a rough brief, a few paragraphs. We reply with
         scope and a timeline.
       </p>
+      <p className={styles.contact}>
+        <a href="mailto:kahessay@icloud.com?subject=PRD%20Submission">kahessay@icloud.com</a>
+      </p>
       <a href="/build" className={styles.ctaPrimary}>Send your PRD</a>
       <a
         href="https://github.com/samuelkahessay/prd-to-prod"

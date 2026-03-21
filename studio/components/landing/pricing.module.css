@@ -165,6 +165,19 @@
   inset: 0;
 }
 
+.contactNote {
+  font-size: 13px;
+  color: var(--ink-muted);
+  text-align: center;
+  margin-top: 12px;
+}
+
+.contactLink {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 .ctaOutline {
   display: block;
   text-align: center;

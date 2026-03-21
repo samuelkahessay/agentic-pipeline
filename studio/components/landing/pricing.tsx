@@ -30,6 +30,10 @@ export function Pricing() {
           </ul>
 
           <a href="/build" className={styles.ctaPrimary}>Send your PRD</a>
+          <p className={styles.contactNote}>
+            Email <a href="mailto:kahessay@icloud.com?subject=PRD%20Submission" className={styles.contactLink}>kahessay@icloud.com</a> with
+            your PRD to get an access code.
+          </p>
         </div>
 
         <div className={styles.card}>
