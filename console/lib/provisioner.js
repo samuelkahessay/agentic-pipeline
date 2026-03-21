@@ -278,7 +278,7 @@ function createProvisioner({ db, buildSessionStore, githubClient }) {
         templateRepo: TEMPLATE_REPO,
         owner: user.github_login,
         name: repoName,
-        isPrivate: true,
+        isPrivate: false,
       });
     } catch (error) {
       emitEvent(sessionId, "provision", "repo_creating", {
