@@ -4,33 +4,9 @@
 
 This is **prd-to-prod** — an autonomous software pipeline powered by gh-aw (GitHub Agentic Workflows). Issues labeled `pipeline` are picked up by the `repo-assist` agent, which implements them, opens PRs, and the review/merge chain handles the rest. No human writes implementation code.
 
-## Our role
-
-We write **design briefs as GitHub issues**, not code. The pipeline agents do the implementation.
-
-- Describe *what* should change and *why*, not *how* (no file paths, no diffs, no implementation details)
-- Use the issue format established in past issues (#201, #202, #205): Problem → Solution → Layout/Behavior → Scope → Design Constraints → Anti-Slop Rules → Acceptance Criteria
-- Label issues with `feature, pipeline` or `bug, pipeline` so auto-dispatch picks them up
-- Acceptance criteria are the contract — the PR review agent verifies against them
-
 **Exception:** `.github/workflows/` changes (pipeline infrastructure) are done directly, not through issues.
 
-## Current goal: pipeline reliability and documentation accuracy
-
-The autonomous pipeline pattern — where AI builds, reviews, and deploys while humans own policy and compliance decisions — must be structurally sound, not just narratively plausible.
-
-**The failure mode we're defending against is that the strongest claim (structural enforcement of the human boundary) is stronger in narrative than in implementation.** Every fix should close a gap between what the documentation says and what the code actually does.
-
-Key enforcement boundaries:
-
-- **Autonomy policy** (`autonomy-policy.yml`) — glob patterns must actually match the compliance files they claim to gate. Regression tests prevent drift.
-- **Decision state machine** — constrained enum (`Approved`/`Rejected`), HUMAN_REQUIRED-only decisions, no duplicates. The state space should be small enough to reason about completely.
-- **Operator authentication** — cookie-based auth on decision endpoints. API endpoints return 401, not 302. `operatorId` comes from authenticated identity, not user-supplied text.
-- **Runtime controls** — demo bypass is environment-gated, destructive endpoints require auth, rate limiting on public mutation endpoints.
-- **Persistence** — SQLite with FK enforcement. Compliance decisions survive restarts. Durable audit trail.
-- **Documentation accuracy** — every claim in README and operator surfaces must be exactly true at the implementation level. No aspirational copy.
-
-When making changes, ask: "If someone reads this claim and then reads the code, will the code back it up?"
+## Current goal: E2E Successful Run 
 
 ## gh-aw upstream bugs
 
@@ -38,10 +14,13 @@ gh-aw is in early technical preview. When discussing gh-aw bugs — issues we fi
 
 **"Check status of findings"** means: read `VERIFICATION.md` in the findings directory, then fetch the actual gh-aw release notes (`gh release view <version> --json body`) for each release that shipped our fixes, and verify credits in the Community Contributions section. Update VERIFICATION.md with any corrections (credit counts, statuses, new releases).
 
+When discussing upstream findings, use gh commands to see if our issues have been worked on / commented on / closed / any activity 
+
 ## Working style
 
 - When exploring the codebase or investigating an issue, start with the specific files/folders mentioned before doing broad exploration. Do not autonomously explore unrelated parts of the repo unless asked.
 - Never fabricate or assume details about PRs, issue statuses, release dates, or external resources. Always read the actual source (PR conversations, issue threads, release notes) before writing about them. If you can't access the source, say so explicitly.
+- 
 - Do not claim a process succeeded (build running, server started, deployment complete) until you have verified the actual output. Check exit codes, logs, and process status before reporting success.
 
 ## Development guardrails
