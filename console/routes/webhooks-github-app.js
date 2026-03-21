@@ -295,17 +295,23 @@ function handleWorkflowRunEvent(buildSessionStore, session, action, payload) {
     return;
   }
 
-  buildSessionStore.upsertRef(session.id, {
-    type: "workflow_run",
-    key: run.name,
-    value: String(run.id),
-    metadata: {
-      url: run.html_url,
-      status: run.status,
-      conclusion: run.conclusion,
-    },
-  });
+  const stage = workflowStage(run.name);
 
+  // Always track ref for meaningful workflows; skip infrastructure noise entirely
+  if (stage !== "noise") {
+    buildSessionStore.upsertRef(session.id, {
+      type: "workflow_run",
+      key: run.name,
+      value: String(run.id),
+      metadata: {
+        url: run.html_url,
+        status: run.status,
+        conclusion: run.conclusion,
+      },
+    });
+  }
+
+  // --- in_progress: emit agent_started for meaningful workflows ---
   if (action === "requested" || action === "in_progress") {
     if (run.name === "Deploy to Vercel") {
       buildSessionStore.appendEvent(session.id, {
@@ -317,6 +323,17 @@ function handleWorkflowRunEvent(buildSessionStore, session, action, payload) {
           detail: "Deployment workflow started.",
         },
       });
+    } else if (stage === "decompose" || stage === "implementation" || stage === "review") {
+      buildSessionStore.appendEvent(session.id, {
+        category: "build",
+        kind: "agent_started",
+        data: {
+          stage,
+          workflowRunId: run.id,
+          workflowRunUrl: run.html_url,
+          detail: `${run.name} is running.`,
+        },
+      });
     }
     return;
   }
@@ -325,7 +342,34 @@ function handleWorkflowRunEvent(buildSessionStore, session, action, payload) {
     return;
   }
 
-  const stalledStage = workflowStage(run.name);
+  // --- completed: suppress noise workflows entirely ---
+  if (stage === "noise") {
+    return;
+  }
+
+  // --- completed + success: emit agent_completed ---
+  if (run.conclusion === "success") {
+    if (stage === "decompose" || stage === "implementation" || stage === "review") {
+      buildSessionStore.appendEvent(session.id, {
+        category: "build",
+        kind: "agent_completed",
+        data: {
+          stage,
+          workflowRunId: run.id,
+          workflowRunUrl: run.html_url,
+          detail: `${run.name} completed successfully.`,
+        },
+      });
+    }
+    // Fall through to deployment-specific success handling below
+  }
+
+  // --- completed + skipped: silent ---
+  if (run.conclusion === "skipped") {
+    return;
+  }
+
+  // --- completed + failure/cancelled/timed_out on meaningful workflows ---
   const failureCount = buildSessionStore
     .getRefs(session.id, { type: "workflow_run", key: run.name })
     .filter((ref) =>
@@ -333,20 +377,25 @@ function handleWorkflowRunEvent(buildSessionStore, session, action, payload) {
     ).length;
 
   if (run.conclusion === "failure" || run.conclusion === "cancelled" || run.conclusion === "timed_out") {
+    // Cancellations on implementation agents are normal (concurrency groups); don't stall
+    if (run.conclusion === "cancelled" && stage === "implementation") {
+      return;
+    }
+
     buildSessionStore.updateSession(session.id, { status: "stalled" });
     buildSessionStore.appendEvent(session.id, {
-      category: stalledStage === "deploy" ? "delivery" : "build",
+      category: stage === "deploy" ? "delivery" : "build",
       kind:
-        stalledStage === "implementation" && failureCount >= 3
+        stage === "implementation" && failureCount >= 3
           ? "provider_retry_exhausted"
           : "pipeline_stalled",
       data: {
-        stage: stalledStage,
+        stage,
         workflowRunId: run.id,
         workflowRunUrl: run.html_url,
         attemptCount: failureCount,
         detail:
-          stalledStage === "implementation" && failureCount >= 3
+          stage === "implementation" && failureCount >= 3
             ? `${run.name} exhausted the beta retry budget after ${failureCount} failed attempts.`
             : `${run.name} completed with ${run.conclusion}.`,
       },
@@ -423,6 +472,20 @@ function workflowStage(name) {
   if (name === "Pipeline Repo Assist" || name === "Frontend Agent") return "implementation";
   if (name === "Pipeline Review Agent") return "review";
   if (name === "Deploy to Vercel" || name === "Validate Deployment") return "deploy";
+  // Infrastructure workflows that produce noise — suppress from build activity
+  if (
+    name === "Auto-Dispatch Pipeline Issues" ||
+    name === "Auto-Dispatch Requeue" ||
+    name === "Copilot Setup Steps" ||
+    name === "CI Failure Router" ||
+    name === "CI Failure Resolver" ||
+    name === "CI Failure Doctor" ||
+    name === "Deploy Router" ||
+    name === "Agentics Maintenance" ||
+    name === "Pipeline Watchdog"
+  ) {
+    return "noise";
+  }
   return "pipeline";
 }
 
