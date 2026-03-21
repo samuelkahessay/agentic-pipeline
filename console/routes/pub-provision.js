@@ -83,6 +83,12 @@ function registerProvisionRoutes(app, { db, serviceResolver }) {
       return res.status(400).json({ error: "COPILOT_GITHUB_TOKEN is required" });
     }
 
+    if (credentials.COPILOT_GITHUB_TOKEN.startsWith("ghp_")) {
+      return res.status(400).json({
+        error: "Classic PATs (ghp_...) are not supported. Please create a fine-grained PAT (github_pat_...) at https://github.com/settings/personal-access-tokens/new",
+      });
+    }
+
     for (const { key } of BYOK_CREDENTIALS) {
       const value = credentials[key];
       if (typeof value === "string" && value.length > 0) {

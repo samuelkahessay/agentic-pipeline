@@ -721,14 +721,14 @@ function ByokForm({
     <div className={styles.gateForm}>
       <p className={styles.gateLabel}>Configure your pipeline</p>
       <p className={styles.copy}>
-        Paste a GitHub personal access token with Copilot scope. This token powers the AI agents that build your app.
+        Paste a fine-grained GitHub personal access token with Copilot scope. Classic PATs (ghp_) are not supported — create one at github.com/settings/personal-access-tokens/new.
         Vercel credentials are optional; without them, the run still finishes in repo handoff mode.
       </p>
       <div className={styles.gateFormFields}>
         <input
           className={styles.gateInput}
           type="password"
-          placeholder="ghp_..."
+          placeholder="github_pat_..."
           value={copilotToken}
           onChange={(e) => setCopilotToken(e.target.value)}
           disabled={submitting}
@@ -763,7 +763,7 @@ function ByokForm({
       <div className={styles.actions}>
         <button
           className={styles.button}
-          disabled={submitting || copilotToken.trim().length < 10}
+          disabled={submitting || copilotToken.trim().length < 10 || copilotToken.trim().startsWith("ghp_")}
           onClick={handleSubmit}
           type="button"
         >

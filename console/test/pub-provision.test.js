@@ -237,7 +237,7 @@ test("credential submission writes an audit event with deployConfigured", async 
         Cookie: "build_session=session-1",
       },
       body: JSON.stringify({
-        COPILOT_GITHUB_TOKEN: "ghp_1234567890",
+        COPILOT_GITHUB_TOKEN: "github_pat_1234567890abcdef",
         VERCEL_TOKEN: "vercel-token",
         VERCEL_ORG_ID: "team_123",
         VERCEL_PROJECT_ID: "prj_123",
