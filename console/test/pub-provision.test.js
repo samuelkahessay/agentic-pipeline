@@ -294,6 +294,50 @@ test("provision is idempotent for a bootstrapping session", async () => {
   expect(provisioner.provisionRepo).not.toHaveBeenCalled();
 });
 
+test("provision remints an oauth grant from the active browser session when missing", async () => {
+  db.prepare("DELETE FROM oauth_grants").run();
+  db.prepare(
+    `INSERT INTO access_codes (code_hash, created_at, issuer, redeemed_by, redeemed_at, build_session_id)
+     VALUES ('test-hash-3', '2026-03-14T00:00:00Z', 'test', 'user-1', '2026-03-14T00:00:00Z', 'credentials-build')`
+  ).run();
+  db.prepare(
+    `UPDATE user_sessions
+     SET github_access_token = 'encrypted-browser-token'
+     WHERE id = 'session-1'`
+  ).run();
+
+  const provisioner = {
+    provisionRepo: jest.fn().mockResolvedValue({
+      sessionId: "credentials-build",
+      status: "awaiting_install",
+      installRequired: true,
+      installUrl: "https://github.com/apps/prd-to-prod-pipeline/installations/new",
+    }),
+    createPrdIssue: jest.fn(),
+    launchPipeline: jest.fn(),
+  };
+  const buildRunner = {
+    dispatchBuild: jest.fn(),
+  };
+
+  await withServer(db, { provisioner, buildRunner }, async (server) => {
+    const response = await fetch(makeUrl(server, "/pub/build-session/credentials-build/provision"), {
+      method: "POST",
+      headers: {
+        Cookie: "build_session=session-1",
+      },
+    });
+
+    expect(response.status).toBe(200);
+  });
+
+  const grant = db
+    .prepare("SELECT github_access_token FROM oauth_grants WHERE user_id = 'user-1'")
+    .get();
+  expect(grant.github_access_token).toBe("encrypted-browser-token");
+  expect(provisioner.provisionRepo).toHaveBeenCalledWith("credentials-build");
+});
+
 test("provision forwards an optional repoName override", async () => {
   db.prepare(
     `INSERT INTO access_codes (code_hash, created_at, issuer, redeemed_by, redeemed_at, build_session_id)

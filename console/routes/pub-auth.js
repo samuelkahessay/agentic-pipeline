@@ -6,6 +6,7 @@ const {
   getActiveUserSession,
   purgeExpiredAuthState,
   replaceOAuthGrant,
+  resolveOAuthGrantTtlMs,
 } = require("../lib/auth-store");
 const { encrypt } = require("../lib/crypto");
 
@@ -21,14 +22,6 @@ function normalizeReturnTo(returnTo) {
     return "/build";
   }
   return returnTo;
-}
-
-function resolveOAuthGrantTtlMs() {
-  const parsed = Number.parseInt(process.env.GITHUB_OAUTH_GRANT_TTL_MS || "", 10);
-  if (Number.isFinite(parsed) && parsed > 0) {
-    return parsed;
-  }
-  return 60 * 60 * 1000;
 }
 
 function registerPubAuthRoutes(app, { db }) {
@@ -113,6 +106,7 @@ function registerPubAuthRoutes(app, { db }) {
       }
 
       const accessToken = tokenData.access_token;
+      const encryptedAccessToken = encrypt(accessToken);
 
       // Fetch user profile
       const userRes = await fetch("https://api.github.com/user", {
@@ -155,6 +149,7 @@ function registerPubAuthRoutes(app, { db }) {
         userId,
         createdAt: now,
         expiresAt,
+        encryptedGithubAccessToken: encryptedAccessToken,
       });
 
       // Store OAuth token as a temporary provisioning grant.
@@ -166,7 +161,7 @@ function registerPubAuthRoutes(app, { db }) {
 
       replaceOAuthGrant(db, {
         userId,
-        encryptedAccessToken: encrypt(accessToken),
+        encryptedAccessToken,
         createdAt: now,
         expiresAt: grantExpires,
       });

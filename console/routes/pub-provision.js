@@ -1,4 +1,4 @@
-const { getActiveUserSession } = require("../lib/auth-store");
+const { ensureOAuthGrantForSession, getActiveUserSession } = require("../lib/auth-store");
 const { encrypt } = require("../lib/crypto");
 const { createAccessCodeStore } = require("../lib/access-codes");
 const { createBuildSessionStore } = require("../lib/build-session-store");
@@ -168,6 +168,10 @@ function registerProvisionRoutes(app, { db, serviceResolver }) {
     }
 
     try {
+      if (!session.is_demo) {
+        ensureOAuthGrantForSession(db, req.cookies?.build_session);
+      }
+
       const { provisioner } = serviceResolver.forSession(session.id);
       const result = parsedOptions.options
         ? await provisioner.provisionRepo(session.id, parsedOptions.options)

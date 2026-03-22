@@ -70,6 +70,7 @@ function createDatabase(dataDir) {
     CREATE TABLE IF NOT EXISTS user_sessions (
       id TEXT PRIMARY KEY,
       user_id TEXT NOT NULL REFERENCES users(id),
+      github_access_token TEXT,
       created_at TEXT NOT NULL,
       expires_at TEXT NOT NULL
     );
@@ -206,6 +207,12 @@ function createDatabase(dataDir) {
   // Safe migration for existing databases
   try {
     db.exec("ALTER TABLE build_sessions ADD COLUMN is_demo INTEGER NOT NULL DEFAULT 0");
+  } catch {
+    // Column already exists — ignore
+  }
+
+  try {
+    db.exec("ALTER TABLE user_sessions ADD COLUMN github_access_token TEXT");
   } catch {
     // Column already exists — ignore
   }

@@ -5,6 +5,7 @@ const path = require("path");
 const { createDatabase } = require("../lib/db");
 const {
   createUserSession,
+  ensureOAuthGrantForSession,
   getActiveUserSession,
   purgeExpiredAuthState,
   replaceOAuthGrant,
@@ -90,4 +91,32 @@ test("replaceOAuthGrant keeps only the latest grant per user", () => {
     .all();
 
   expect(grants).toEqual([{ id: "grant-b", github_access_token: "token-b" }]);
+});
+
+test("ensureOAuthGrantForSession remints a grant from the active browser session token", () => {
+  createUserSession(db, {
+    userId: "u1",
+    createdAt: "2026-03-13T00:00:00Z",
+    expiresAt: "2026-03-13T02:00:00Z",
+    encryptedGithubAccessToken: "encrypted-session-token",
+    sessionId: "active-session",
+  });
+
+  const grant = ensureOAuthGrantForSession(db, "active-session", {
+    now: "2026-03-13T01:00:00Z",
+    ttlMs: 15 * 60 * 1000,
+  });
+
+  expect(grant).toEqual(
+    expect.objectContaining({
+      user_id: "u1",
+      github_access_token: "encrypted-session-token",
+    })
+  );
+
+  const stored = db
+    .prepare("SELECT github_access_token, expires_at FROM oauth_grants WHERE user_id = 'u1'")
+    .get();
+  expect(stored.github_access_token).toBe("encrypted-session-token");
+  expect(stored.expires_at).toBe("2026-03-13T01:15:00.000Z");
 });

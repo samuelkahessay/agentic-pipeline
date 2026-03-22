@@ -106,8 +106,12 @@ test("oauth callback stores a one-hour provisioning grant by default", async () 
   const grant = db
     .prepare("SELECT created_at, expires_at FROM oauth_grants ORDER BY created_at DESC LIMIT 1")
     .get();
+  const browserSession = db
+    .prepare("SELECT github_access_token FROM user_sessions ORDER BY created_at DESC LIMIT 1")
+    .get();
 
   const ttl = Date.parse(grant.expires_at) - Date.parse(grant.created_at);
   expect(ttl).toBeGreaterThanOrEqual(60 * 60 * 1000);
   expect(ttl).toBeLessThanOrEqual(60 * 60 * 1000 + 50);
+  expect(browserSession.github_access_token).toBeTruthy();
 });

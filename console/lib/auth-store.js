@@ -1,5 +1,13 @@
 const crypto = require("crypto");
 
+function resolveOAuthGrantTtlMs() {
+  const parsed = Number.parseInt(process.env.GITHUB_OAUTH_GRANT_TTL_MS || "", 10);
+  if (Number.isFinite(parsed) && parsed > 0) {
+    return parsed;
+  }
+  return 60 * 60 * 1000;
+}
+
 function purgeExpiredAuthState(db, now = new Date().toISOString()) {
   const runCleanup = db.transaction((timestamp) => {
     const expiredSessions = db
@@ -21,11 +29,17 @@ function purgeExpiredAuthState(db, now = new Date().toISOString()) {
   return runCleanup(now);
 }
 
-function createUserSession(db, { userId, createdAt, expiresAt, sessionId = crypto.randomUUID() }) {
+function createUserSession(db, {
+  userId,
+  createdAt,
+  expiresAt,
+  encryptedGithubAccessToken = null,
+  sessionId = crypto.randomUUID(),
+}) {
   db.prepare(
-    `INSERT INTO user_sessions (id, user_id, created_at, expires_at)
-     VALUES (?, ?, ?, ?)`
-  ).run(sessionId, userId, createdAt, expiresAt);
+    `INSERT INTO user_sessions (id, user_id, github_access_token, created_at, expires_at)
+     VALUES (?, ?, ?, ?, ?)`
+  ).run(sessionId, userId, encryptedGithubAccessToken, createdAt, expiresAt);
 
   return sessionId;
 }
@@ -78,12 +92,63 @@ function deleteActiveOAuthGrantsForUser(db, userId) {
 function getActiveUserSession(db, sessionId, now = new Date().toISOString()) {
   return db
     .prepare(
-      `SELECT us.user_id, us.expires_at, u.github_id, u.github_login, u.github_avatar_url
+      `SELECT us.id AS session_id, us.user_id, us.github_access_token, us.expires_at,
+              u.github_id, u.github_login, u.github_avatar_url
        FROM user_sessions us
        JOIN users u ON u.id = us.user_id
        WHERE us.id = ? AND us.expires_at > ?`
     )
     .get(sessionId, now);
+}
+
+function ensureOAuthGrantForSession(
+  db,
+  sessionId,
+  {
+    now = new Date().toISOString(),
+    ttlMs = resolveOAuthGrantTtlMs(),
+  } = {}
+) {
+  const session = getActiveUserSession(db, sessionId, now);
+  if (!session) {
+    return null;
+  }
+
+  const existingGrant = db
+    .prepare(
+      `SELECT *
+       FROM oauth_grants
+       WHERE user_id = ? AND consumed_at IS NULL AND expires_at > ?
+       ORDER BY created_at DESC
+       LIMIT 1`
+    )
+    .get(session.user_id, now);
+
+  if (existingGrant) {
+    return existingGrant;
+  }
+
+  if (!session.github_access_token) {
+    return null;
+  }
+
+  const expiresAt = new Date(Date.parse(now) + ttlMs).toISOString();
+  replaceOAuthGrant(db, {
+    userId: session.user_id,
+    encryptedAccessToken: session.github_access_token,
+    createdAt: now,
+    expiresAt,
+  });
+
+  return db
+    .prepare(
+      `SELECT *
+       FROM oauth_grants
+       WHERE user_id = ? AND consumed_at IS NULL AND expires_at > ?
+       ORDER BY created_at DESC
+       LIMIT 1`
+    )
+    .get(session.user_id, now);
 }
 
 function startAuthStateCleanup(db, {
@@ -110,8 +175,10 @@ module.exports = {
   createUserSession,
   deleteActiveOAuthGrantsForUser,
   deleteUserSession,
+  ensureOAuthGrantForSession,
   getActiveUserSession,
   purgeExpiredAuthState,
   replaceOAuthGrant,
+  resolveOAuthGrantTtlMs,
   startAuthStateCleanup,
 };
