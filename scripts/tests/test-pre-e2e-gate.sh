@@ -134,6 +134,10 @@ EOF
 cat > "$TMPDIR/bin/curl" <<'EOF'
 #!/bin/bash
 printf 'curl %s\n' "$*" >> "$LOG_FILE"
+if printf '%s\n' "$*" | grep -q -- "--config"; then
+  printf '%s' "${TEST_OPENAI_PROBE_STATUS:-200}"
+  exit 0
+fi
 if printf '%s\n' "$*" | grep -q "githubstatus.com"; then
   cat <<JSON
 {"components":[{"name":"Actions","status":"operational"}]}
@@ -192,6 +196,7 @@ export OPENAI_API_KEY="sk-or-v1-local"
 export GH_AW_GITHUB_TOKEN="ghp_local_token"
 export PIPELINE_APP_ID="12345"
 export PIPELINE_APP_PRIVATE_KEY="private-key"
+export TEST_OPENAI_PROBE_STATUS="200"
 export REAL_NODE_BIN
 
 run_and_capture() {
@@ -207,6 +212,11 @@ OUTPUT_SKIP=$(run_and_capture --skip-live)
 
 if ! printf '%s\n' "$OUTPUT_SKIP" | grep -qF "Local: console preflight required checks pass"; then
   echo "FAIL: expected local preflight check in output" >&2
+  exit 1
+fi
+
+if ! printf '%s\n' "$OUTPUT_SKIP" | grep -qF "Local: resolved AI API key authenticates with OpenAI"; then
+  echo "FAIL: expected local AI key auth probe in output" >&2
   exit 1
 fi
 
@@ -261,6 +271,19 @@ OUTPUT_DETACHED=$(TEST_GIT_BRANCH=HEAD PRE_E2E_ALLOW_DETACHED_HEAD=1 run_and_cap
 
 if ! printf '%s\n' "$OUTPUT_DETACHED" | grep -qF "PASS ("; then
   echo "FAIL: expected detached HEAD pinned to main to pass when explicitly allowed" >&2
+  exit 1
+fi
+
+TEST_OPENAI_PROBE_STATUS="401"
+OUTPUT_BAD_KEY=$(run_and_capture --skip-live)
+
+if ! printf '%s\n' "$OUTPUT_BAD_KEY" | grep -qF "Resolved local AI API key was rejected by OpenAI (HTTP 401)."; then
+  echo "FAIL: expected invalid local AI key to fail fast" >&2
+  exit 1
+fi
+
+if ! printf '%s\n' "$OUTPUT_BAD_KEY" | grep -qF "FAIL ("; then
+  echo "FAIL: expected gate to fail when the local AI key is invalid" >&2
   exit 1
 fi
 

@@ -134,6 +134,60 @@ NODE
   printf '%s\n' "$output"
 }
 
+resolve_local_ai_api_key() {
+  local candidate=""
+
+  for candidate in \
+    "${E2E_OPENAI_API_KEY:-}" \
+    "${PUBLIC_BETA_OPENAI_API_KEY:-}" \
+    "${OPENAI_API_KEY:-}" \
+    "${OPENROUTER_API_KEY:-}"
+  do
+    if [ -n "$candidate" ]; then
+      printf '%s' "$candidate"
+      return 0
+    fi
+  done
+
+  return 1
+}
+
+probe_openai_api_key() {
+  local token="$1"
+  local url="${PRE_E2E_OPENAI_PROBE_URL:-https://api.openai.com/v1/models}"
+
+  curl -sS -o /dev/null -w '%{http_code}' --max-time 20 --config - <<EOF
+url = "$url"
+header = "Authorization: Bearer $token"
+header = "Content-Type: application/json"
+EOF
+}
+
+check_local_agent_api_key() {
+  local token status
+  token=$(resolve_local_ai_api_key || true)
+  if [ -z "$token" ]; then
+    echo "No local AI API key resolved for the E2E harness." >&2
+    return 1
+  fi
+
+  status=$(probe_openai_api_key "$token" 2>/dev/null || true)
+  case "$status" in
+    200)
+      printf "Resolved local AI API key authenticated with OpenAI.\n"
+      return 0
+      ;;
+    401|403)
+      echo "Resolved local AI API key was rejected by OpenAI (HTTP $status)." >&2
+      return 1
+      ;;
+    *)
+      echo "Resolved local AI API key probe returned unexpected status '$status'." >&2
+      return 1
+      ;;
+  esac
+}
+
 ensure_node_dependencies() {
   local app_dir="$1"
   local app_name="$2"
@@ -259,6 +313,7 @@ check_runtime_pipeline_app_private_key() {
 run_check "Source: on main branch" check_main_branch
 run_check "Source: working tree is clean" check_clean_tree
 run_check "Local: console preflight required checks pass" check_console_preflight
+run_check "Local: resolved AI API key authenticates with OpenAI" check_local_agent_api_key
 
 run_check "App: console dependencies ready" ensure_node_dependencies "console" "console"
 run_check "App: studio dependencies ready" ensure_node_dependencies "studio" "studio"

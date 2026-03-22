@@ -6,7 +6,8 @@ description: |
   Can be triggered on-demand via /repo-assist <instructions>.
 
 on:
-  schedule: daily
+  schedule:
+    - cron: "47 4 * * *"
   workflow_dispatch:
     inputs:
       issue_number:
@@ -76,10 +77,6 @@ safe-outputs:
     title-prefix: "[Pipeline] "
     labels: [automation, pipeline]
     max: 2
-  create-project-status-update:
-    project: "https://github.com/users/samuelkahessay/projects/2"
-    max: 1
-    github-token: ${{ secrets.GH_AW_PROJECT_GITHUB_TOKEN }}
   add-labels:
     allowed: [feature, test, infra, docs, bug, pipeline, blocked, ready, in-progress, completed, agentic-workflows]
     max: 20
@@ -311,7 +308,11 @@ If Targeted Issue Dispatch Mode is active, Task 1 must operate only on issue `#$
 
 ### Task 5: Update Pipeline Status (ALWAYS DO THIS)
 
-Post a project status update to `https://github.com/users/samuelkahessay/projects/2` as a rolling summary.
+Write a rolling pipeline summary into repo-memory instead of posting to GitHub Projects.
+
+Update both of these files on every run:
+- `/tmp/gh-aw/repo-memory/default/status/pipeline-status.md`
+- `/tmp/gh-aw/repo-memory/default/status/pipeline-status.json`
 
 ```
 ## Pipeline Status — Updated YYYY-MM-DD
@@ -341,7 +342,9 @@ Use status:
 - `OFF_TRACK` when the pipeline is stalled
 - `COMPLETE` when no open pipeline issues/PRs remain
 
-Do NOT create or update a `[Pipeline] Status` issue for this task. Create exactly one project status update every run.
+Do NOT create or update a `[Pipeline] Status` issue for this task.
+Do NOT create a GitHub Project status update for this task.
+If no other GitHub write is needed during the run, finish with `noop`.
 
 ### Task 6: Triage Agentic Workflow Failures (ALWAYS DO THIS)
 

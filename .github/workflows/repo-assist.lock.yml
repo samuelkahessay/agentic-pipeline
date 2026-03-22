@@ -25,7 +25,7 @@
 # Also maintains its own PRs by fixing CI failures and resolving merge conflicts.
 # Can be triggered on-demand via /repo-assist <instructions>.
 #
-# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"bd8469b1512a0b9c63ff5ba800c5b58ce29ef6f96aee7a33b0eced6984da9174","compiler_version":"v0.62.5","strict":true,"agent_id":"codex","agent_model":"openai/gpt-5-codex"}
+# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"8602a1f36ab9c41eff42fc744d639abdb7e2e70af1c4838c2d180ad06798117e","compiler_version":"v0.62.5","strict":true,"agent_id":"codex","agent_model":"openai/gpt-5-codex"}
 
 name: "Pipeline Repo Assist"
 "on":
@@ -218,7 +218,7 @@ jobs:
           cat "${RUNNER_TEMP}/gh-aw/prompts/safe_outputs_prompt.md"
           cat << 'GH_AW_PROMPT_EOF'
           <safe-output-tools>
-          Tools: add_comment, create_issue, create_pull_request, add_labels, remove_labels, push_to_pull_request_branch, create_project_status_update, missing_tool, missing_data, noop
+          Tools: add_comment, create_issue, create_pull_request, add_labels, remove_labels, push_to_pull_request_branch, missing_tool, missing_data, noop
           GH_AW_PROMPT_EOF
           cat "${RUNNER_TEMP}/gh-aw/prompts/safe_outputs_create_pull_request.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/safe_outputs_push_to_pr_branch.md"
@@ -442,7 +442,7 @@ jobs:
           mkdir -p /tmp/gh-aw/safeoutputs
           mkdir -p /tmp/gh-aw/mcp-logs/safeoutputs
           cat > ${RUNNER_TEMP}/gh-aw/safeoutputs/config.json << 'GH_AW_SAFE_OUTPUTS_CONFIG_EOF'
-          {"add_comment":{"max":10,"target":"*"},"add_labels":{"allowed":["feature","test","infra","docs","bug","pipeline","blocked","ready","in-progress","completed","agentic-workflows"],"max":20,"target":"*"},"create_issue":{"max":2},"create_project_status_update":{"max":1},"create_pull_request":{"max":4,"title_prefix":"[Pipeline] "},"missing_data":{},"missing_tool":{},"noop":{"max":1},"push_repo_memory":{"memories":[{"dir":"/tmp/gh-aw/repo-memory/default","id":"default","max_file_count":100,"max_file_size":524288,"max_patch_size":102400}]},"push_to_pull_request_branch":{"max":4,"target":"*"},"remove_labels":{"allowed":["ready","in-progress","blocked"],"max":10}}
+          {"add_comment":{"max":10,"target":"*"},"add_labels":{"allowed":["feature","test","infra","docs","bug","pipeline","blocked","ready","in-progress","completed","agentic-workflows"],"max":20,"target":"*"},"create_issue":{"max":2},"create_pull_request":{"max":4,"title_prefix":"[Pipeline] "},"missing_data":{},"missing_tool":{},"noop":{"max":1},"push_repo_memory":{"memories":[{"dir":"/tmp/gh-aw/repo-memory/default","id":"default","max_file_count":100,"max_file_size":524288,"max_patch_size":102400}]},"push_to_pull_request_branch":{"max":4,"target":"*"},"remove_labels":{"allowed":["ready","in-progress","blocked"],"max":10}}
           GH_AW_SAFE_OUTPUTS_CONFIG_EOF
       - name: Write Safe Outputs Tools
         run: |
@@ -452,7 +452,6 @@ jobs:
               "add_comment": " CONSTRAINTS: Maximum 10 comment(s) can be added. Target: *.",
               "add_labels": " CONSTRAINTS: Maximum 20 label(s) can be added. Only these labels are allowed: [\"feature\" \"test\" \"infra\" \"docs\" \"bug\" \"pipeline\" \"blocked\" \"ready\" \"in-progress\" \"completed\" \"agentic-workflows\"]. Target: *.",
               "create_issue": " CONSTRAINTS: Maximum 2 issue(s) can be created. Title will be prefixed with \"[Pipeline] \". Labels [\"automation\" \"pipeline\"] will be automatically added.",
-              "create_project_status_update": " CONSTRAINTS: Maximum 1 status update(s) can be created. Default project URL: \"https://github.com/users/samuelkahessay/projects/2\".",
               "create_pull_request": " CONSTRAINTS: Maximum 4 pull request(s) can be created. Title will be prefixed with \"[Pipeline] \". Labels [\"automation\" \"pipeline\"] will be automatically added.",
               "push_to_pull_request_branch": " CONSTRAINTS: Maximum 4 push(es) can be made. The target pull request title must start with \"[Pipeline] \".",
               "remove_labels": " CONSTRAINTS: Maximum 10 label(s) can be removed. Only these labels can be removed: [ready in-progress blocked]. Target: *."
@@ -530,45 +529,6 @@ jobs:
                   "type": "string",
                   "sanitize": true,
                   "maxLength": 128
-                }
-              }
-            },
-            "create_project_status_update": {
-              "defaultMax": 10,
-              "fields": {
-                "body": {
-                  "required": true,
-                  "type": "string",
-                  "sanitize": true,
-                  "maxLength": 65536
-                },
-                "project": {
-                  "required": true,
-                  "type": "string",
-                  "sanitize": true,
-                  "maxLength": 512,
-                  "pattern": "^https://[^/]+/(orgs|users)/[^/]+/projects/\\d+",
-                  "patternError": "must be a full GitHub project URL (e.g., https://github.com/orgs/myorg/projects/42)"
-                },
-                "start_date": {
-                  "type": "string",
-                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
-                  "patternError": "must be in YYYY-MM-DD format"
-                },
-                "status": {
-                  "type": "string",
-                  "enum": [
-                    "INACTIVE",
-                    "ON_TRACK",
-                    "AT_RISK",
-                    "OFF_TRACK",
-                    "COMPLETE"
-                  ]
-                },
-                "target_date": {
-                  "type": "string",
-                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
-                  "patternError": "must be in YYYY-MM-DD format"
                 }
               }
             },
@@ -1161,7 +1121,6 @@ jobs:
           github-api-url: ${{ github.api_url }}
           permission-contents: write
           permission-issues: write
-          permission-organization-projects: write
           permission-pull-requests: write
       - name: Download agent output artifact
         id: download-agent-output
@@ -1434,7 +1393,6 @@ jobs:
         uses: github/gh-aw-actions/setup@dc50be57c94373431b49d3d0927f318ac2bb5c4c # v0.62.5
         with:
           destination: ${{ runner.temp }}/gh-aw/actions
-          safe-output-custom-tokens: 'true'
       - name: Download agent output artifact
         id: download-agent-output
         continue-on-error: true
@@ -1465,7 +1423,6 @@ jobs:
           github-api-url: ${{ github.api_url }}
           permission-contents: write
           permission-issues: write
-          permission-organization-projects: write
           permission-pull-requests: write
       - name: Checkout repository
         if: (!cancelled()) && needs.agent.result != 'skipped' && contains(needs.agent.outputs.output_types, 'create_pull_request') || (!cancelled()) && needs.agent.result != 'skipped' && contains(needs.agent.outputs.output_types, 'push_to_pull_request_branch')
@@ -1505,10 +1462,8 @@ jobs:
           GH_AW_ALLOWED_DOMAINS: "*.jsr.io,*.pythonhosted.org,*.vsblob.vsassets.io,172.30.0.1,anaconda.org,api.npms.io,api.nuget.org,api.openai.com,api.snapcraft.io,archive.ubuntu.com,azure.archive.ubuntu.com,azuresearch-usnc.nuget.org,azuresearch-ussc.nuget.org,binstar.org,bootstrap.pypa.io,builds.dotnet.microsoft.com,bun.sh,cdn.jsdelivr.net,ci.dot.net,conda.anaconda.org,conda.binstar.org,crates.io,crl.geotrust.com,crl.globalsign.com,crl.identrust.com,crl.sectigo.com,crl.thawte.com,crl.usertrust.com,crl.verisign.com,crl3.digicert.com,crl4.digicert.com,crls.ssl.com,dc.services.visualstudio.com,deb.nodesource.com,deno.land,dist.nuget.org,dot.net,dotnet.microsoft.com,dotnetcli.blob.core.windows.net,esm.sh,files.pythonhosted.org,get.pnpm.io,googleapis.deno.dev,googlechromelabs.github.io,host.docker.internal,index.crates.io,json-schema.org,json.schemastore.org,jsr.io,keyserver.ubuntu.com,nodejs.org,npm.pkg.github.com,npmjs.com,npmjs.org,nuget.org,nuget.pkg.github.com,nugetregistryv2prod.blob.core.windows.net,ocsp.digicert.com,ocsp.geotrust.com,ocsp.globalsign.com,ocsp.identrust.com,ocsp.sectigo.com,ocsp.ssl.com,ocsp.thawte.com,ocsp.usertrust.com,ocsp.verisign.com,oneocsp.microsoft.com,openai.com,packagecloud.io,packages.cloud.google.com,packages.microsoft.com,pip.pypa.io,pkgs.dev.azure.com,ppa.launchpad.net,pypi.org,pypi.python.org,registry.bower.io,registry.npmjs.com,registry.npmjs.org,registry.yarnpkg.com,repo.anaconda.com,repo.continuum.io,repo.yarnpkg.com,s.symcb.com,s.symcd.com,security.ubuntu.com,skimdb.npmjs.com,static.crates.io,storage.googleapis.com,telemetry.vercel.com,ts-crl.ws.symantec.com,ts-ocsp.ws.symantec.com,www.googleapis.com,www.microsoft.com,www.npmjs.com,www.npmjs.org,yarnpkg.com"
           GITHUB_SERVER_URL: ${{ github.server_url }}
           GITHUB_API_URL: ${{ github.api_url }}
-          GH_AW_SAFE_OUTPUTS_HANDLER_CONFIG: "{\"add_comment\":{\"hide_older_comments\":true,\"max\":10,\"target\":\"*\"},\"add_labels\":{\"allowed\":[\"feature\",\"test\",\"infra\",\"docs\",\"bug\",\"pipeline\",\"blocked\",\"ready\",\"in-progress\",\"completed\",\"agentic-workflows\"],\"max\":20,\"target\":\"*\"},\"create_issue\":{\"labels\":[\"automation\",\"pipeline\"],\"max\":2,\"title_prefix\":\"[Pipeline] \"},\"create_project_status_update\":{\"github-token\":\"${{ secrets.GH_AW_PROJECT_GITHUB_TOKEN }}\",\"max\":1,\"project\":\"https://github.com/users/samuelkahessay/projects/2\"},\"create_pull_request\":{\"draft\":false,\"labels\":[\"automation\",\"pipeline\"],\"max\":4,\"max_patch_size\":1024,\"protected_files\":[\"package.json\",\"bun.lockb\",\"bunfig.toml\",\"deno.json\",\"deno.jsonc\",\"deno.lock\",\"global.json\",\"NuGet.Config\",\"Directory.Packages.props\",\"mix.exs\",\"mix.lock\",\"go.mod\",\"go.sum\",\"stack.yaml\",\"stack.yaml.lock\",\"pom.xml\",\"build.gradle\",\"build.gradle.kts\",\"settings.gradle\",\"settings.gradle.kts\",\"gradle.properties\",\"package-lock.json\",\"yarn.lock\",\"pnpm-lock.yaml\",\"npm-shrinkwrap.json\",\"requirements.txt\",\"Pipfile\",\"Pipfile.lock\",\"pyproject.toml\",\"setup.py\",\"setup.cfg\",\"Gemfile\",\"Gemfile.lock\",\"uv.lock\",\"AGENTS.md\"],\"protected_files_policy\":\"fallback-to-issue\",\"protected_path_prefixes\":[\".github/\",\".agents/\",\".codex/\"],\"title_prefix\":\"[Pipeline] \"},\"missing_data\":{},\"missing_tool\":{},\"noop\":{\"max\":1,\"report-as-issue\":\"true\"},\"push_to_pull_request_branch\":{\"if_no_changes\":\"warn\",\"max\":4,\"max_patch_size\":1024,\"protected_files\":[\"package.json\",\"bun.lockb\",\"bunfig.toml\",\"deno.json\",\"deno.jsonc\",\"deno.lock\",\"global.json\",\"NuGet.Config\",\"Directory.Packages.props\",\"mix.exs\",\"mix.lock\",\"go.mod\",\"go.sum\",\"stack.yaml\",\"stack.yaml.lock\",\"pom.xml\",\"build.gradle\",\"build.gradle.kts\",\"settings.gradle\",\"settings.gradle.kts\",\"gradle.properties\",\"package-lock.json\",\"yarn.lock\",\"pnpm-lock.yaml\",\"npm-shrinkwrap.json\",\"requirements.txt\",\"Pipfile\",\"Pipfile.lock\",\"pyproject.toml\",\"setup.py\",\"setup.cfg\",\"Gemfile\",\"Gemfile.lock\",\"uv.lock\",\"AGENTS.md\"],\"protected_files_policy\":\"fallback-to-issue\",\"protected_path_prefixes\":[\".github/\",\".agents/\",\".codex/\"],\"target\":\"*\",\"title_prefix\":\"[Pipeline] \"},\"remove_labels\":{\"allowed\":[\"ready\",\"in-progress\",\"blocked\"],\"max\":10,\"target\":\"*\"}}"
+          GH_AW_SAFE_OUTPUTS_HANDLER_CONFIG: "{\"add_comment\":{\"hide_older_comments\":true,\"max\":10,\"target\":\"*\"},\"add_labels\":{\"allowed\":[\"feature\",\"test\",\"infra\",\"docs\",\"bug\",\"pipeline\",\"blocked\",\"ready\",\"in-progress\",\"completed\",\"agentic-workflows\"],\"max\":20,\"target\":\"*\"},\"create_issue\":{\"labels\":[\"automation\",\"pipeline\"],\"max\":2,\"title_prefix\":\"[Pipeline] \"},\"create_pull_request\":{\"draft\":false,\"labels\":[\"automation\",\"pipeline\"],\"max\":4,\"max_patch_size\":1024,\"protected_files\":[\"package.json\",\"bun.lockb\",\"bunfig.toml\",\"deno.json\",\"deno.jsonc\",\"deno.lock\",\"global.json\",\"NuGet.Config\",\"Directory.Packages.props\",\"mix.exs\",\"mix.lock\",\"go.mod\",\"go.sum\",\"stack.yaml\",\"stack.yaml.lock\",\"pom.xml\",\"build.gradle\",\"build.gradle.kts\",\"settings.gradle\",\"settings.gradle.kts\",\"gradle.properties\",\"package-lock.json\",\"yarn.lock\",\"pnpm-lock.yaml\",\"npm-shrinkwrap.json\",\"requirements.txt\",\"Pipfile\",\"Pipfile.lock\",\"pyproject.toml\",\"setup.py\",\"setup.cfg\",\"Gemfile\",\"Gemfile.lock\",\"uv.lock\",\"AGENTS.md\"],\"protected_files_policy\":\"fallback-to-issue\",\"protected_path_prefixes\":[\".github/\",\".agents/\",\".codex/\"],\"title_prefix\":\"[Pipeline] \"},\"missing_data\":{},\"missing_tool\":{},\"noop\":{\"max\":1,\"report-as-issue\":\"true\"},\"push_to_pull_request_branch\":{\"if_no_changes\":\"warn\",\"max\":4,\"max_patch_size\":1024,\"protected_files\":[\"package.json\",\"bun.lockb\",\"bunfig.toml\",\"deno.json\",\"deno.jsonc\",\"deno.lock\",\"global.json\",\"NuGet.Config\",\"Directory.Packages.props\",\"mix.exs\",\"mix.lock\",\"go.mod\",\"go.sum\",\"stack.yaml\",\"stack.yaml.lock\",\"pom.xml\",\"build.gradle\",\"build.gradle.kts\",\"settings.gradle\",\"settings.gradle.kts\",\"gradle.properties\",\"package-lock.json\",\"yarn.lock\",\"pnpm-lock.yaml\",\"npm-shrinkwrap.json\",\"requirements.txt\",\"Pipfile\",\"Pipfile.lock\",\"pyproject.toml\",\"setup.py\",\"setup.cfg\",\"Gemfile\",\"Gemfile.lock\",\"uv.lock\",\"AGENTS.md\"],\"protected_files_policy\":\"fallback-to-issue\",\"protected_path_prefixes\":[\".github/\",\".agents/\",\".codex/\"],\"target\":\"*\",\"title_prefix\":\"[Pipeline] \"},\"remove_labels\":{\"allowed\":[\"ready\",\"in-progress\",\"blocked\"],\"max\":10,\"target\":\"*\"}}"
           GH_AW_CI_TRIGGER_TOKEN: ${{ secrets.GH_AW_CI_TRIGGER_TOKEN }}
-          GH_AW_PROJECT_URL: "https://github.com/users/samuelkahessay/projects/2"
-          GH_AW_PROJECT_GITHUB_TOKEN: ${{ secrets.GH_AW_PROJECT_GITHUB_TOKEN }}
           GITHUB_TOKEN: ${{ steps.safe-outputs-app-token.outputs.token }}
         with:
           github-token: ${{ steps.safe-outputs-app-token.outputs.token }}

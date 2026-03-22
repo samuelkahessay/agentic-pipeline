@@ -123,6 +123,7 @@ dist/scaffold/scripts/tests/test-push-to-existing-golden.sh
 dist/scaffold/scripts/tests/test-push-to-existing.sh
 dist/scaffold/scripts/tests/test-push-to-pipeline-dryrun.sh
 dist/scaffold/scripts/tests/test-render-ci-repair-command.sh
+dist/scaffold/scripts/tests/test-repo-assist-no-project-status.sh
 dist/scaffold/scripts/tests/test-resolve-deployment-url.sh
 dist/scaffold/scripts/tests/test-resolve-nextjs-app-root.sh
 dist/scaffold/scripts/tests/test-retry-state.sh
