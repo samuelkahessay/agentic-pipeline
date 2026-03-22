@@ -176,6 +176,9 @@ if printf '%s\n' "$*" | grep -q "PIPELINE_APP_ID"; then
   exit 0
 fi
 if printf '%s\n' "$*" | grep -q "PIPELINE_APP_PRIVATE_KEY"; then
+  if [ "${TEST_FLY_MISSING_PRIVATE_KEY:-0}" = "1" ]; then
+    exit 0
+  fi
   printf 'private-key'
   exit 0
 fi
@@ -197,6 +200,7 @@ export GH_AW_GITHUB_TOKEN="ghp_local_token"
 export PIPELINE_APP_ID="12345"
 export PIPELINE_APP_PRIVATE_KEY="private-key"
 export TEST_OPENAI_PROBE_STATUS="200"
+export TEST_FLY_MISSING_PRIVATE_KEY="0"
 export REAL_NODE_BIN
 
 run_and_capture() {
@@ -262,6 +266,21 @@ if ! printf '%s\n' "$OUTPUT_REMOTE" | grep -qF "PASS ("; then
   echo "FAIL: expected PASS summary from remote-harness gate" >&2
   exit 1
 fi
+
+TEST_FLY_MISSING_PRIVATE_KEY="1"
+OUTPUT_REMOTE_ADVISORY=$(run_and_capture --remote-harness)
+
+if ! printf '%s\n' "$OUTPUT_REMOTE_ADVISORY" | grep -qF "treating this as advisory in remote-harness mode"; then
+  echo "FAIL: expected missing remote private key to downgrade to advisory in remote-harness mode" >&2
+  exit 1
+fi
+
+if ! printf '%s\n' "$OUTPUT_REMOTE_ADVISORY" | grep -qF "PASS ("; then
+  echo "FAIL: expected remote-harness gate to pass when the runtime private key check is advisory" >&2
+  exit 1
+fi
+
+TEST_FLY_MISSING_PRIVATE_KEY="0"
 
 export GH_AW_GITHUB_TOKEN="ghp_local_token"
 export PIPELINE_APP_ID="12345"
