@@ -80,6 +80,7 @@ maybe_reexec_in_clean_worktree() {
     "E2E_RUNTIME_ENV_FILE=$ENV_FILE"
     "E2E_COOKIE_JAR_PATH=$COOKIE_JAR_PATH"
     "PRE_E2E_ALLOW_DETACHED_HEAD=1"
+    "SKIP_E2E_PROVISION_SMOKE_TEST=1"
   )
 
   if [[ -n "${E2E_RUNTIME_ENV_SCRIPT:-}" ]]; then
