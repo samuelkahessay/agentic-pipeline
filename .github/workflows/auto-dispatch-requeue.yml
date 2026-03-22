@@ -15,6 +15,9 @@ concurrency:
   group: auto-dispatch-requeue
   cancel-in-progress: false
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 jobs:
   requeue:
     # Skip runs where repo-assist had no activation (skipped) or was cancelled mid-run.

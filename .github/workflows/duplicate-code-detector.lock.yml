@@ -38,6 +38,9 @@ concurrency:
 
 run-name: "Duplicate Code Detector"
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 jobs:
   activation:
     runs-on: ubuntu-slim

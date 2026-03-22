@@ -56,6 +56,9 @@ permissions:
 # ---------------------------------------------------------------------------
 # Job 1: issue_comment trigger — automated path
 # ---------------------------------------------------------------------------
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 jobs:
   submit-review-comment:
     runs-on: ubuntu-latest

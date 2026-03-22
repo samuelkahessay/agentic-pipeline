@@ -21,6 +21,9 @@ concurrency:
   group: "close-issues-${{ github.event.pull_request.number }}"
   cancel-in-progress: false
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 jobs:
   close-issues:
     runs-on: ubuntu-latest

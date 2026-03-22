@@ -47,6 +47,9 @@ concurrency:
 
 run-name: "Security Compliance Campaign"
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 jobs:
   activation:
     runs-on: ubuntu-slim

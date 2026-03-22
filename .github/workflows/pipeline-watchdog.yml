@@ -25,6 +25,9 @@ concurrency:
   group: "pipeline-watchdog"
   cancel-in-progress: false
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 jobs:
   watchdog:
     if: vars.PIPELINE_ACTIVE != 'false'

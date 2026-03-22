@@ -43,6 +43,9 @@ concurrency:
 
 run-name: "Code Simplifier"
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 jobs:
   activation:
     needs: pre_activation
