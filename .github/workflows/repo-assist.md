@@ -48,7 +48,6 @@ permissions: read-all
 network:
   allowed:
   - defaults
-  - openrouter.ai
   - node
   - python
   - dotnet

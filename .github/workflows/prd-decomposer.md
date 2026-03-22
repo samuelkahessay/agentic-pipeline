@@ -29,7 +29,6 @@ permissions: read-all
 network:
   allowed:
     - defaults
-    - openrouter.ai
 
 safe-outputs:
   github-app:
