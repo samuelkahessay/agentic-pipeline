@@ -41,6 +41,7 @@ E2E_RUNTIME_ENV_SCRIPT="$RUNTIME_ENV_SCRIPT" \
 E2E_HARNESS_SCRIPT="$HARNESS_SCRIPT" \
 E2E_RUNTIME_ENV_FILE="$ENV_FILE" \
 E2E_COOKIE_JAR_PATH="$COOKIE_JAR" \
+E2E_PROVISION_SMOKE_DISABLE_WORKTREE=1 \
 bash "$SCRIPT" >/dev/null
 
 if ! grep -qF "runtime-env refresh --path $ENV_FILE" "$CALLS_FILE"; then
@@ -63,6 +64,7 @@ E2E_RUNTIME_ENV_SCRIPT="$RUNTIME_ENV_SCRIPT" \
 E2E_HARNESS_SCRIPT="$HARNESS_SCRIPT" \
 E2E_RUNTIME_ENV_FILE="$ENV_FILE" \
 E2E_COOKIE_JAR_PATH="$COOKIE_JAR" \
+E2E_PROVISION_SMOKE_DISABLE_WORKTREE=1 \
 bash "$SCRIPT" --keep-repo >/dev/null
 
 if grep -qF "runtime-env refresh" "$CALLS_FILE"; then
@@ -72,6 +74,96 @@ fi
 
 if ! grep -qF "harness run --lane provision-only --path $COOKIE_JAR --keep-repo" "$CALLS_FILE"; then
   echo "FAIL: expected provision-smoke to forward --keep-repo" >&2
+  exit 1
+fi
+
+WORKTREE_GIT="$TMPDIR/git"
+: > "$CALLS_FILE"
+
+cat > "$WORKTREE_GIT" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+if [[ "$1" == "-C" ]]; then
+  shift 2
+fi
+
+case "$1" in
+  status)
+    printf ' M dirty-file\n'
+    ;;
+  worktree)
+    case "$2" in
+      add)
+        worktree_dir="$4"
+        echo "git worktree add $worktree_dir" >> "$CALLS_FILE"
+        mkdir -p "$worktree_dir/scripts/e2e" "$worktree_dir/console" "$worktree_dir/studio"
+        cat > "$worktree_dir/scripts/e2e/provision-smoke.sh" <<'EOS'
+#!/usr/bin/env bash
+set -euo pipefail
+child_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
+console_link=0
+studio_link=0
+if [[ -L "$child_root/console/node_modules" ]]; then
+  console_link=1
+fi
+if [[ -L "$child_root/studio/node_modules" ]]; then
+  studio_link=1
+fi
+echo "child worktree run state-root=$E2E_STATE_ROOT env-file=$E2E_RUNTIME_ENV_FILE cookie=$E2E_COOKIE_JAR_PATH child=$E2E_PROVISION_SMOKE_CHILD console-link=$console_link studio-link=$studio_link" >> "$CALLS_FILE"
+EOS
+        chmod +x "$worktree_dir/scripts/e2e/provision-smoke.sh"
+        ;;
+      remove)
+        echo "git worktree remove $4" >> "$CALLS_FILE"
+        ;;
+      *)
+        echo "Unexpected git worktree command: $*" >&2
+        exit 1
+        ;;
+    esac
+    ;;
+  *)
+    echo "Unexpected git command: $*" >&2
+    exit 1
+    ;;
+esac
+EOF
+
+chmod +x "$WORKTREE_GIT"
+
+PATH="$TMPDIR:$PATH" \
+CALLS_FILE="$CALLS_FILE" \
+E2E_RUNTIME_ENV_FILE="$ENV_FILE" \
+E2E_COOKIE_JAR_PATH="$COOKIE_JAR" \
+bash "$SCRIPT" >/dev/null
+
+if ! grep -qF "git worktree add" "$CALLS_FILE"; then
+  echo "FAIL: expected provision-smoke to create a clean worktree when the source checkout is dirty" >&2
+  exit 1
+fi
+
+if ! grep -qF "child worktree run state-root=" "$CALLS_FILE"; then
+  echo "FAIL: expected provision-smoke to re-run itself from the clean worktree" >&2
+  exit 1
+fi
+
+if ! grep -qF "child=1" "$CALLS_FILE"; then
+  echo "FAIL: expected child worktree execution to be marked as a child run" >&2
+  exit 1
+fi
+
+if ! grep -qF "console-link=1" "$CALLS_FILE"; then
+  echo "FAIL: expected provision-smoke to link console/node_modules into the clean worktree" >&2
+  exit 1
+fi
+
+if ! grep -qF "studio-link=1" "$CALLS_FILE"; then
+  echo "FAIL: expected provision-smoke to link studio/node_modules into the clean worktree" >&2
+  exit 1
+fi
+
+if ! grep -qF "git worktree remove" "$CALLS_FILE"; then
+  echo "FAIL: expected provision-smoke to remove the temporary worktree" >&2
   exit 1
 fi
 
