@@ -64,6 +64,11 @@ jobs:
         id: source
         run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
+      - name: Install gh-aw CLI
+        uses: github/gh-aw-actions/setup-cli@v0.62.5
+        with:
+          version: v0.62.5
+
       - name: Export scaffold
         run: bash scaffold/export-scaffold.sh
 
