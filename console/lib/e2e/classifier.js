@@ -62,7 +62,7 @@ function classifyFailure({
 
   if (timedOut) {
     const laneForTimeout = activeLane || lane;
-    if (hasBootstrapConflictWarning(warnings, detail)) {
+    if (laneForTimeout === "provision-only" && hasBootstrapConflictWarning(warnings, detail)) {
       return {
         failureClass: "bootstrap_conflict",
         failureDetail: detail || "Bootstrap encountered a repo-memory 409 conflict and did not recover.",

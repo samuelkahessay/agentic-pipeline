@@ -38,6 +38,20 @@ test("bootstrap conflict is inferred from state.json 409", () => {
   expect(result.failureClass).toBe("bootstrap_conflict");
 });
 
+test("decomposer timeout wins over earlier bootstrap warnings", () => {
+  const result = classifyFailure({
+    lane: "decomposer-only",
+    timedOut: true,
+    warnings: ["state.json update returned 409 conflict"],
+    detail: "Timed out waiting for build milestone.",
+  });
+
+  expect(result).toEqual({
+    failureClass: "decomposer_timeout",
+    failureDetail: "Timed out waiting for build milestone.",
+  });
+});
+
 test("ui auth failures classify immediately", () => {
   const result = classifyFailure({
     lane: "browser-canary",
