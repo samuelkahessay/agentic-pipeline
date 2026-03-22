@@ -26,7 +26,7 @@
 #   Imports:
 #     - shared/reporting.md
 #
-# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"127980c434cf4664245d0042dfdfcdd855634ae497686ce9207a5301a01a0f22","compiler_version":"v0.62.5","strict":true,"agent_id":"codex","agent_model":"openai/gpt-5-codex"}
+# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"b1b2b328ead93c57f5aa601d039f2e2b3bfe7f3792fc3db7956c57c756ffc8d2","compiler_version":"v0.62.5","strict":true,"agent_id":"codex","agent_model":"openai/gpt-5-codex"}
 
 name: "Code Simplifier"
 "on":

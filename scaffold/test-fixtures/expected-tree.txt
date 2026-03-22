@@ -65,6 +65,7 @@ dist/scaffold/scripts/healing-control.sh
 dist/scaffold/scripts/log-decision.sh
 dist/scaffold/scripts/monitor-pipeline.sh
 dist/scaffold/scripts/patch-pr-review-agent-lock.sh
+dist/scaffold/scripts/patch-runner-labels.sh
 dist/scaffold/scripts/pipeline-watchdog.sh
 dist/scaffold/scripts/render-ci-repair-command.sh
 dist/scaffold/scripts/require-node.sh

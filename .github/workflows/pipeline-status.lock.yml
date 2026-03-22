@@ -23,7 +23,7 @@
 # Daily pipeline progress report. Creates and updates a rolling status issue
 # tracking all pipeline issues and PRs.
 #
-# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"066275d6ece60ca1b74b3a0f7942c39b0f5833f57e4add7481ac39373abfbfdb","compiler_version":"v0.62.5","strict":true,"agent_id":"codex","agent_model":"openai/gpt-5-codex"}
+# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"c86de674259d6f2ce490bdc924b135758480dd72bb4101f4f641ab26e1461b8d","compiler_version":"v0.62.5","strict":true,"agent_id":"codex","agent_model":"openai/gpt-5-codex"}
 
 name: "Pipeline Status Report"
 "on":

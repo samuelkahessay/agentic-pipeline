@@ -22,7 +22,7 @@
 #
 # Identifies duplicate code patterns across the codebase and suggests refactoring opportunities
 #
-# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"e131b7ed0aa7d274769ab405615945827f8be30f9b147f62a918d5113c9b9a2c","compiler_version":"v0.62.5","strict":true,"agent_id":"codex","agent_model":"openai/gpt-5-codex"}
+# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"9f46bc569b6b45590a7f497fd8efb6ce9a07fde87b2599cfa1741ccb24e77c63","compiler_version":"v0.62.5","strict":true,"agent_id":"codex","agent_model":"openai/gpt-5-codex"}
 
 name: "Duplicate Code Detector"
 "on":

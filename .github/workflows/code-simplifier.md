@@ -15,6 +15,9 @@ tracker-id: code-simplifier
 imports:
   - shared/reporting.md
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 engine:
   id: codex
   model: openai/gpt-5-codex

@@ -4,6 +4,9 @@ description: Fix critical vulnerabilities before audit deadline with full tracki
 timeout-minutes: 30
 strict: true
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 on:
   workflow_dispatch:
     inputs:

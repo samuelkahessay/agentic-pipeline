@@ -24,7 +24,7 @@
 # Each issue gets clear acceptance criteria, dependency references, and type labels.
 # Triggered by the /decompose command on any issue or discussion containing a PRD.
 #
-# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"4f620c1147ef4c4a38bf3430f0d97c299ef4d8ab34ba36f8286a9b7b6f2f56ac","compiler_version":"v0.62.5","strict":true,"agent_id":"codex","agent_model":"openai/gpt-5-codex"}
+# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"802ca3120f21e0372d77590be3ef595f7a40bb00e1c7d60371a51852afbf4d06","compiler_version":"v0.62.5","strict":true,"agent_id":"codex","agent_model":"openai/gpt-5-codex"}
 
 name: "PRD Decomposer"
 "on":

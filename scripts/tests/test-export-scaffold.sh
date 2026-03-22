@@ -4,9 +4,12 @@ set -euo pipefail
 ROOT_DIR=$(cd "$(dirname "$0")/../.." && pwd)
 EXPORT_SCRIPT="$ROOT_DIR/scaffold/export-scaffold.sh"
 OUTPUT_DIR="$ROOT_DIR/dist/scaffold"
+ORIGINAL_PATH="$PATH"
 
 TMPDIR=$(mktemp -d)
 cleanup() {
+  PATH="$ORIGINAL_PATH"
+  bash "$EXPORT_SCRIPT" >/dev/null 2>&1 || true
   rm -rf "$TMPDIR"
 }
 trap cleanup EXIT

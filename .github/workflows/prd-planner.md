@@ -14,6 +14,9 @@ on:
 
 timeout-minutes: 30
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 engine:
   id: codex
   model: openai/gpt-5-codex

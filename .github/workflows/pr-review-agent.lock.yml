@@ -25,7 +25,7 @@
 # review verdict. Posts the verdict as a PR comment for pr-review-submit.yml
 # to act on.
 #
-# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"4d1f44861d2d62779f206366428c48c8bbfeec5ee5f2e5efd9f00d10c73bff42","compiler_version":"v0.62.5","strict":true,"agent_id":"codex","agent_model":"openai/gpt-5-codex"}
+# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"5e1a3e13c26c8cd8c1367fa7c9c0fe7aa5a564879268a30b55a9b6ca6bc964cc","compiler_version":"v0.62.5","strict":true,"agent_id":"codex","agent_model":"openai/gpt-5-codex"}
 
 name: "Pipeline Review Agent"
 "on":

@@ -25,7 +25,7 @@
 # Also maintains its own PRs by fixing CI failures and resolving merge conflicts.
 # Can be triggered on-demand via /repo-assist <instructions>.
 #
-# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"6b036e7e375f1bbb8cc8fd994efee06894bcd55404cb7c4362e68a988f063c53","compiler_version":"v0.62.5","strict":true,"agent_id":"codex","agent_model":"openai/gpt-5-codex"}
+# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"c45265e30e7fbf63eaa0fc24d08052bf0e3715d4511e755bddb53e25554d7909","compiler_version":"v0.62.5","strict":true,"agent_id":"codex","agent_model":"openai/gpt-5-codex"}
 
 name: "Pipeline Repo Assist"
 "on":

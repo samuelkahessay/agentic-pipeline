@@ -25,7 +25,7 @@
 # patterns, and risks. The plan is posted as a human-readable comment
 # and stored as a JSON artifact in repo-memory for downstream agents.
 #
-# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"596dfaf21e9a414d27e4adde6c746bf74443a9f24aa8891a60abc54b911404fd","compiler_version":"v0.62.5","strict":true,"agent_id":"codex","agent_model":"openai/gpt-5-codex"}
+# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"4de9ae5a611ed266401580444e5b07b06737682b5ac63c61d6c7e76425a98456","compiler_version":"v0.62.5","strict":true,"agent_id":"codex","agent_model":"openai/gpt-5-codex"}
 
 name: "PRD Architecture Planner"
 "on":

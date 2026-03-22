@@ -22,7 +22,7 @@
 #
 # Fix critical vulnerabilities before audit deadline with full tracking and reporting
 #
-# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"b533be2c4f94b3f16f872fba7c9ea1dc7e131de48b293a4cbd15dbee8f51ac05","compiler_version":"v0.62.5","strict":true,"agent_id":"codex","agent_model":"openai/gpt-5-codex"}
+# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"fe4077b9609bdd89233aef4b5920740e73caf38ef56e895b0ebea4d4231b06a1","compiler_version":"v0.62.5","strict":true,"agent_id":"codex","agent_model":"openai/gpt-5-codex"}
 
 name: "Security Compliance Campaign"
 "on":

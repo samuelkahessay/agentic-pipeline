@@ -5,6 +5,7 @@ ROOT_DIR=$(cd "$(dirname "$0")/../.." && pwd)
 BOOTSTRAP_SCRIPT="$ROOT_DIR/scaffold/bootstrap-test.sh"
 EXPORT_SCRIPT="$ROOT_DIR/scaffold/export-scaffold.sh"
 OUTPUT_DIR="$ROOT_DIR/dist/scaffold"
+ORIGINAL_PATH="$PATH"
 
 if [ ! -x "$BOOTSTRAP_SCRIPT" ]; then
   echo "RED: $BOOTSTRAP_SCRIPT does not exist yet — test defines the contract" >&2
@@ -12,7 +13,12 @@ if [ ! -x "$BOOTSTRAP_SCRIPT" ]; then
 fi
 
 TMPDIR=$(mktemp -d)
-trap 'rm -rf "$TMPDIR"' EXIT
+cleanup() {
+  PATH="$ORIGINAL_PATH"
+  bash "$EXPORT_SCRIPT" >/dev/null 2>&1 || true
+  rm -rf "$TMPDIR"
+}
+trap cleanup EXIT
 
 mkdir -p "$TMPDIR/bin"
 cat > "$TMPDIR/bin/gh" <<'STUB'

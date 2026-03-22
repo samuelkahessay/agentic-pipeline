@@ -36,6 +36,9 @@ concurrency:
 
 timeout-minutes: 60
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 engine:
   id: codex
   model: openai/gpt-5-codex
