@@ -405,7 +405,16 @@ function createProvisioner({ db, buildSessionStore, githubClient }) {
       }
 
       await githubClient.configureActionsPermissions(token, owner, repo);
-      await githubClient.enableAutoMerge(token, owner, repo);
+      try {
+        await githubClient.enableAutoMerge(token, owner, repo);
+      } catch (warning) {
+        if (!isIgnorableAutoMergeWarning(warning)) {
+          throw warning;
+        }
+        emitEvent(sessionId, "provision", "bootstrap_warning", {
+          detail: `Auto-merge was not fully configured: ${warning.message}`,
+        });
+      }
       await githubClient.ensureRepoMemoryBranch(token, owner, repo);
       if (!PIPELINE_APP_ID || !PIPELINE_APP_PRIVATE_KEY) {
         throw new Error("PIPELINE_APP_ID and PIPELINE_APP_PRIVATE_KEY must be configured on the platform");
@@ -632,6 +641,10 @@ function parseRepo(fullName) {
     throw new Error(`Invalid repository name: ${fullName}`);
   }
   return { owner, repo };
+}
+
+function isIgnorableAutoMergeWarning(error) {
+  return /conflicting_auto_merge_configuration/i.test(error?.message || "");
 }
 
 function readUserGithubId(db, userId) {
