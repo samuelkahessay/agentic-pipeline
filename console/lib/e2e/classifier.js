@@ -158,7 +158,7 @@ function hasBootstrapConflictWarning(warnings, detail) {
 }
 
 function isAuthExpiry(detail) {
-  return /authorization has expired|oauth[_\s-]*grant|re-authenticate/i.test(detail || "");
+  return /authorization has expired|oauth[_\s-]*grant|re-authenticate|GitHub API .*401 .*Bad credentials/i.test(detail || "");
 }
 
 module.exports = {

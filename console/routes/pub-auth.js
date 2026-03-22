@@ -8,6 +8,7 @@ const {
   replaceOAuthGrant,
   resolveOAuthGrantTtlMs,
 } = require("../lib/auth-store");
+const { validateSessionGithubAccess } = require("../lib/github-session-auth");
 const { encrypt } = require("../lib/crypto");
 
 function isOAuthConfigured(clientId, clientSecret) {
@@ -209,12 +210,34 @@ function registerPubAuthRoutes(app, { db }) {
       return res.status(401).json({ error: "Session expired" });
     }
 
-    res.json({
-      id: session.user_id,
-      githubId: session.github_id,
-      githubLogin: session.github_login,
-      githubAvatarUrl: session.github_avatar_url,
-    });
+    const sendUser = () =>
+      res.json({
+        id: session.user_id,
+        githubId: session.github_id,
+        githubLogin: session.github_login,
+        githubAvatarUrl: session.github_avatar_url,
+      });
+
+    if (req.query.validate !== "provision") {
+      return sendUser();
+    }
+
+    validateSessionGithubAccess(session, {
+      returnTo: normalizeReturnTo(req.query.return_to),
+    })
+      .then(sendUser)
+      .catch((error) => {
+        if (error?.status === 409) {
+          return res.status(409).json({
+            error: error.code,
+            message: error.message,
+            action: error.action,
+            returnTo: error.returnTo,
+          });
+        }
+        console.error("Provision auth validation error:", error);
+        return res.status(500).json({ error: "Provision auth validation failed" });
+      });
   });
 }
 

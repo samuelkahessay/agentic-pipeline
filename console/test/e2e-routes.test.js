@@ -23,7 +23,7 @@ afterEach(() => {
   fs.rmSync(tmpDir, { recursive: true, force: true });
 });
 
-async function withServer(harness, run) {
+async function withServer(harness, run, options = {}) {
   const app = express();
   app.use(express.json());
   app.use(cookieParser());
@@ -34,7 +34,11 @@ async function withServer(harness, run) {
 
   registerE2ERunRoutes(app, { harness });
   registerE2EStreamRoutes(app, { harness });
-  registerE2EAuthRoutes(app, { harness, db });
+  registerE2EAuthRoutes(app, {
+    harness,
+    db,
+    validateSessionAccess: options.validateSessionAccess,
+  });
 
   const server = await new Promise((resolve) => {
     const instance = app.listen(0, "127.0.0.1", () => resolve(instance));
@@ -198,5 +202,62 @@ test("auth-cookie route exports and validates real build-session cookies", async
       cookieJarPath: "/tmp/e2e-cookiejar",
       user: { githubLogin: "octocat" },
     });
+  }, {
+    validateSessionAccess: jest.fn().mockResolvedValue(undefined),
+  });
+});
+
+test("auth-cookie route refuses to export stale GitHub provisioning auth", async () => {
+  const now = new Date().toISOString();
+  db.prepare(
+    `INSERT INTO users (id, github_id, github_login, github_avatar_url, created_at, updated_at)
+     VALUES ('user-1', 42, 'octocat', 'https://example.com/octocat.png', ?, ?)`
+  ).run(now, now);
+  const browserSessionId = createUserSession(db, {
+    userId: "user-1",
+    createdAt: now,
+    expiresAt: new Date(Date.now() + 60_000).toISOString(),
+    sessionId: "build-session-1",
+  });
+
+  const harness = {
+    exportAuthCookie: jest.fn(),
+    authBootstrapUrl: jest.fn(),
+    validateAuth: jest.fn(),
+    isDashboardLaunchable: jest.fn(),
+    launchRun: jest.fn(),
+    listRuns: jest.fn(),
+    getRun: jest.fn(),
+    cleanupRun: jest.fn(),
+  };
+  const validateSessionAccess = jest.fn().mockRejectedValue(
+    Object.assign(new Error("Your GitHub authorization has expired. Please re-authenticate."), {
+      status: 409,
+      code: "oauth_grant_expired",
+      action: "re_auth",
+      returnTo: "/build",
+    })
+  );
+
+  await withServer(harness, async (server) => {
+    const exportRes = await fetch(makeUrl(server, "/pub/e2e/auth-cookie"), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Cookie: `build_session=${browserSessionId}`,
+      },
+      body: JSON.stringify({ path: "/tmp/e2e-cookiejar" }),
+    });
+
+    expect(exportRes.status).toBe(409);
+    expect(await exportRes.json()).toEqual({
+      error: "oauth_grant_expired",
+      message: "Your GitHub authorization has expired. Please re-authenticate.",
+      action: "re_auth",
+      returnTo: "/build",
+    });
+    expect(harness.exportAuthCookie).not.toHaveBeenCalled();
+  }, {
+    validateSessionAccess,
   });
 });

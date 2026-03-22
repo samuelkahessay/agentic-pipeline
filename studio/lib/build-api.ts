@@ -57,7 +57,10 @@ export interface StreamChunk {
 }
 
 export const buildApi = {
-  getMe: () => get<BuildUser>("/pub/auth/me"),
+  getMe: (options?: { validateProvision?: boolean }) =>
+    get<BuildUser>(
+      options?.validateProvision ? "/pub/auth/me?validate=provision" : "/pub/auth/me"
+    ),
 
   createSession: (demo = false) =>
     post<{ sessionId: string }>("/pub/build-session", demo ? { demo: true } : undefined),

@@ -36,8 +36,9 @@ function createPublicBuildClient({ baseUrl, cookieHeader }) {
   }
 
   return {
-    getMe() {
-      return get("/pub/auth/me");
+    getMe({ validateProvision = false } = {}) {
+      const search = validateProvision ? "?validate=provision" : "";
+      return get(`/pub/auth/me${search}`);
     },
 
     createSession() {

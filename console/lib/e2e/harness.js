@@ -108,7 +108,7 @@ function createE2EHarness({
         baseUrl,
         cookieHeader: ensureBuildSessionCookie(jar.cookieHeader),
       });
-      const user = await client.getMe();
+      const user = await client.getMe({ validateProvision: true });
       return { user, cookieJarPath: jar.path || cookieJarPath || defaultCookieJarPath() };
     },
 
@@ -875,7 +875,7 @@ function createE2EHarness({
     const cookieHeader = ensureBuildSessionCookie(jar.cookieHeader);
     const client = createPublicBuildClient({ baseUrl, cookieHeader });
     try {
-      const user = await client.getMe();
+      const user = await client.getMe({ validateProvision: true });
       appendStep(runId, e2eStore.getRun(runId)?.activeLane || "auth", "auth.validate", "passed", `Authenticated as ${user.githubLogin}.`);
       return {
         client,
@@ -883,7 +883,9 @@ function createE2EHarness({
         user,
       };
     } catch (error) {
-      const authError = new Error("Saved browser auth expired. Refresh the cookie jar.");
+      const authError = new Error(
+        error?.message || "Saved browser auth expired. Refresh the cookie jar."
+      );
       authError.failureClass = "auth_required";
       authError.failureDetail = authError.message;
       throw authError;

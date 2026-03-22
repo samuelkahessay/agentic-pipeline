@@ -1,6 +1,11 @@
 const { getActiveUserSession } = require("../lib/auth-store");
+const { validateSessionGithubAccess } = require("../lib/github-session-auth");
 
-function registerE2EAuthRoutes(app, { harness, db }) {
+function registerE2EAuthRoutes(app, {
+  harness,
+  db,
+  validateSessionAccess = validateSessionGithubAccess,
+}) {
   app.post("/pub/e2e/auth-cookie", async (req, res) => {
     const sessionId = req.cookies?.build_session;
     if (!sessionId) {
@@ -13,6 +18,9 @@ function registerE2EAuthRoutes(app, { harness, db }) {
     }
 
     try {
+      await validateSessionAccess(session, {
+        returnTo: req.body?.returnTo || "/build",
+      });
       const result = harness.exportAuthCookie({
         cookieJarPath: req.body?.path,
         cookieHeader: `build_session=${sessionId}`,
@@ -30,6 +38,14 @@ function registerE2EAuthRoutes(app, { harness, db }) {
         authBootstrapUrl: harness.authBootstrapUrl(result.cookieJarPath),
       });
     } catch (error) {
+      if (error?.status === 409) {
+        return res.status(409).json({
+          error: error.code,
+          message: error.message,
+          action: error.action,
+          returnTo: error.returnTo,
+        });
+      }
       res.status(500).json({ error: error.message });
     }
   });

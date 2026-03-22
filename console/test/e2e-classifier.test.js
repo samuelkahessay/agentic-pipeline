@@ -90,3 +90,17 @@ test("oauth grant expiry classifies as auth_required", () => {
     failureDetail: "Your GitHub authorization has expired. Please re-authenticate.",
   });
 });
+
+test("github bad credentials during template generation classify as auth_required", () => {
+  const detail =
+    'GitHub API POST https://api.github.com/repos/octocat/template/generate: 401 {"message":"Bad credentials"}';
+  const result = classifyFailure({
+    lane: "provision-only",
+    detail,
+  });
+
+  expect(result).toEqual({
+    failureClass: "auth_required",
+    failureDetail: detail,
+  });
+});

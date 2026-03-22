@@ -65,6 +65,12 @@ function createGitHubClient() {
     );
   }
 
+  async function getAuthenticatedUser(token) {
+    return githubFetch(`${GITHUB_API}/user`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  }
+
   async function waitForRepo(token, owner, repo, maxAttempts = 15) {
     for (let i = 0; i < maxAttempts; i++) {
       try {
@@ -397,6 +403,7 @@ function createGitHubClient() {
     generateAppJwt,
     getInstallationToken,
     checkAppInstallation,
+    getAuthenticatedUser,
     createRepoFromTemplate,
     waitForRepo,
     createLabel,

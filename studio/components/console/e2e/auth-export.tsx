@@ -23,7 +23,7 @@ export function E2EAuthExport() {
 
   useEffect(() => {
     buildApi
-      .getMe()
+      .getMe({ validateProvision: true })
       .then(() => {
         setAuthState("ready");
         setMessage("Build-session auth is active. Exporting the cookie jar.");

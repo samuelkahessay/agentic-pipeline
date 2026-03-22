@@ -1,4 +1,5 @@
 const { decrypt } = require("./crypto");
+const { createGitHubReauthError, isGitHubAuthFailure } = require("./github-session-auth");
 
 const TEMPLATE_OWNER = process.env.PUBLIC_BETA_TEMPLATE_OWNER || "samuelkahessay";
 const TEMPLATE_REPO = process.env.PUBLIC_BETA_TEMPLATE_REPO || "prd-to-prod-template";
@@ -288,6 +289,9 @@ function createProvisioner({ db, buildSessionStore, githubClient }) {
         detail: `Failed to create repo: ${error.message}`,
         error: true,
       });
+      if (isGitHubAuthFailure(error)) {
+        throw createGitHubReauthError(`/build/${sessionId}`);
+      }
       throw error;
     }
 
