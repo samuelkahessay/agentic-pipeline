@@ -693,7 +693,7 @@ function createE2EHarness({
 
       await page.getByPlaceholder("BETA-XXXXXXXX").fill(accessCode);
       await page.getByRole("button", { name: "Redeem" }).click();
-      await page.getByPlaceholder("sk-or-v1-...").fill(credentials.OPENAI_API_KEY);
+      await page.getByPlaceholder("sk-...").fill(credentials.OPENAI_API_KEY);
       await page.getByRole("button", { name: "Continue" }).click();
 
       const client = auth.client;

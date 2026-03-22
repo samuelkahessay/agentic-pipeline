@@ -725,14 +725,14 @@ function ByokForm({
     <div className={styles.gateForm}>
       <p className={styles.gateLabel}>Configure your pipeline</p>
       <p className={styles.copy}>
-        Paste your OpenRouter API key. The pipeline uses it as an OpenAI-compatible `OPENAI_API_KEY` for gh-aw.
+        Paste your OpenAI API key. The pipeline stores it as `OPENAI_API_KEY` for gh-aw and the public beta build flow.
         Vercel credentials are optional; without them, the run still finishes in repo handoff mode.
       </p>
       <div className={styles.gateFormFields}>
         <input
           className={styles.gateInput}
           type="password"
-          placeholder="sk-or-v1-..."
+          placeholder="sk-..."
           value={agentApiKey}
           onChange={(e) => setAgentApiKey(e.target.value)}
           disabled={submitting}

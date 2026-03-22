@@ -1,5 +1,5 @@
-const DEFAULT_URL = "https://openrouter.ai/api/v1/chat/completions";
-const DEFAULT_MODEL = "anthropic/claude-haiku-4.5";
+const DEFAULT_URL = "https://api.openai.com/v1/chat/completions";
+const DEFAULT_MODEL = "gpt-4.1-mini";
 const MAX_TOKENS = 2048;
 
 const SYSTEM_PROMPT = `You are a product requirements analyst. Your job is to help users refine vague ideas into specific, actionable PRDs (Product Requirements Documents).
@@ -147,14 +147,19 @@ function createLLMClient() {
   const apiUrl = process.env.LLM_API_URL || DEFAULT_URL;
 
   function buildRequestBody(messages, stream) {
-    return {
+    const body = {
       model,
       messages: [{ role: "system", content: SYSTEM_PROMPT }, ...messages],
       max_tokens: MAX_TOKENS,
       stream,
       response_format: RESPONSE_FORMAT,
-      provider: { require_parameters: true },
     };
+
+    if (apiUrl.includes("openrouter.ai")) {
+      body.provider = { require_parameters: true };
+    }
+
+    return body;
   }
 
   async function streamChat(messages, onChunk) {
