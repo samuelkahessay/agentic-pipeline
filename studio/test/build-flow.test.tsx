@@ -172,6 +172,43 @@ describe("BuildPage", () => {
 
     expect(mockedNavigateTo).toHaveBeenCalledWith("/build/session-1");
   });
+
+  it("preserves the e2e repo override across finalize redirects", async () => {
+    const user: BuildUser = {
+      id: "user-1",
+      githubId: 42,
+      githubLogin: "octocat",
+      githubAvatarUrl: "https://example.com/octocat.png",
+    };
+    const parsed = makeParsedResponse("ready");
+
+    mockedBuildApi.getMe.mockResolvedValue(user);
+    mockedBuildApi.getSession.mockResolvedValue({
+      session: makeSession("refining"),
+      messages: [makeAssistantEvent(parsed)],
+    });
+    mockedBuildApi.finalizeSession.mockResolvedValue({
+      sessionId: "session-1",
+      status: "ready",
+      prd: parsed.prd,
+    });
+
+    window.history.replaceState(
+      {},
+      "",
+      "/build?session=session-1&resume=finalize&e2e_repo_name=personal-bookmark-manager-e2e-bc-abc12345"
+    );
+
+    render(<BuildPage />);
+
+    await waitFor(() => {
+      expect(mockedBuildApi.finalizeSession).toHaveBeenCalledWith("session-1");
+    });
+
+    expect(mockedNavigateTo).toHaveBeenCalledWith(
+      "/build/session-1?e2e_repo_name=personal-bookmark-manager-e2e-bc-abc12345"
+    );
+  });
 });
 
 describe("BuildStatusPage", () => {
@@ -280,6 +317,37 @@ describe("BuildStatusPage", () => {
     expect(
       await screen.findByText("That was a simulation. Ready for the invite-only beta?")
     ).toBeInTheDocument();
+  });
+
+  it("forwards an e2e repo override when auto-provisioning", async () => {
+    mockedBuildApi.getSession.mockResolvedValue({
+      session: makeSession("ready"),
+      messages: [makeAssistantEvent(makeParsedResponse("ready"))],
+    });
+    mockedBuildApi.provisionRepo.mockResolvedValue({
+      sessionId: "session-1",
+      status: "ready_to_launch",
+      installRequired: false,
+    });
+    mockedBuildApi.startBuild.mockResolvedValue({
+      sessionId: "session-1",
+      status: "building",
+    });
+
+    render(
+      await BuildStatusPage({
+        params: Promise.resolve({ id: "session-1" }),
+        searchParams: Promise.resolve({
+          e2e_repo_name: "personal-bookmark-manager-e2e-po-abc12345",
+        }),
+      })
+    );
+
+    await waitFor(() => {
+      expect(mockedBuildApi.provisionRepo).toHaveBeenCalledWith("session-1", {
+        repoName: "personal-bookmark-manager-e2e-po-abc12345",
+      });
+    });
   });
 
   it("shows the install CTA and lets the user continue after app installation", async () => {

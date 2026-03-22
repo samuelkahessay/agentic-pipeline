@@ -45,7 +45,7 @@ const REPO_BOOTSTRAP_LABELS = [
 ];
 
 function createProvisioner({ db, buildSessionStore, githubClient }) {
-  async function provisionRepo(sessionId) {
+  async function provisionRepo(sessionId, options = {}) {
     const session = getProvisionableSession(sessionId);
     if (!session.github_repo && session.status === "bootstrapping") {
       return {
@@ -63,7 +63,7 @@ function createProvisioner({ db, buildSessionStore, githubClient }) {
 
     let repoContext = session.github_repo
       ? parseRepo(session.github_repo)
-      : await createTargetRepo(sessionId, session).catch((error) => {
+      : await createTargetRepo(sessionId, session, options).catch((error) => {
           const current = buildSessionStore.getSession(sessionId);
           if (claimedRepoCreation && !current?.github_repo) {
             buildSessionStore.updateSession(sessionId, { status: "stalled" });
@@ -257,7 +257,7 @@ function createProvisioner({ db, buildSessionStore, githubClient }) {
     return issue;
   }
 
-  async function createTargetRepo(sessionId, session) {
+  async function createTargetRepo(sessionId, session, options = {}) {
     const grant = getActiveOAuthGrant(session.user_id);
     if (!grant) {
       throw new Error("No valid OAuth grant. User must re-authenticate.");
@@ -265,7 +265,7 @@ function createProvisioner({ db, buildSessionStore, githubClient }) {
 
     const userToken = decrypt(grant.github_access_token);
     const user = db.prepare("SELECT * FROM users WHERE id = ?").get(session.user_id);
-    const repoName = deriveRepoName(session.prd_final);
+    const repoName = resolveRequestedRepoName(session.prd_final, options.repoName);
 
     emitEvent(sessionId, "provision", "repo_creating", {
       detail: `Creating ${user.github_login}/${repoName} from generated scaffold template`,
@@ -570,13 +570,28 @@ function buildInstallUrl(githubId) {
 function deriveRepoName(prdMarkdown) {
   const titleMatch = prdMarkdown.match(/^#\s+PRD:\s*(.+)$/m);
   const title = titleMatch ? titleMatch[1].trim() : "my-project";
-  return (
-    title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-|-$/g, "")
-      .slice(0, 50) || "my-project"
-  );
+  return normalizeRepoName(title) || "my-project";
+}
+
+function resolveRequestedRepoName(prdMarkdown, requestedRepoName = "") {
+  if (typeof requestedRepoName === "string" && requestedRepoName.trim()) {
+    const normalized = normalizeRepoName(requestedRepoName);
+    if (!normalized) {
+      throw new Error("Invalid repository name.");
+    }
+    return normalized;
+  }
+
+  return deriveRepoName(prdMarkdown);
+}
+
+function normalizeRepoName(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 50)
+    .replace(/^-|-$/g, "");
 }
 
 function derivePublicBetaProductionUrl(repoName) {
@@ -626,4 +641,4 @@ function readUserGithubId(db, userId) {
   return db.prepare("SELECT github_id FROM users WHERE id = ?").get(userId)?.github_id || null;
 }
 
-module.exports = { createProvisioner, deriveRepoName };
+module.exports = { createProvisioner, deriveRepoName, normalizeRepoName };

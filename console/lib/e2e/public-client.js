@@ -107,8 +107,8 @@ function createPublicBuildClient({ baseUrl, cookieHeader }) {
       return post(`/pub/build-session/${sessionId}/credentials`, credentials);
     },
 
-    provisionRepo(sessionId) {
-      return post(`/pub/build-session/${sessionId}/provision`);
+    provisionRepo(sessionId, options) {
+      return post(`/pub/build-session/${sessionId}/provision`, options);
     },
 
     startBuild(sessionId) {

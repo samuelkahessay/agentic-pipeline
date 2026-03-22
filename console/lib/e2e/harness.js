@@ -2,6 +2,7 @@ const { execFile } = require("child_process");
 const { promisify } = require("util");
 
 const { createAccessCodeStore } = require("../access-codes");
+const { deriveRepoName } = require("../provisioner");
 const { classifyFailure } = require("./classifier");
 const {
   DASHBOARD_LAUNCHABLE_LANES,
@@ -380,8 +381,23 @@ function createE2EHarness({
     await client.submitCredentials(sessionId, credentials);
     appendStep(runId, lane, "credentials", "passed", "Stored Copilot and optional Vercel credentials.");
 
-    appendStep(runId, lane, "provision", "running", "Provisioning the repository.");
-    await client.provisionRepo(sessionId);
+    const requestedRepoName = buildHarnessRepoName({
+      lane,
+      runId,
+      prdMarkdown: STANDARD_PRD_TEXT,
+    });
+    const requestedRepoFullName = `${auth.user.githubLogin}/${requestedRepoName}`;
+    e2eStore.updateRun(runId, {
+      repo_full_name: requestedRepoFullName,
+    });
+    appendStep(
+      runId,
+      lane,
+      "provision",
+      "running",
+      `Provisioning the repository as ${requestedRepoFullName}.`
+    );
+    await client.provisionRepo(sessionId, { repoName: requestedRepoName });
 
     const waited = await waitForProvision(runId, lane, sessionId, client);
     syncLocalSession(sessionId, waited.session);
@@ -580,6 +596,14 @@ function createE2EHarness({
       issuer: "e2e-harness",
       memo: `lane=${lane};run=${runId}`,
     });
+    const requestedRepoName = buildHarnessRepoName({
+      lane,
+      runId,
+      prdMarkdown: STANDARD_PRD_TEXT,
+    });
+    e2eStore.updateRun(runId, {
+      repo_full_name: `${auth.user.githubLogin}/${requestedRepoName}`,
+    });
     const browser = await playwright.chromium.launch({
       headless: process.env.E2E_HEADLESS !== "false",
     });
@@ -608,9 +632,12 @@ function createE2EHarness({
       ]);
 
       const page = await context.newPage();
-      await page.goto(`${stripTrailingSlash(studioUrl)}/build`, {
-        waitUntil: "networkidle",
-      });
+      await page.goto(
+        `${stripTrailingSlash(studioUrl)}/build?e2e_repo_name=${encodeURIComponent(requestedRepoName)}`,
+        {
+          waitUntil: "networkidle",
+        }
+      );
 
       if (/github\.com\/login/.test(page.url())) {
         return failLaneResult(lane, null, {
@@ -1132,6 +1159,24 @@ function resolveCredentials() {
       ? { VERCEL_PROJECT_ID: readEnvValue("E2E_VERCEL_PROJECT_ID", "VERCEL_PROJECT_ID") }
       : {}),
   };
+}
+
+function buildHarnessRepoName({ lane, runId, prdMarkdown }) {
+  const laneCode = laneToRepoCode(lane);
+  const runCode = String(runId || "run").split("-")[0].toLowerCase();
+  const suffix = `e2e-${laneCode}-${runCode}`;
+  const base = deriveRepoName(prdMarkdown);
+  const maxBaseLength = Math.max(1, 50 - suffix.length - 1);
+  const trimmedBase = (base || "build").slice(0, maxBaseLength).replace(/-+$/g, "") || "build";
+  return `${trimmedBase}-${suffix}`;
+}
+
+function laneToRepoCode(lane) {
+  if (lane === "provision-only") return "po";
+  if (lane === "decomposer-only") return "dc";
+  if (lane === "first-pr") return "fp";
+  if (lane === "browser-canary") return "bc";
+  return "run";
 }
 
 function readEnvValue(primary, fallback) {

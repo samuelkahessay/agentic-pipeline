@@ -162,9 +162,16 @@ function registerProvisionRoutes(app, { db, serviceResolver }) {
       });
     }
 
+    const parsedOptions = parseProvisionOptions(req.body);
+    if (!parsedOptions.ok) {
+      return res.status(400).json({ error: parsedOptions.error });
+    }
+
     try {
       const { provisioner } = serviceResolver.forSession(session.id);
-      const result = await provisioner.provisionRepo(session.id);
+      const result = parsedOptions.options
+        ? await provisioner.provisionRepo(session.id, parsedOptions.options)
+        : await provisioner.provisionRepo(session.id);
       res.json(result);
     } catch (err) {
       console.error("Provisioning error:", err);
@@ -308,6 +315,32 @@ function hasDeployCredentials(db, sessionId) {
        WHERE build_session_id = ? AND ref_type = 'credential' AND ref_key = ?`
     ).get(sessionId, key)
   );
+}
+
+function parseProvisionOptions(body) {
+  if (body == null) {
+    return { ok: true, options: null };
+  }
+
+  if (Array.isArray(body) || typeof body !== "object") {
+    return { ok: false, error: "Provision options must be an object." };
+  }
+
+  if (body.repoName !== undefined && typeof body.repoName !== "string") {
+    return { ok: false, error: "repoName must be a string." };
+  }
+
+  const repoName = typeof body.repoName === "string" ? body.repoName.trim() : "";
+  if (!repoName) {
+    return { ok: true, options: null };
+  }
+
+  return {
+    ok: true,
+    options: {
+      repoName,
+    },
+  };
 }
 
 function enforceSessionBoundary(db, userId, session, res) {

@@ -125,13 +125,13 @@ export const buildApi = {
   submitCredentials: (sessionId: string, credentials: Record<string, string>) =>
     post<{ stored: boolean }>(`/pub/build-session/${sessionId}/credentials`, credentials),
 
-  provisionRepo: (sessionId: string) =>
+  provisionRepo: (sessionId: string, options?: { repoName?: string }) =>
     post<{
       sessionId: string;
       status: string;
       installRequired: boolean;
       installUrl?: string;
-    }>(`/pub/build-session/${sessionId}/provision`),
+    }>(`/pub/build-session/${sessionId}/provision`, options),
 
   startBuild: (sessionId: string) =>
     post<{ sessionId: string; status: string }>(

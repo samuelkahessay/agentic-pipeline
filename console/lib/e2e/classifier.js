@@ -44,6 +44,15 @@ function classifyFailure({
     return classifyStalledEvent(stalled, { warnings, fallbackDetail: detail });
   }
 
+  if (activeLane === "provision-only" || lane === "provision-only") {
+    if (/name already exists on this account/i.test(detail)) {
+      return {
+        failureClass: "provision_failed",
+        failureDetail: detail || "Provisioning could not create the requested repository.",
+      };
+    }
+  }
+
   if (timedOut) {
     const laneForTimeout = activeLane || lane;
     if (hasBootstrapConflictWarning(warnings, detail)) {

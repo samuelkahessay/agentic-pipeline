@@ -146,7 +146,9 @@ export default function BuildPage() {
       setResumeAction(null);
       persistSessionInUrl(id, null);
       const result = await buildApi.finalizeSession(id);
-      navigateTo(`/build/${result.sessionId}`);
+      navigateTo(
+        buildStatusPath(result.sessionId, readRequestedRepoNameFromLocation())
+      );
     },
     [persistSessionInUrl]
   );
@@ -211,11 +213,12 @@ export default function BuildPage() {
     if (!sessionId) return;
 
     if (!user) {
+      const requestedRepoName = readRequestedRepoNameFromLocation();
       setResumeAction(RESUME_ACTION_FINALIZE);
       persistSessionInUrl(sessionId, RESUME_ACTION_FINALIZE);
       navigateTo(
         `/pub/auth/github?return_to=${encodeURIComponent(
-          buildPagePath(sessionId, RESUME_ACTION_FINALIZE)
+          buildPagePath(sessionId, RESUME_ACTION_FINALIZE, requestedRepoName)
         )}`
       );
       return;
@@ -302,17 +305,40 @@ export default function BuildPage() {
   );
 }
 
-function buildPagePath(sessionId: string, resumeAction?: string | null): string {
+function buildPagePath(
+  sessionId: string,
+  resumeAction?: string | null,
+  requestedRepoName?: string | null
+): string {
   const params = new URLSearchParams({ session: sessionId });
   if (resumeAction) {
     params.set("resume", resumeAction);
   }
+  if (requestedRepoName) {
+    params.set("e2e_repo_name", requestedRepoName);
+  }
   return `/build?${params.toString()}`;
+}
+
+function buildStatusPath(sessionId: string, requestedRepoName?: string | null): string {
+  const params = new URLSearchParams();
+  if (requestedRepoName) {
+    params.set("e2e_repo_name", requestedRepoName);
+  }
+  return `/build/${sessionId}${params.size > 0 ? `?${params.toString()}` : ""}`;
 }
 
 function toRelativeUrl(url: URL): string {
   const search = url.searchParams.toString();
   return `${url.pathname}${search ? `?${search}` : ""}${url.hash}`;
+}
+
+function readRequestedRepoNameFromLocation(): string | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  return new URL(window.location.href).searchParams.get("e2e_repo_name");
 }
 
 function hasReadyPrd(session: BuildSession, buildEvents: BuildEvent[]): boolean {

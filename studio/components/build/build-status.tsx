@@ -20,6 +20,7 @@ import styles from "../../app/build/[id]/page.module.css";
 interface BuildStatusProps {
   initialSession: BuildSession;
   initialEvents: BuildEvent[];
+  requestedRepoName?: string | null;
 }
 
 type PendingAction = "provision" | "start_build" | null;
@@ -29,6 +30,7 @@ const HUMAN_BOUNDARY_URL =
 export function BuildStatus({
   initialSession,
   initialEvents,
+  requestedRepoName = null,
 }: BuildStatusProps) {
   const isDemo = !!initialSession.is_demo;
   const [session, setSession] = useState(initialSession);
@@ -104,7 +106,9 @@ export function BuildStatus({
     setError(null);
 
     try {
-      const result = await buildApi.provisionRepo(session.id);
+      const result = requestedRepoName
+        ? await buildApi.provisionRepo(session.id, { repoName: requestedRepoName })
+        : await buildApi.provisionRepo(session.id);
       setSession((previous) => ({
         ...previous,
         status: parseBuildStatus(result.status),
@@ -123,7 +127,7 @@ export function BuildStatus({
     } finally {
       setPendingAction(null);
     }
-  }, [session.id]);
+  }, [requestedRepoName, session.id]);
 
   const startBuild = useCallback(async () => {
     setPendingAction("start_build");

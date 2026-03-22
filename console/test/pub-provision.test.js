@@ -294,6 +294,52 @@ test("provision is idempotent for a bootstrapping session", async () => {
   expect(provisioner.provisionRepo).not.toHaveBeenCalled();
 });
 
+test("provision forwards an optional repoName override", async () => {
+  db.prepare(
+    `INSERT INTO access_codes (code_hash, created_at, issuer, redeemed_by, redeemed_at, build_session_id)
+     VALUES ('test-hash-2', '2026-03-14T00:00:00Z', 'test', 'user-1', '2026-03-14T00:00:00Z', 'credentials-build')`
+  ).run();
+
+  const provisioner = {
+    provisionRepo: jest.fn().mockResolvedValue({
+      sessionId: "credentials-build",
+      status: "awaiting_install",
+      installRequired: true,
+      installUrl: "https://github.com/apps/prd-to-prod-pipeline/installations/new",
+    }),
+    createPrdIssue: jest.fn(),
+    launchPipeline: jest.fn(),
+  };
+  const buildRunner = {
+    dispatchBuild: jest.fn(),
+  };
+
+  await withServer(db, { provisioner, buildRunner }, async (server) => {
+    const response = await fetch(makeUrl(server, "/pub/build-session/credentials-build/provision"), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Cookie: "build_session=session-1",
+      },
+      body: JSON.stringify({
+        repoName: "personal-bookmark-manager-e2e-po-abc12345",
+      }),
+    });
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      sessionId: "credentials-build",
+      status: "awaiting_install",
+      installRequired: true,
+      installUrl: "https://github.com/apps/prd-to-prod-pipeline/installations/new",
+    });
+  });
+
+  expect(provisioner.provisionRepo).toHaveBeenCalledWith("credentials-build", {
+    repoName: "personal-bookmark-manager-e2e-po-abc12345",
+  });
+});
+
 test("start-build is idempotent for an active build session", async () => {
   const provisioner = {
     provisionRepo: jest.fn(),

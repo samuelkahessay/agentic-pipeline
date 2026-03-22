@@ -50,3 +50,17 @@ test("ui auth failures classify immediately", () => {
     failureDetail: "GitHub login form appeared.",
   });
 });
+
+test("repo name collisions classify as provision failures", () => {
+  const result = classifyFailure({
+    lane: "provision-only",
+    detail:
+      'GitHub API POST https://api.github.com/repos/octocat/template/generate: 422 {"message":"Could not clone: Name already exists on this account"}',
+  });
+
+  expect(result).toEqual({
+    failureClass: "provision_failed",
+    failureDetail:
+      'GitHub API POST https://api.github.com/repos/octocat/template/generate: 422 {"message":"Could not clone: Name already exists on this account"}',
+  });
+});
