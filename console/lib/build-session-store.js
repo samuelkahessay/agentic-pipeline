@@ -11,6 +11,15 @@ function createBuildSessionStore(db) {
     return emitters.get(sessionId);
   }
 
+  function resolveUserId(userId) {
+    if (!userId) {
+      return null;
+    }
+
+    const user = db.prepare("SELECT id FROM users WHERE id = ?").get(userId);
+    return user ? userId : null;
+  }
+
   return {
     createSession(userId, { isDemo = false } = {}) {
       const id = crypto.randomUUID();
@@ -33,7 +42,7 @@ function createBuildSessionStore(db) {
            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
         ).run(
           id,
-          fields.user_id || null,
+          resolveUserId(fields.user_id),
           fields.status || "refining",
           fields.is_demo ? 1 : 0,
           fields.github_repo || null,
@@ -73,7 +82,7 @@ function createBuildSessionStore(db) {
       for (const [key, value] of Object.entries(fields)) {
         if (allowed.includes(key)) {
           sets.push(`${key} = ?`);
-          values.push(value);
+          values.push(key === "user_id" ? resolveUserId(value) : value);
         }
       }
       if (sets.length === 0) return;

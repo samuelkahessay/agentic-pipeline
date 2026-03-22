@@ -57,3 +57,18 @@ test("ensureSession updates an existing mirrored session", () => {
     })
   );
 });
+
+test("ensureSession drops unknown user ids to avoid foreign key failures", () => {
+  const session = store.ensureSession("remote-session", {
+    status: "building",
+    user_id: "missing-user",
+  });
+
+  expect(session).toEqual(
+    expect.objectContaining({
+      id: "remote-session",
+      status: "building",
+      user_id: null,
+    })
+  );
+});
