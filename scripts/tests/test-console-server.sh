@@ -5,6 +5,7 @@ ROOT_DIR=$(cd "$(dirname "$0")/../.." && pwd)
 PORT=43123
 SERVER_PID=""
 CONSOLE_DIR="$ROOT_DIR/console"
+SQLITE_PROBE='const Database = require("better-sqlite3"); const db = new Database(":memory:"); db.close();'
 
 cleanup() {
   if [ -n "$SERVER_PID" ] && kill -0 "$SERVER_PID" 2>/dev/null; then
@@ -21,6 +22,19 @@ if [ ! -d "$CONSOLE_DIR/node_modules" ]; then
     echo "FAIL: console dependencies must install successfully" >&2
     exit 1
   }
+fi
+
+if ! (cd "$CONSOLE_DIR" && node -e "$SQLITE_PROBE" >/dev/null 2>&1); then
+  npm --prefix "$CONSOLE_DIR" rebuild better-sqlite3 >/tmp/prd-to-prod-console-npm.log 2>&1 || {
+    cat /tmp/prd-to-prod-console-npm.log >&2
+    echo "FAIL: console native dependencies must rebuild for the active Node.js version" >&2
+    exit 1
+  }
+  if ! (cd "$CONSOLE_DIR" && node -e "$SQLITE_PROBE" >/dev/null 2>&1); then
+    cat /tmp/prd-to-prod-console-npm.log >&2
+    echo "FAIL: better-sqlite3 is still incompatible with the active Node.js runtime after rebuild" >&2
+    exit 1
+  fi
 fi
 
 (

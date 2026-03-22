@@ -4,6 +4,7 @@ import type {
   Decision,
   AuditEntry,
   PreflightCheck,
+  E2ERun,
 } from "./types";
 
 // Server-side (RSC) fetch has no browser context, so relative URLs fail.
@@ -98,4 +99,51 @@ export const api = {
 
   getAudit: (runId: string, options?: ApiRequestOptions) =>
     get<AuditEntry[]>(`/api/run/${runId}/audit`, options),
+
+  listE2ERuns: (options?: ApiRequestOptions) =>
+    get<{ runs: E2ERun[] }>("/api/e2e/runs", options).then((r) => r.runs),
+
+  getE2ERun: (id: string, options?: ApiRequestOptions) =>
+    get<E2ERun>(`/api/e2e/runs/${id}`, options),
+
+  startE2ERun: (
+    payload: {
+      lane: string;
+      keepRepo?: boolean;
+      cookieJarPath?: string;
+    },
+    options?: ApiRequestOptions
+  ) => post<{ runId: string; run: E2ERun }>("/api/e2e/runs", payload, options),
+
+  cleanupE2ERun: (id: string, force = false, options?: ApiRequestOptions) =>
+    post<{ run: E2ERun }>(`/api/e2e/runs/${id}/cleanup`, { force }, options),
+
+  getE2EReport: (
+    id: string,
+    options?: ApiRequestOptions
+  ) =>
+    get<{
+      reportJsonPath: string;
+      reportMarkdownPath: string;
+      reportJson: Record<string, unknown> | null;
+      reportMarkdown: string | null;
+    }>(`/api/e2e/runs/${id}/report`, options),
+
+  streamE2ERun: (id: string, onEvent: (event: unknown) => void) => {
+    const source = new EventSource(`/api/e2e/runs/${id}/stream`);
+    source.onmessage = (e) => onEvent(JSON.parse(e.data));
+    return () => source.close();
+  },
+
+  exportE2EAuthCookie: (cookieJarPath: string) =>
+    post<{ ok: boolean; cookieJarPath: string; authBootstrapUrl: string }>(
+      "/api/e2e/auth-cookie",
+      { path: cookieJarPath }
+    ),
+
+  getE2EAuthCookie: (cookieJarPath: string, options?: ApiRequestOptions) =>
+    get<{ ok: boolean; cookieJarPath: string; user: Record<string, unknown> }>(
+      `/api/e2e/auth-cookie?path=${encodeURIComponent(cookieJarPath)}`,
+      options
+    ),
 };

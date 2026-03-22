@@ -15,6 +15,7 @@ export function ConsoleNav({ queueCount, pipelineHealthy }: ConsoleNavProps) {
   const tabs = [
     { label: "Launch", href: "/console#launch" },
     { label: "Runs", href: "/console/runs" },
+    { label: "E2E", href: "/console/e2e" },
     { label: "Queue", href: "/console#queue", badge: queueCount },
   ];
 

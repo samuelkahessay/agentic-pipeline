@@ -14,6 +14,21 @@ printf '%s' "$OUTPUT" | jq -e '.[] | select(.id == "openrouter")' >/dev/null || 
   exit 1
 }
 
+printf '%s' "$OUTPUT" | jq -e '.[] | select(.id == "gh-aw-github-token" and .required == true)' >/dev/null || {
+  echo "FAIL: preflight must include the workflow dispatch token check" >&2
+  exit 1
+}
+
+printf '%s' "$OUTPUT" | jq -e '.[] | select(.id == "pipeline-app-id" and .required == true)' >/dev/null || {
+  echo "FAIL: preflight must include the pipeline app id check" >&2
+  exit 1
+}
+
+printf '%s' "$OUTPUT" | jq -e '.[] | select(.id == "deploy-profile" and .required == true)' >/dev/null || {
+  echo "FAIL: preflight must include the deploy profile check" >&2
+  exit 1
+}
+
 printf '%s' "$OUTPUT" | jq -e '.[] | select(.id == "workiq" and .required == false)' >/dev/null || {
   echo "FAIL: preflight must treat WorkIQ as optional" >&2
   exit 1

@@ -314,6 +314,70 @@ function createGitHubClient() {
     );
   }
 
+  async function getRepo(token, owner, repo) {
+    return githubFetch(`${GITHUB_API}/repos/${owner}/${repo}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  }
+
+  async function listLabels(token, owner, repo) {
+    return githubFetch(`${GITHUB_API}/repos/${owner}/${repo}/labels?per_page=100`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  }
+
+  async function listActionsSecrets(token, owner, repo) {
+    const response = await githubFetch(
+      `${GITHUB_API}/repos/${owner}/${repo}/actions/secrets`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    return response?.secrets || [];
+  }
+
+  async function listActionsVariables(token, owner, repo) {
+    const response = await githubFetch(
+      `${GITHUB_API}/repos/${owner}/${repo}/actions/variables`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    return response?.variables || [];
+  }
+
+  async function getActionsVariable(token, owner, repo, name) {
+    return githubFetch(
+      `${GITHUB_API}/repos/${owner}/${repo}/actions/variables/${name}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+  }
+
+  async function listIssues(token, owner, repo, { state = "open" } = {}) {
+    return githubFetch(
+      `${GITHUB_API}/repos/${owner}/${repo}/issues?state=${encodeURIComponent(state)}&per_page=100`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+  }
+
+  async function listPullRequests(token, owner, repo, { state = "open" } = {}) {
+    return githubFetch(
+      `${GITHUB_API}/repos/${owner}/${repo}/pulls?state=${encodeURIComponent(state)}&per_page=100`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+  }
+
+  async function listWorkflowRuns(token, owner, repo, { perPage = 50 } = {}) {
+    const response = await githubFetch(
+      `${GITHUB_API}/repos/${owner}/${repo}/actions/runs?per_page=${perPage}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    return response?.workflow_runs || [];
+  }
+
+  async function deleteRepo(token, owner, repo) {
+    return githubFetch(`${GITHUB_API}/repos/${owner}/${repo}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  }
+
   return {
     generateAppJwt,
     getInstallationToken,
@@ -330,6 +394,15 @@ function createGitHubClient() {
     ensureRepoMemoryBranch,
     ensureBranchProtection,
     dispatchWorkflow,
+    getRepo,
+    listLabels,
+    listActionsSecrets,
+    listActionsVariables,
+    getActionsVariable,
+    listIssues,
+    listPullRequests,
+    listWorkflowRuns,
+    deleteRepo,
   };
 }
 

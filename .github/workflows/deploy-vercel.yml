@@ -59,8 +59,14 @@ jobs:
         if: steps.creds.outputs.configured == 'true'
         run: npm install -g vercel
 
+      - name: Resolve Next.js app root
+        if: steps.creds.outputs.configured == 'true'
+        id: app-root
+        run: echo "path=$(bash scripts/resolve-nextjs-app-root.sh)" >> "$GITHUB_OUTPUT"
+
       - name: Pull Vercel config
         if: steps.creds.outputs.configured == 'true'
+        working-directory: ${{ steps.app-root.outputs.path }}
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -69,12 +75,14 @@ jobs:
 
       - name: Build
         if: steps.creds.outputs.configured == 'true'
+        working-directory: ${{ steps.app-root.outputs.path }}
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: vercel build --prod --token=$VERCEL_TOKEN
 
       - name: Deploy
         if: steps.creds.outputs.configured == 'true'
+        working-directory: ${{ steps.app-root.outputs.path }}
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN

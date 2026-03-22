@@ -24,10 +24,15 @@ const { createBuildSessionStore } = require("./lib/build-session-store");
 const { createServiceResolver } = require("./lib/service-resolver");
 const { registerProvisionRoutes } = require("./routes/pub-provision");
 const { registerInternalBuildRoutes } = require("./routes/internal-build");
+const { createE2EHarness } = require("./lib/e2e/harness");
+const { registerE2ERunRoutes } = require("./routes/api-e2e-runs");
+const { registerE2EStreamRoutes } = require("./routes/api-e2e-stream");
+const { registerE2EAuthRoutes } = require("./routes/api-e2e-auth");
 
 const app = express();
 app.set("trust proxy", 1);
 const port = Number(process.env.CONSOLE_PORT || 3000);
+const host = process.env.HOST || "127.0.0.1";
 app.locals.projectRoot = path.resolve(__dirname, "..");
 
 // --- Middleware ordering matters ---
@@ -101,6 +106,18 @@ registerAccessCodeRoutes(app, { db });
 
 const buildSessionStore = createBuildSessionStore(db);
 const serviceResolver = createServiceResolver({ db, buildSessionStore });
+const e2eHarness = createE2EHarness({
+  db,
+  buildSessionStore,
+  serviceResolver,
+  projectRoot: path.resolve(__dirname, ".."),
+  baseUrl: process.env.API_URL || `http://${host}:${port}`,
+  studioUrl: process.env.FRONTEND_URL || "http://127.0.0.1:3001",
+});
+
+registerE2ERunRoutes(app, { harness: e2eHarness });
+registerE2EStreamRoutes(app, { harness: e2eHarness });
+registerE2EAuthRoutes(app, { harness: e2eHarness, db });
 
 // DEMO_MODE env var: when set, register mock auth globally (all-mock deployment).
 // Otherwise register real OAuth. Per-session demo is always available via the API.
@@ -131,7 +148,6 @@ app.get("/healthz", (_req, res) => {
   res.json({ status: "ok" });
 });
 
-const host = process.env.HOST || "127.0.0.1";
 app.listen(port, host, () => {
   console.log(`Operator console listening on http://${host}:${port}`);
 });

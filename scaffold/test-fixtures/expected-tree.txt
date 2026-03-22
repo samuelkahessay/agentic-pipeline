@@ -106,6 +106,7 @@ dist/scaffold/scripts/tests/test-patch-pr-review-agent-lock.sh
 dist/scaffold/scripts/tests/test-pipeline-watchdog.sh
 dist/scaffold/scripts/tests/test-pr-review-agent-activation.sh
 dist/scaffold/scripts/tests/test-pr-review-submit-policy-gate.sh
+dist/scaffold/scripts/tests/test-pre-e2e-gate.sh
 dist/scaffold/scripts/tests/test-publish-scaffold-template-workflow.sh
 dist/scaffold/scripts/tests/test-publish-scaffold-template.sh
 dist/scaffold/scripts/tests/test-push-to-existing-golden.sh

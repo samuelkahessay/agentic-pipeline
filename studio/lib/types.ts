@@ -167,3 +167,83 @@ export interface EvidenceRow {
   duration: string | null;
   outcome: EvidenceOutcome;
 }
+
+export type E2ERunLane =
+  | "provision-only"
+  | "decomposer-only"
+  | "first-pr"
+  | "browser-canary"
+  | "full-ladder";
+
+export type E2ERunStatus =
+  | "queued"
+  | "auth_required"
+  | "running"
+  | "passed"
+  | "failed"
+  | "cleaned_up"
+  | "cancelled";
+
+export type E2EFailureClass =
+  | "auth_required"
+  | "ui_auth_failed"
+  | "ui_flow_failed"
+  | "provision_failed"
+  | "bootstrap_conflict"
+  | "bootstrap_stalled"
+  | "capacity_waitlisted"
+  | "decomposer_timeout"
+  | "provider_retry_exhausted"
+  | "first_pr_timeout"
+  | "review_stalled"
+  | "handoff_stalled"
+  | "unknown";
+
+export interface E2EReportRef {
+  type: string;
+  path?: string;
+  url?: string;
+  label?: string;
+}
+
+export interface E2ERunEvent {
+  id: number;
+  runId: string;
+  lane: string;
+  step: string;
+  status: string;
+  detail: string;
+  evidence: Record<string, unknown>;
+  elapsedMs: number | null;
+  createdAt: string;
+}
+
+export interface E2ERun {
+  id: string;
+  lane: E2ERunLane;
+  activeLane: string;
+  status: E2ERunStatus;
+  failureClass: E2EFailureClass | null;
+  failureDetail: string;
+  buildSessionId: string | null;
+  repoFullName: string;
+  repoUrl: string;
+  rootIssueNumber: number | null;
+  rootIssueUrl: string;
+  firstPrNumber: number | null;
+  firstPrUrl: string;
+  cleanupMode: string;
+  cleanupStatus: string;
+  cleanupDetail: string;
+  keepRepo: boolean;
+  cookieJarPath: string;
+  reportJsonPath: string;
+  reportMarkdownPath: string;
+  artifactRefs: E2EReportRef[];
+  metadata: Record<string, unknown>;
+  startedAt: string | null;
+  finishedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  events?: E2ERunEvent[];
+}

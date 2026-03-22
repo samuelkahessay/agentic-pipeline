@@ -20,53 +20,135 @@ function ghAuthOk() {
   }
 }
 
-function runPreflight(projectRoot) {
+function requiredCheck(id, name, present, detail) {
+  return { id, name, required: true, present, detail };
+}
+
+function optionalCheck(id, name, present, detail) {
+  return { id, name, required: false, present, detail };
+}
+
+function classifyCopilotToken(token) {
+  if (!token) {
+    return { present: false, detail: "Missing COPILOT_GITHUB_TOKEN." };
+  }
+  if (token.startsWith("github_pat_")) {
+    return { present: true, detail: "Fine-grained GitHub PAT detected." };
+  }
+  if (token.startsWith("ghp_")) {
+    return {
+      present: false,
+      detail: "Classic PAT detected. gh-aw rejects classic PATs for GitHub Copilot; use a github_pat_ token.",
+    };
+  }
+  if (token.startsWith("gho_")) {
+    return {
+      present: false,
+      detail: "OAuth token detected. Use a fine-grained github_pat_ token for GitHub Copilot.",
+    };
+  }
+  return {
+    present: false,
+    detail: "Unrecognized Copilot token format. Use a fine-grained github_pat_ token.",
+  };
+}
+
+function classifyWorkflowToken(token) {
+  if (!token) {
+    return { present: false, detail: "Missing GH_AW_GITHUB_TOKEN." };
+  }
+  if (token.startsWith("github_pat_")) {
+    return { present: true, detail: "Fine-grained workflow token detected." };
+  }
+  if (token.startsWith("ghp_")) {
+    return { present: true, detail: "Classic workflow PAT detected." };
+  }
+  return {
+    present: false,
+    detail: "Unrecognized workflow token format. Use a ghp_ or github_pat_ token.",
+  };
+}
+
+function runPreflight(projectRoot, env = process.env) {
+  const ghPresent = commandExists("gh");
+  const ghAuthPresent = ghAuthOk();
+  const ghAwPresent = commandExists("gh", ["aw", "version"]);
+  const deployProfilePresent = fs.existsSync(path.join(projectRoot, ".deploy-profile"));
+  const workIqPresent = fs.existsSync(path.join(projectRoot, "extraction", "workiq-client.ts"));
+  const copilotToken = classifyCopilotToken(
+    env.COPILOT_GITHUB_TOKEN || env.PUBLIC_BETA_COPILOT_GITHUB_TOKEN || ""
+  );
+  const workflowToken = classifyWorkflowToken(env.GH_AW_GITHUB_TOKEN || "");
+
   return [
-    {
-      id: "openrouter",
-      name: "OpenRouter API",
-      required: true,
-      present: Boolean(process.env.OPENROUTER_API_KEY),
-    },
-    {
-      id: "gh",
-      name: "GitHub CLI",
-      required: true,
-      present: commandExists("gh"),
-    },
-    {
-      id: "gh-auth",
-      name: "GitHub auth",
-      required: true,
-      present: ghAuthOk(),
-    },
-    {
-      id: "gh-aw",
-      name: "gh-aw",
-      required: true,
-      present: commandExists("gh", ["aw", "version"]),
-    },
-    {
-      id: "copilot-token",
-      name: "Copilot token",
-      required: true,
-      present: Boolean(process.env.COPILOT_GITHUB_TOKEN),
-    },
-    {
-      id: "vercel-token",
-      name: "Vercel token",
-      required: false,
-      present: Boolean(process.env.VERCEL_TOKEN),
-    },
-    {
-      id: "workiq",
-      name: "WorkIQ client",
-      required: false,
-      present: fs.existsSync(path.join(projectRoot, "extraction", "workiq-client.ts")),
-    },
+    requiredCheck(
+      "openrouter",
+      "OpenRouter API",
+      Boolean(env.OPENROUTER_API_KEY),
+      env.OPENROUTER_API_KEY ? "OPENROUTER_API_KEY is configured." : "Missing OPENROUTER_API_KEY."
+    ),
+    requiredCheck(
+      "gh",
+      "GitHub CLI",
+      ghPresent,
+      ghPresent ? "gh is installed." : "gh is not installed or not on PATH."
+    ),
+    requiredCheck(
+      "gh-auth",
+      "GitHub auth",
+      ghAuthPresent,
+      ghAuthPresent ? "gh auth status succeeded." : "gh auth status failed."
+    ),
+    requiredCheck(
+      "gh-aw",
+      "gh-aw",
+      ghAwPresent,
+      ghAwPresent ? "gh aw version succeeded." : "gh-aw is not installed or not available to gh."
+    ),
+    requiredCheck("copilot-token", "Copilot token", copilotToken.present, copilotToken.detail),
+    requiredCheck(
+      "gh-aw-github-token",
+      "Workflow dispatch token",
+      workflowToken.present,
+      workflowToken.detail
+    ),
+    requiredCheck(
+      "pipeline-app-id",
+      "Pipeline app id",
+      Boolean(env.PIPELINE_APP_ID),
+      env.PIPELINE_APP_ID ? "PIPELINE_APP_ID is configured." : "Missing PIPELINE_APP_ID."
+    ),
+    requiredCheck(
+      "pipeline-app-private-key",
+      "Pipeline app private key",
+      Boolean(env.PIPELINE_APP_PRIVATE_KEY),
+      env.PIPELINE_APP_PRIVATE_KEY
+        ? "PIPELINE_APP_PRIVATE_KEY is configured."
+        : "Missing PIPELINE_APP_PRIVATE_KEY."
+    ),
+    requiredCheck(
+      "deploy-profile",
+      "Deploy profile",
+      deployProfilePresent,
+      deployProfilePresent ? ".deploy-profile is present." : "Missing .deploy-profile."
+    ),
+    optionalCheck(
+      "vercel-token",
+      "Vercel token",
+      Boolean(env.VERCEL_TOKEN),
+      env.VERCEL_TOKEN ? "VERCEL_TOKEN is configured." : "VERCEL_TOKEN is not configured."
+    ),
+    optionalCheck(
+      "workiq",
+      "WorkIQ client",
+      workIqPresent,
+      workIqPresent ? "WorkIQ client exists." : "WorkIQ client is not present in this checkout."
+    ),
   ];
 }
 
 module.exports = {
+  classifyCopilotToken,
+  classifyWorkflowToken,
   runPreflight,
 };
