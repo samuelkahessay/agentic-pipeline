@@ -28,8 +28,8 @@ grep -F 'bash scripts/resolve-nextjs-app-root.sh' "$DEPLOY_WORKFLOW" >/dev/null 
   exit 1
 }
 
-grep -F 'working-directory: ${{ steps.app-root.outputs.path }}' "$DEPLOY_WORKFLOW" >/dev/null || {
-  echo "FAIL: deploy-vercel.yml must run Vercel commands from the resolved app root" >&2
+grep -F 'APP_ROOT="${{ steps.app-root.outputs.path }}"' "$DEPLOY_WORKFLOW" >/dev/null || {
+  echo "FAIL: deploy-vercel.yml must validate the resolved Next.js app root before invoking Vercel" >&2
   exit 1
 }
 

@@ -66,26 +66,35 @@ jobs:
 
       - name: Pull Vercel config
         if: steps.creds.outputs.configured == 'true'
-        working-directory: ${{ steps.app-root.outputs.path }}
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-        run: vercel pull --yes --environment=production --token=$VERCEL_TOKEN
+        run: |
+          APP_ROOT="${{ steps.app-root.outputs.path }}"
+          [ -f "$APP_ROOT/package.json" ]
+          echo "Resolved Next.js app root: $APP_ROOT"
+          vercel pull --yes --environment=production --token=$VERCEL_TOKEN
 
       - name: Build
         if: steps.creds.outputs.configured == 'true'
-        working-directory: ${{ steps.app-root.outputs.path }}
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-        run: vercel build --prod --token=$VERCEL_TOKEN
+        run: |
+          APP_ROOT="${{ steps.app-root.outputs.path }}"
+          [ -f "$APP_ROOT/package.json" ]
+          echo "Resolved Next.js app root: $APP_ROOT"
+          vercel build --prod --token=$VERCEL_TOKEN
 
       - name: Deploy
         if: steps.creds.outputs.configured == 'true'
-        working-directory: ${{ steps.app-root.outputs.path }}
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-        run: vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN
+        run: |
+          APP_ROOT="${{ steps.app-root.outputs.path }}"
+          [ -f "$APP_ROOT/package.json" ]
+          echo "Resolved Next.js app root: $APP_ROOT"
+          vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN
 
       - name: Finish in repo handoff mode
         if: steps.creds.outputs.configured != 'true'
