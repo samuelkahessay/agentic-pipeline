@@ -36,6 +36,7 @@ describe("preflight", () => {
 
   afterEach(() => {
     delete process.env.OPENROUTER_API_KEY;
+    delete process.env.E2E_COPILOT_GITHUB_TOKEN;
     delete process.env.COPILOT_GITHUB_TOKEN;
     delete process.env.PUBLIC_BETA_COPILOT_GITHUB_TOKEN;
     delete process.env.GH_AW_GITHUB_TOKEN;
@@ -68,6 +69,25 @@ describe("preflight", () => {
           detail: expect.stringContaining("workflow"),
         }),
       ])
+    );
+  });
+
+  test("accepts E2E_COPILOT_GITHUB_TOKEN for harness-driven runs", () => {
+    process.env.OPENROUTER_API_KEY = "or-key";
+    process.env.E2E_COPILOT_GITHUB_TOKEN = "github_pat_copilot";
+    process.env.GH_AW_GITHUB_TOKEN = "ghp_workflow";
+    process.env.PIPELINE_APP_ID = "123";
+    process.env.PIPELINE_APP_PRIVATE_KEY = "private-key";
+
+    const checks = runPreflight("/repo");
+    const copilotCheck = checks.find((check) => check.id === "copilot-token");
+
+    expect(copilotCheck).toEqual(
+      expect.objectContaining({
+        required: true,
+        present: true,
+        detail: expect.stringContaining("Fine-grained"),
+      })
     );
   });
 

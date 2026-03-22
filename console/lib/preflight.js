@@ -96,7 +96,7 @@ function runPreflight(projectRoot, env = process.env, options = {}) {
   const deployProfilePresent = fs.existsSync(path.join(projectRoot, ".deploy-profile"));
   const workIqPresent = fs.existsSync(path.join(projectRoot, "extraction", "workiq-client.ts"));
   const copilotToken = classifyCopilotToken(
-    env.COPILOT_GITHUB_TOKEN || env.PUBLIC_BETA_COPILOT_GITHUB_TOKEN || ""
+    env.E2E_COPILOT_GITHUB_TOKEN || env.COPILOT_GITHUB_TOKEN || env.PUBLIC_BETA_COPILOT_GITHUB_TOKEN || ""
   );
   const workflowToken = classifyWorkflowToken(env.GH_AW_GITHUB_TOKEN || "");
 
