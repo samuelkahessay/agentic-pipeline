@@ -2,6 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR=$(cd "$(dirname "$0")/../.." && pwd)
+source "$ROOT_DIR/scripts/require-node.sh"
 PORT=43123
 SERVER_PID=""
 CONSOLE_DIR="$ROOT_DIR/console"

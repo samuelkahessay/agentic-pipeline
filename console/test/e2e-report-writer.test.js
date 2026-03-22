@@ -46,7 +46,7 @@ test("writes JSON and markdown reports", () => {
   const result = writer.write(run, {
     summary: "Timed out waiting for the first PR.",
     labels: ["pipeline", "feature"],
-    secrets: ["COPILOT_GITHUB_TOKEN"],
+    secrets: ["OPENAI_API_KEY"],
     variables: { PIPELINE_ACTIVE: "true" },
     issues: [],
     pullRequests: [],

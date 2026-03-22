@@ -3,20 +3,27 @@ set -euo pipefail
 
 ROOT_DIR=$(cd "$(dirname "$0")/../.." && pwd)
 SCRIPT="$ROOT_DIR/scripts/pre-e2e-gate.sh"
+REAL_NODE_BIN=$(command -v node)
 
 TMPDIR=$(mktemp -d)
 trap 'rm -rf "$TMPDIR"' EXIT
 
 mkdir -p "$TMPDIR/bin"
+mkdir -p "$TMPDIR/scripts"
 LOG_FILE="$TMPDIR/calls.log"
 : > "$LOG_FILE"
 export LOG_FILE
 
+ln -s "$ROOT_DIR/scripts/require-node.sh" "$TMPDIR/scripts/require-node.sh"
 ln -s "$ROOT_DIR/console" "$TMPDIR/console"
 ln -s "$ROOT_DIR/studio" "$TMPDIR/studio"
 
 cat > "$TMPDIR/.deploy-profile" <<'EOF'
 nextjs-vercel
+EOF
+
+cat > "$TMPDIR/.nvmrc" <<'EOF'
+22
 EOF
 
 cat > "$TMPDIR/bin/git" <<'EOF'
@@ -102,6 +109,22 @@ printf 'npm %s\n' "$*" >> "$LOG_FILE"
 exit 0
 EOF
 
+cat > "$TMPDIR/bin/node" <<'EOF'
+#!/bin/bash
+printf 'node %s\n' "$*" >> "$LOG_FILE"
+
+if [ "${1:-}" = "-p" ] && [ "${2:-}" = "process.versions.node" ]; then
+  echo "22.19.0"
+  exit 0
+fi
+
+if [ "${1:-}" = "-e" ] && printf '%s\n' "${2:-}" | grep -q 'better-sqlite3'; then
+  exit 0
+fi
+
+exec "$REAL_NODE_BIN" "$@"
+EOF
+
 cat > "$TMPDIR/bin/bash" <<'EOF'
 #!/bin/bash
 printf 'bash %s\n' "$*" >> "$LOG_FILE"
@@ -136,8 +159,8 @@ EOF
 cat > "$TMPDIR/bin/fly" <<'EOF'
 #!/bin/bash
 printf 'fly %s\n' "$*" >> "$LOG_FILE"
-if printf '%s\n' "$*" | grep -q "COPILOT_GITHUB_TOKEN"; then
-  printf 'github_pat_live_token'
+if printf '%s\n' "$*" | grep -q "OPENAI_API_KEY"; then
+  printf 'sk-or-v1-live'
   exit 0
 fi
 if printf '%s\n' "$*" | grep -q "GH_AW_GITHUB_TOKEN"; then
@@ -158,16 +181,18 @@ EOF
 chmod +x \
   "$TMPDIR/bin/git" \
   "$TMPDIR/bin/gh" \
+  "$TMPDIR/bin/node" \
   "$TMPDIR/bin/npm" \
   "$TMPDIR/bin/bash" \
   "$TMPDIR/bin/curl" \
   "$TMPDIR/bin/fly"
 
 export OPENROUTER_API_KEY="or-key"
-export COPILOT_GITHUB_TOKEN="github_pat_local_token"
+export OPENAI_API_KEY="sk-or-v1-local"
 export GH_AW_GITHUB_TOKEN="ghp_local_token"
 export PIPELINE_APP_ID="12345"
 export PIPELINE_APP_PRIVATE_KEY="private-key"
+export REAL_NODE_BIN
 
 run_and_capture() {
   : > "$LOG_FILE"
@@ -197,7 +222,7 @@ fi
 
 OUTPUT_LIVE=$(run_and_capture)
 
-if ! printf '%s\n' "$OUTPUT_LIVE" | grep -qF "Live: Fly runtime Copilot token is fine-grained"; then
+if ! printf '%s\n' "$OUTPUT_LIVE" | grep -qF "Live: Fly runtime AI API key exists"; then
   echo "FAIL: expected Fly runtime token check in live mode" >&2
   exit 1
 fi

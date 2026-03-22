@@ -28,6 +28,8 @@ test("createRun persists runs and default metadata", () => {
 
   expect(run.lane).toBe("provision-only");
   expect(run.status).toBe("queued");
+  expect(run.cleanupMode).toBe("keep");
+  expect(run.keepRepo).toBe(true);
   expect(run.metadata).toEqual({ requestedBy: "jest" });
 });
 

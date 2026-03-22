@@ -32,7 +32,7 @@ export function E2EDashboard({
 }) {
   const [runs, setRuns] = useState(initialRuns);
   const [lane, setLane] = useState<E2ERunLane>("provision-only");
-  const [keepRepo, setKeepRepo] = useState(false);
+  const [keepRepo, setKeepRepo] = useState(true);
   const [cookieJarPath, setCookieJarPath] = useState(defaultCookieJarPath);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState("");

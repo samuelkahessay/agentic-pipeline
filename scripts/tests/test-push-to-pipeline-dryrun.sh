@@ -184,7 +184,7 @@ case "$1" in
     ;;
   secret)
     if [ "$2" = "list" ]; then
-      JSON='[{"name":"PIPELINE_APP_PRIVATE_KEY"},{"name":"COPILOT_GITHUB_TOKEN"},{"name":"VERCEL_TOKEN"},{"name":"VERCEL_ORG_ID"},{"name":"GH_AW_GITHUB_TOKEN"}]'
+      JSON='[{"name":"PIPELINE_APP_PRIVATE_KEY"},{"name":"OPENAI_API_KEY"},{"name":"VERCEL_TOKEN"},{"name":"VERCEL_ORG_ID"},{"name":"GH_AW_GITHUB_TOKEN"}]'
       JQ_FILTER=""
       shift 2
       while [ $# -gt 0 ]; do
@@ -233,7 +233,7 @@ ln -sf "$(which jq)" "$TMPDIR/bin/jq" 2>/dev/null || true
 
 export PATH="$TMPDIR/bin:$PATH"
 export SCAFFOLD_SOURCE_DIR="$TMPDIR/dist/scaffold"
-export COPILOT_GITHUB_TOKEN="test-token"
+export OPENAI_API_KEY="test-token"
 export VERCEL_TOKEN="test-token"
 export VERCEL_ORG_ID="test-org"
 export PIPELINE_APP_ID="12345"

@@ -6,8 +6,8 @@ function createE2EStore(db) {
       lane,
       activeLane = "",
       status = "queued",
-      cleanupMode = "auto",
-      keepRepo = false,
+      cleanupMode = "keep",
+      keepRepo = true,
       cookieJarPath = "",
       metadata = {},
     }) {

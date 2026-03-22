@@ -13,6 +13,8 @@ OUTPUT_DIR="$REPO_ROOT/dist/scaffold"
 [ -d "$OUTPUT_DIR" ] || { echo "FAIL: run export-scaffold.sh first" >&2; exit 1; }
 command -v gh >/dev/null 2>&1 || { echo "FAIL: gh is required" >&2; exit 1; }
 gh aw --help >/dev/null 2>&1 || { echo "FAIL: gh-aw extension is required" >&2; exit 1; }
+# shellcheck disable=SC1091
+source "$OUTPUT_DIR/scripts/require-node.sh"
 
 ERRORS=0
 

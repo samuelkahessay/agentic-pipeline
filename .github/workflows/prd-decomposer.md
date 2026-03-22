@@ -18,12 +18,17 @@ on:
 timeout-minutes: 15
 
 engine:
-  id: copilot
-  model: gpt-5
+  id: codex
+  model: openai/gpt-5-codex
+  env:
+    OPENAI_BASE_URL: https://openrouter.ai/api/v1
 
 permissions: read-all
 
-network: defaults
+network:
+  allowed:
+    - defaults
+    - openrouter.ai
 
 safe-outputs:
   github-app:

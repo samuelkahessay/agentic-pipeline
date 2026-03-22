@@ -20,11 +20,16 @@ permissions:
   issues: read         # To search and analyze issues
   pull-requests: read  # To analyze pull request context
 
-network: defaults
+network:
+  allowed:
+    - defaults
+    - openrouter.ai
 
 engine:
-  id: copilot
-  model: gpt-5.1-codex-mini
+  id: codex
+  model: openai/gpt-5-codex
+  env:
+    OPENAI_BASE_URL: https://openrouter.ai/api/v1
 
 safe-outputs:
   create-issue:

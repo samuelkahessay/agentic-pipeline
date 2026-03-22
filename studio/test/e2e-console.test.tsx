@@ -34,10 +34,10 @@ function makeRun(overrides: Partial<E2ERun> = {}): E2ERun {
     rootIssueUrl: "",
     firstPrNumber: null,
     firstPrUrl: "",
-    cleanupMode: "auto",
+    cleanupMode: "keep",
     cleanupStatus: "pending",
     cleanupDetail: "",
-    keepRepo: false,
+    keepRepo: true,
     cookieJarPath: "/tmp/.e2e-cookiejar",
     reportJsonPath: "",
     reportMarkdownPath: "",
@@ -74,7 +74,7 @@ test("dashboard launches a lane and refreshes the run list", async () => {
   await waitFor(() => {
     expect(mockedApi.startE2ERun).toHaveBeenCalledWith({
       lane: "provision-only",
-      keepRepo: false,
+      keepRepo: true,
       cookieJarPath: "/tmp/.e2e-cookiejar",
     });
   });

@@ -23,7 +23,16 @@ permissions:
   contents: read
   security-events: read
 
-engine: copilot
+engine:
+  id: codex
+  model: openai/gpt-5-codex
+  env:
+    OPENAI_BASE_URL: https://openrouter.ai/api/v1
+
+network:
+  allowed:
+    - defaults
+    - openrouter.ai
 
 safe-outputs:
   create-issue:

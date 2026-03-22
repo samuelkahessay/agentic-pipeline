@@ -13,8 +13,8 @@ ENV_FILE="$TMPDIR/runtime-env"
 cat > "$TMPDIR/bin/fly" <<'EOF'
 #!/usr/bin/env bash
 case "$*" in
-  *"COPILOT_GITHUB_TOKEN"*)
-    printf 'Z2l0aHViX3BhdF90ZXN0'
+  *"OPENAI_API_KEY"*)
+    printf 'c2stb3ItdjEtdGVzdA=='
     ;;
   *"PIPELINE_APP_ID"*)
     printf 'MTIzNDU='
@@ -43,7 +43,7 @@ VALUES=$(
   /bin/bash -lc "
     source '$ENV_FILE'
     printf '%s|%s|%s|%s|%s|%s' \
-      \"\$E2E_COPILOT_GITHUB_TOKEN\" \
+      \"\$E2E_OPENAI_API_KEY\" \
       \"\$PIPELINE_APP_ID\" \
       \"\$PIPELINE_APP_PRIVATE_KEY\" \
       \"\$BUILD_INTERNAL_SECRET\" \
@@ -52,7 +52,7 @@ VALUES=$(
   "
 )
 
-if [[ "$VALUES" != "github_pat_test|12345|private-key|internal-secret|https://console.example.com|https://studio.example.com" ]]; then
+if [[ "$VALUES" != "sk-or-v1-test|12345|private-key|internal-secret|https://console.example.com|https://studio.example.com" ]]; then
   echo "FAIL: env file did not round-trip expected values" >&2
   exit 1
 fi

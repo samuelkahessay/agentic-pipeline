@@ -26,7 +26,7 @@ export function Pricing() {
             <li>You get a GitHub repo you own — full commit history, CI/CD, agentic workflows pre-wired</li>
             <li>Live deployment on Vercel for 30 days</li>
             <li>After 30 days, you take over hosting (Vercel free tier works for most projects)</li>
-            <li>The agentic pipeline in your repo activates when you add your own Copilot token</li>
+            <li>The agentic pipeline in your repo activates when you add your own OpenRouter key</li>
           </ul>
 
           <a href="/build" className={styles.ctaPrimary}>Send your PRD</a>
@@ -45,7 +45,7 @@ export function Pricing() {
 
           <ul className={styles.features}>
             <li>Full pipeline source code</li>
-            <li>Bring your own LLM (Copilot, Claude, Codex, Gemini)</li>
+            <li>Bring your own OpenAI-compatible LLM key</li>
             <li>Deploy anywhere — your infra, your rules</li>
             <li>Self-healing, review agents, auto-dispatch</li>
           </ul>
@@ -54,7 +54,7 @@ export function Pricing() {
             <p className={styles.needsTitle}>You need</p>
             <ul className={styles.needsList}>
               <li>GitHub repo + Actions</li>
-              <li>LLM access (Copilot, Claude, etc.)</li>
+              <li>LLM access via your own OpenAI-compatible key</li>
               <li>Hosting (Vercel, Fly, etc.)</li>
             </ul>
           </div>

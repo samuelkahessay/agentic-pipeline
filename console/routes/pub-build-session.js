@@ -98,7 +98,7 @@ function registerBuildSessionRoutes(app, { db, buildSessionStore, serviceResolve
         "SELECT 1 FROM access_codes WHERE redeemed_by = ? AND (build_session_id IS NULL OR build_session_id = ?) LIMIT 1"
       ).get(userId, session.id);
       const credRow = db.prepare(
-        "SELECT 1 FROM build_session_refs WHERE build_session_id = ? AND ref_type = 'credential' AND ref_key = 'COPILOT_GITHUB_TOKEN' LIMIT 1"
+        "SELECT 1 FROM build_session_refs WHERE build_session_id = ? AND ref_type = 'credential' AND ref_key = 'OPENAI_API_KEY' LIMIT 1"
       ).get(session.id);
       const deployConfigured = [
         "VERCEL_TOKEN",

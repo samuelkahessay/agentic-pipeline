@@ -1,7 +1,7 @@
 # PRD to Prod
 
 Send a PRD, get an invite-only beta run. The current public path is manual
-$1 entitlement -> single-use access code -> GitHub auth -> BYOK Copilot token
+$1 entitlement -> single-use access code -> GitHub auth -> BYOK OpenRouter key
 -> private repo provisioned from the public scaffold. Runs finish at repo
 handoff by default, with deployment validation when Vercel credentials are
 configured.
@@ -33,13 +33,13 @@ Today, `$1` is a manual entitlement, not a checkout flow.
 
 - We email a single-use access code
 - You authenticate with GitHub
-- You paste a BYOK Copilot token
+- You paste a BYOK OpenRouter key
 - Vercel credentials are optional; include them if you want validated deployment
 - Supported lane: greenfield `nextjs-vercel` only
 
 ### Run it yourself
 
-The code is MIT. Fork it, bring your own LLM (Copilot, Claude, Codex, Gemini),
+The code is MIT. Fork it, bring your own OpenAI-compatible LLM key,
 deploy anywhere.
 
 ```bash

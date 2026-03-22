@@ -9,8 +9,14 @@ permissions:
   issues: read
   pull-requests: read
 engine:
-  id: copilot
-  model: claude-sonnet-4.6
+  id: codex
+  model: openai/gpt-5-codex
+  env:
+    OPENAI_BASE_URL: https://openrouter.ai/api/v1
+network:
+  allowed:
+    - defaults
+    - openrouter.ai
 safe-outputs:
   create-issue:
     expires: 2d

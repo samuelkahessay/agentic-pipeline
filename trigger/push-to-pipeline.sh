@@ -162,7 +162,7 @@ PIPELINE_REQUIRED_STATUS_CHECKS="${PIPELINE_REQUIRED_STATUS_CHECKS:-review,Node 
 PIPELINE_APP_PRIVATE_KEY_FILE="${PIPELINE_APP_PRIVATE_KEY_FILE:-$HOME/.config/prd-to-prod/prd-to-prod-pipeline.2026-03-02.private-key.pem}"
 VISIBILITY_FLAG=$(visibility_flag "$PIPELINE_VISIBILITY")
 
-require_env COPILOT_GITHUB_TOKEN
+require_env OPENAI_API_KEY
 require_env VERCEL_TOKEN
 require_env VERCEL_ORG_ID
 [ -n "$PIPELINE_APP_ID" ] || fail "PIPELINE_APP_ID must not be empty"
@@ -246,7 +246,7 @@ else
   gh secret set PIPELINE_APP_PRIVATE_KEY --repo "$REPO" < "$PIPELINE_APP_PRIVATE_KEY_FILE"
 fi
 
-gh secret set COPILOT_GITHUB_TOKEN --repo "$REPO" --body "$COPILOT_GITHUB_TOKEN"
+gh secret set OPENAI_API_KEY --repo "$REPO" --body "$OPENAI_API_KEY"
 gh secret set VERCEL_TOKEN --repo "$REPO" --body "$VERCEL_TOKEN"
 gh secret set VERCEL_ORG_ID --repo "$REPO" --body "$VERCEL_ORG_ID"
 
@@ -258,7 +258,7 @@ fi
 verify_repo_variable "$REPO" PIPELINE_APP_ID "$PIPELINE_APP_ID"
 verify_repo_variable "$REPO" PIPELINE_BOT_LOGIN "$PIPELINE_BOT_LOGIN"
 verify_repo_secret "$REPO" PIPELINE_APP_PRIVATE_KEY
-verify_repo_secret "$REPO" COPILOT_GITHUB_TOKEN
+verify_repo_secret "$REPO" OPENAI_API_KEY
 verify_repo_secret "$REPO" VERCEL_TOKEN
 verify_repo_secret "$REPO" VERCEL_ORG_ID
 

@@ -10,7 +10,7 @@ jest.mock("fs", () => ({
 }));
 
 const {
-  classifyCopilotToken,
+  classifyAgentApiKey,
   classifyWorkflowToken,
   runPreflight,
 } = require("../lib/preflight");
@@ -36,18 +36,18 @@ describe("preflight", () => {
 
   afterEach(() => {
     delete process.env.OPENROUTER_API_KEY;
-    delete process.env.E2E_COPILOT_GITHUB_TOKEN;
-    delete process.env.COPILOT_GITHUB_TOKEN;
-    delete process.env.PUBLIC_BETA_COPILOT_GITHUB_TOKEN;
+    delete process.env.E2E_OPENAI_API_KEY;
+    delete process.env.OPENAI_API_KEY;
+    delete process.env.PUBLIC_BETA_OPENAI_API_KEY;
     delete process.env.GH_AW_GITHUB_TOKEN;
     delete process.env.PIPELINE_APP_ID;
     delete process.env.PIPELINE_APP_PRIVATE_KEY;
     delete process.env.VERCEL_TOKEN;
   });
 
-  test("accepts a fine-grained Copilot PAT and workflow PAT", () => {
+  test("accepts an agent API key and workflow PAT", () => {
     process.env.OPENROUTER_API_KEY = "or-key";
-    process.env.COPILOT_GITHUB_TOKEN = "github_pat_copilot";
+    process.env.OPENAI_API_KEY = "sk-or-v1-key";
     process.env.GH_AW_GITHUB_TOKEN = "ghp_workflow";
     process.env.PIPELINE_APP_ID = "123";
     process.env.PIPELINE_APP_PRIVATE_KEY = "private-key";
@@ -59,9 +59,9 @@ describe("preflight", () => {
     expect(checks).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          id: "copilot-token",
+          id: "agent-api-key",
           present: true,
-          detail: expect.stringContaining("Fine-grained"),
+          detail: expect.stringContaining("Agent API key"),
         }),
         expect.objectContaining({
           id: "gh-aw-github-token",
@@ -72,30 +72,30 @@ describe("preflight", () => {
     );
   });
 
-  test("accepts E2E_COPILOT_GITHUB_TOKEN for harness-driven runs", () => {
+  test("accepts E2E_OPENAI_API_KEY for harness-driven runs", () => {
     process.env.OPENROUTER_API_KEY = "or-key";
-    process.env.E2E_COPILOT_GITHUB_TOKEN = "github_pat_copilot";
+    process.env.E2E_OPENAI_API_KEY = "sk-or-v1-key";
     process.env.GH_AW_GITHUB_TOKEN = "ghp_workflow";
     process.env.PIPELINE_APP_ID = "123";
     process.env.PIPELINE_APP_PRIVATE_KEY = "private-key";
 
     const checks = runPreflight("/repo");
-    const copilotCheck = checks.find((check) => check.id === "copilot-token");
+    const agentKeyCheck = checks.find((check) => check.id === "agent-api-key");
 
-    expect(copilotCheck).toEqual(
+    expect(agentKeyCheck).toEqual(
       expect.objectContaining({
         required: true,
         present: true,
-        detail: expect.stringContaining("Fine-grained"),
+        detail: expect.stringContaining("Agent API key"),
       })
     );
   });
 
-  test("rejects classic Copilot PATs before E2E", () => {
-    expect(classifyCopilotToken("ghp_classic")).toEqual(
+  test("rejects missing agent API keys before E2E", () => {
+    expect(classifyAgentApiKey("")).toEqual(
       expect.objectContaining({
         present: false,
-        detail: expect.stringContaining("Classic PAT"),
+        detail: expect.stringContaining("Missing OPENAI_API_KEY"),
       })
     );
   });
@@ -111,7 +111,7 @@ describe("preflight", () => {
 
   test("marks missing pipeline credentials as required failures", () => {
     process.env.OPENROUTER_API_KEY = "or-key";
-    process.env.COPILOT_GITHUB_TOKEN = "github_pat_copilot";
+    process.env.OPENAI_API_KEY = "sk-or-v1-key";
 
     const checks = runPreflight("/repo");
 
@@ -138,7 +138,7 @@ describe("preflight", () => {
 
   test("treats platform secrets as remote-validated in remote harness mode", () => {
     process.env.OPENROUTER_API_KEY = "or-key";
-    process.env.COPILOT_GITHUB_TOKEN = "github_pat_copilot";
+    process.env.OPENAI_API_KEY = "sk-or-v1-key";
 
     const checks = runPreflight("/repo", process.env, { mode: "remote-harness" });
     const requiredFailures = checks.filter((check) => check.required && !check.present);

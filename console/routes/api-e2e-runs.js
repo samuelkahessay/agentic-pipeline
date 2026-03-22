@@ -2,7 +2,7 @@ const fs = require("fs");
 
 function registerE2ERunRoutes(app, { harness }) {
   app.post("/api/e2e/runs", async (req, res) => {
-    const { lane, keepRepo = false, cookieJarPath = "", requestedBy = "" } = req.body || {};
+    const { lane, keepRepo = true, cookieJarPath = "", requestedBy = "" } = req.body || {};
     if (!lane) {
       return res.status(400).json({ error: "lane is required" });
     }

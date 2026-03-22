@@ -28,29 +28,11 @@ function optionalCheck(id, name, present, detail) {
   return { id, name, required: false, present, detail };
 }
 
-function classifyCopilotToken(token) {
+function classifyAgentApiKey(token) {
   if (!token) {
-    return { present: false, detail: "Missing COPILOT_GITHUB_TOKEN." };
+    return { present: false, detail: "Missing OPENAI_API_KEY." };
   }
-  if (token.startsWith("github_pat_")) {
-    return { present: true, detail: "Fine-grained GitHub PAT detected." };
-  }
-  if (token.startsWith("ghp_")) {
-    return {
-      present: false,
-      detail: "Classic PAT detected. gh-aw rejects classic PATs for GitHub Copilot; use a github_pat_ token.",
-    };
-  }
-  if (token.startsWith("gho_")) {
-    return {
-      present: false,
-      detail: "OAuth token detected. Use a fine-grained github_pat_ token for GitHub Copilot.",
-    };
-  }
-  return {
-    present: false,
-    detail: "Unrecognized Copilot token format. Use a fine-grained github_pat_ token.",
-  };
+  return { present: true, detail: "Agent API key detected." };
 }
 
 function classifyWorkflowToken(token) {
@@ -95,8 +77,13 @@ function runPreflight(projectRoot, env = process.env, options = {}) {
   const ghAwPresent = commandExists("gh", ["aw", "version"]);
   const deployProfilePresent = fs.existsSync(path.join(projectRoot, ".deploy-profile"));
   const workIqPresent = fs.existsSync(path.join(projectRoot, "extraction", "workiq-client.ts"));
-  const copilotToken = classifyCopilotToken(
-    env.E2E_COPILOT_GITHUB_TOKEN || env.COPILOT_GITHUB_TOKEN || env.PUBLIC_BETA_COPILOT_GITHUB_TOKEN || ""
+  const agentApiKey = classifyAgentApiKey(
+    env.E2E_OPENAI_API_KEY ||
+      env.OPENAI_API_KEY ||
+      env.PUBLIC_BETA_OPENAI_API_KEY ||
+      env.OPENROUTER_API_KEY ||
+      env.PUBLIC_BETA_OPENROUTER_API_KEY ||
+      ""
   );
   const workflowToken = classifyWorkflowToken(env.GH_AW_GITHUB_TOKEN || "");
 
@@ -106,8 +93,10 @@ function runPreflight(projectRoot, env = process.env, options = {}) {
       true,
       "openrouter",
       "OpenRouter API",
-      Boolean(env.OPENROUTER_API_KEY),
-      env.OPENROUTER_API_KEY ? "OPENROUTER_API_KEY is configured." : "Missing OPENROUTER_API_KEY."
+      Boolean(env.OPENROUTER_API_KEY || env.OPENAI_API_KEY),
+      env.OPENROUTER_API_KEY || env.OPENAI_API_KEY
+        ? "OpenRouter-compatible API key is configured."
+        : "Missing OPENROUTER_API_KEY or OPENAI_API_KEY."
     ),
     makeCheck(
       mode,
@@ -133,7 +122,7 @@ function runPreflight(projectRoot, env = process.env, options = {}) {
       ghAwPresent,
       ghAwPresent ? "gh aw version succeeded." : "gh-aw is not installed or not available to gh."
     ),
-    makeCheck(mode, true, "copilot-token", "Copilot token", copilotToken.present, copilotToken.detail),
+    makeCheck(mode, true, "agent-api-key", "Agent API key", agentApiKey.present, agentApiKey.detail),
     makeCheck(
       mode,
       true,
@@ -188,7 +177,7 @@ function runPreflight(projectRoot, env = process.env, options = {}) {
 }
 
 module.exports = {
-  classifyCopilotToken,
+  classifyAgentApiKey,
   classifyWorkflowToken,
   runPreflight,
 };

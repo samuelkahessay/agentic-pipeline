@@ -77,7 +77,7 @@ beforeEach(() => {
   // BYOK credential for owned-build so start-build gate passes
   db.prepare(
     `INSERT INTO build_session_refs (build_session_id, ref_type, ref_key, ref_value, metadata, created_at, updated_at)
-     VALUES ('owned-build', 'credential', 'COPILOT_GITHUB_TOKEN', 'encrypted-stub', '{}', '2026-03-14T00:00:00Z', '2026-03-14T00:00:00Z')`
+     VALUES ('owned-build', 'credential', 'OPENAI_API_KEY', 'encrypted-stub', '{}', '2026-03-14T00:00:00Z', '2026-03-14T00:00:00Z')`
   ).run();
 
   // Access code redeemed by user-1 for owned-build so provision gate passes
@@ -237,7 +237,7 @@ test("credential submission writes an audit event with deployConfigured", async 
         Cookie: "build_session=session-1",
       },
       body: JSON.stringify({
-        COPILOT_GITHUB_TOKEN: "github_pat_1234567890abcdef",
+        OPENAI_API_KEY: "sk-or-v1-key",
         VERCEL_TOKEN: "vercel-token",
         VERCEL_ORG_ID: "team_123",
         VERCEL_PROJECT_ID: "prj_123",

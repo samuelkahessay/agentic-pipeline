@@ -2,6 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
+source "$ROOT_DIR/scripts/require-node.sh"
 STATE_ROOT="${E2E_STATE_ROOT:-$ROOT_DIR}"
 DEPENDENCY_SOURCE_ROOT="${E2E_PROVISION_SMOKE_DEPENDENCY_SOURCE_ROOT:-$ROOT_DIR}"
 RUNTIME_ENV_SCRIPT="${E2E_RUNTIME_ENV_SCRIPT:-$ROOT_DIR/scripts/e2e/runtime-env.sh}"

@@ -110,7 +110,7 @@ async function runLane(argv) {
     throw new Error("--lane is required");
   }
 
-  const keepRepo = argv.includes("--keep-repo");
+  const keepRepo = !argv.includes("--auto-cleanup");
   const cookieJarPath = readOption(argv, "--path") || resolveCookieJarPath(projectRoot);
   const run = await harness.runNow({
     lane,
@@ -211,7 +211,7 @@ function printUsage() {
   console.log("Usage:");
   console.log("  scripts/e2e/harness.sh auth-check [--path <cookie-jar>]");
   console.log("  scripts/e2e/harness.sh auth-refresh [--path <cookie-jar>] [--no-open]");
-  console.log("  scripts/e2e/harness.sh run --lane <lane> [--keep-repo] [--path <cookie-jar>]");
+  console.log("  scripts/e2e/harness.sh run --lane <lane> [--auto-cleanup] [--path <cookie-jar>]");
   console.log("  scripts/e2e/harness.sh watch <run-id>");
   console.log("  scripts/e2e/harness.sh cleanup <run-id> [--force]");
   console.log("  scripts/e2e/harness.sh report <run-id>");

@@ -3,6 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
 REPO_ROOT="${REPO_ROOT:-$(cd "$SCRIPT_DIR/.." && pwd)}"
+source "$REPO_ROOT/scripts/require-node.sh"
 
 usage() {
   cat >&2 <<'USAGE'
@@ -13,7 +14,7 @@ Run the local and live readiness gate before burning tokens on a real E2E run.
 Options:
   --skip-live    Skip live platform checks (GitHub/Fly/Vercel/template runtime checks)
   --remote-harness
-                Validate remote-harness prerequisites. Local Copilot/auth checks still
+                Validate remote-harness prerequisites. Local AI/auth checks still
                 run, but platform secrets are validated against the deployed runtime.
   -h, --help     Show this help
 
@@ -207,26 +208,14 @@ read_fly_runtime_secret() {
   fly ssh console --app prd-to-prod -C "printenv ${secret_name}" 2>/dev/null | tr -d '\r'
 }
 
-check_runtime_copilot_token() {
+check_runtime_agent_api_key() {
   local token
-  token=$(read_fly_runtime_secret "COPILOT_GITHUB_TOKEN")
+  token=$(read_fly_runtime_secret "OPENAI_API_KEY")
   if [ -z "$token" ]; then
-    echo "COPILOT_GITHUB_TOKEN is missing from the Fly runtime." >&2
+    echo "OPENAI_API_KEY is missing from the Fly runtime." >&2
     return 1
   fi
-  case "$token" in
-    github_pat_*)
-      printf "Detected fine-grained Copilot PAT in Fly runtime.\n"
-      ;;
-    ghp_*)
-      echo "Fly runtime still has a classic Copilot PAT; use github_pat_." >&2
-      return 1
-      ;;
-    *)
-      echo "Fly runtime Copilot token format is unrecognized." >&2
-      return 1
-      ;;
-  esac
+  printf "Detected AI API key in Fly runtime.\n"
 }
 
 check_runtime_workflow_token() {
@@ -291,7 +280,7 @@ if [ "$SKIP_LIVE" = false ]; then
   run_check "Live: Vercel studio reachable" check_vercel_studio
   run_check "Live: template repo is published" check_template_repo
   run_check "Live: template scaffold files and deploy profile exist" check_template_files
-  run_check "Live: Fly runtime Copilot token is fine-grained" check_runtime_copilot_token
+  run_check "Live: Fly runtime AI API key exists" check_runtime_agent_api_key
   run_check "Live: Fly runtime workflow token exists" check_runtime_workflow_token
   run_check "Live: Fly runtime pipeline app id exists" check_runtime_pipeline_app_id
   run_check "Live: Fly runtime pipeline app private key exists" check_runtime_pipeline_app_private_key

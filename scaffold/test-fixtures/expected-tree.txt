@@ -41,6 +41,8 @@ dist/scaffold/.github/workflows/security-compliance.md
 dist/scaffold/.github/workflows/shared/reporting.md
 dist/scaffold/.github/workflows/validate-deployment.yml
 dist/scaffold/.gitignore
+dist/scaffold/.node-version
+dist/scaffold/.nvmrc
 dist/scaffold/AGENTS.md
 dist/scaffold/LICENSE
 dist/scaffold/README.md
@@ -65,6 +67,7 @@ dist/scaffold/scripts/monitor-pipeline.sh
 dist/scaffold/scripts/patch-pr-review-agent-lock.sh
 dist/scaffold/scripts/pipeline-watchdog.sh
 dist/scaffold/scripts/render-ci-repair-command.sh
+dist/scaffold/scripts/require-node.sh
 dist/scaffold/scripts/resolve-deployment-url.sh
 dist/scaffold/scripts/resolve-nextjs-app-root.sh
 dist/scaffold/scripts/run-lifecycle-lib.sh
@@ -89,6 +92,7 @@ dist/scaffold/scripts/tests/test-console-server.sh
 dist/scaffold/scripts/tests/test-console-structure.sh
 dist/scaffold/scripts/tests/test-demo-preflight.sh
 dist/scaffold/scripts/tests/test-deploy-validation-wiring.sh
+dist/scaffold/scripts/tests/test-disable-test-repo-workflows.sh
 dist/scaffold/scripts/tests/test-duplicate-code-detector.sh
 dist/scaffold/scripts/tests/test-e2e-provision-smoke.sh
 dist/scaffold/scripts/tests/test-e2e-runtime-env.sh
@@ -104,6 +108,7 @@ dist/scaffold/scripts/tests/test-log-decision.sh
 dist/scaffold/scripts/tests/test-manifest-completeness.sh
 dist/scaffold/scripts/tests/test-manifest-parse.sh
 dist/scaffold/scripts/tests/test-no-stale-references.sh
+dist/scaffold/scripts/tests/test-node-runtime-contract.sh
 dist/scaffold/scripts/tests/test-patch-pr-review-agent-lock.sh
 dist/scaffold/scripts/tests/test-pipeline-watchdog.sh
 dist/scaffold/scripts/tests/test-pr-review-agent-activation.sh
@@ -129,6 +134,7 @@ dist/scaffold/scripts/verify-mvp.sh
 dist/scaffold/setup-verify.sh
 dist/scaffold/setup.sh
 dist/scaffold/studio/.gitignore
+dist/scaffold/studio/.npmrc
 dist/scaffold/studio/app/globals.css
 dist/scaffold/studio/app/layout.tsx
 dist/scaffold/studio/app/page.tsx

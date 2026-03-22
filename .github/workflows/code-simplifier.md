@@ -15,15 +15,22 @@ tracker-id: code-simplifier
 imports:
   - shared/reporting.md
 
+engine:
+  id: codex
+  model: openai/gpt-5-codex
+  env:
+    OPENAI_BASE_URL: https://openrouter.ai/api/v1
+
 safe-outputs:
   create-pull-request:
     title-prefix: "[code-simplifier] "
     labels: [refactoring, code-quality, automation]
-    reviewers: [copilot]
     expires: 1d
 
 network:
   allowed:
+    - defaults
+    - openrouter.ai
     - dotnet
 
 tools:
@@ -345,7 +352,7 @@ Create the pull request using the safe-outputs configuration:
 
 - Title will be prefixed with `[code-simplifier]`
 - Labeled with `refactoring`, `code-quality`, `automation`
-- Assigned to `copilot` for review
+- Assigned to the automated review agent for review
 - Set as ready for review (not draft)
 
 ## Important Guidelines

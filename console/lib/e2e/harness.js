@@ -25,7 +25,7 @@ const { createE2EStore } = require("./store");
 const execFileAsync = promisify(execFile);
 const REQUIRED_BOOTSTRAP_LABELS = ["pipeline", "feature", "bug", "infra", "test", "docs"];
 const REQUIRED_BOOTSTRAP_SECRETS = [
-  "COPILOT_GITHUB_TOKEN",
+  "OPENAI_API_KEY",
   "PIPELINE_APP_PRIVATE_KEY",
   "GH_AW_GITHUB_TOKEN",
 ];
@@ -143,13 +143,15 @@ function createE2EHarness({
     if (!E2E_LANES.includes(lane)) {
       throw new Error(`Unsupported E2E lane: ${lane}`);
     }
+    const keepRepo =
+      typeof options.keepRepo === "boolean" ? options.keepRepo : true;
 
     return e2eStore.createRun({
       lane,
       activeLane: lane === "full-ladder" ? FULL_LADDER_SEQUENCE[0] : lane,
       status: "queued",
-      cleanupMode: options.keepRepo ? "keep" : "auto",
-      keepRepo: Boolean(options.keepRepo),
+      cleanupMode: keepRepo ? "keep" : "auto",
+      keepRepo,
       cookieJarPath: options.cookieJarPath || defaultCookieJarPath(),
       metadata: {
         requestedBy: options.requestedBy || "system",
@@ -379,7 +381,7 @@ function createE2EHarness({
 
     appendStep(runId, lane, "credentials", "running", "Submitting BYOK credentials.");
     await client.submitCredentials(sessionId, credentials);
-    appendStep(runId, lane, "credentials", "passed", "Stored Copilot and optional Vercel credentials.");
+    appendStep(runId, lane, "credentials", "passed", "Stored AI API and optional Vercel credentials.");
 
     const requestedRepoName = buildHarnessRepoName({
       lane,
@@ -670,7 +672,7 @@ function createE2EHarness({
 
       await page.getByPlaceholder("BETA-XXXXXXXX").fill(accessCode);
       await page.getByRole("button", { name: "Redeem" }).click();
-      await page.getByPlaceholder("github_pat_...").fill(credentials.COPILOT_GITHUB_TOKEN);
+      await page.getByPlaceholder("sk-or-v1-...").fill(credentials.OPENAI_API_KEY);
       await page.getByRole("button", { name: "Continue" }).click();
 
       const client = auth.client;
@@ -1199,18 +1201,19 @@ function createE2EHarness({
 }
 
 function resolveCredentials() {
-  const copilotToken =
-    process.env.E2E_COPILOT_GITHUB_TOKEN ||
-    process.env.PUBLIC_BETA_COPILOT_GITHUB_TOKEN ||
-    process.env.COPILOT_GITHUB_TOKEN ||
+  const agentApiKey =
+    process.env.E2E_OPENAI_API_KEY ||
+    process.env.PUBLIC_BETA_OPENAI_API_KEY ||
+    process.env.OPENAI_API_KEY ||
+    process.env.OPENROUTER_API_KEY ||
     "";
 
-  if (!copilotToken) {
-    throw new Error("Set E2E_COPILOT_GITHUB_TOKEN or COPILOT_GITHUB_TOKEN before running the harness.");
+  if (!agentApiKey) {
+    throw new Error("Set E2E_OPENAI_API_KEY, OPENAI_API_KEY, or OPENROUTER_API_KEY before running the harness.");
   }
 
   return {
-    COPILOT_GITHUB_TOKEN: copilotToken,
+    OPENAI_API_KEY: agentApiKey,
     ...(readEnvValue("E2E_VERCEL_TOKEN", "VERCEL_TOKEN")
       ? { VERCEL_TOKEN: readEnvValue("E2E_VERCEL_TOKEN", "VERCEL_TOKEN") }
       : {}),

@@ -18,7 +18,7 @@ cat > "$RUNTIME_ENV_SCRIPT" <<'EOF'
 set -euo pipefail
 echo "runtime-env $*" >> "$CALLS_FILE"
 cat > "$3" <<ENV
-export E2E_COPILOT_GITHUB_TOKEN='github_pat_test'
+export E2E_OPENAI_API_KEY='sk-or-v1-test'
 export PIPELINE_APP_ID='12345'
 export PIPELINE_APP_PRIVATE_KEY='private-key'
 export BUILD_INTERNAL_SECRET='internal-secret'

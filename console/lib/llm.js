@@ -142,7 +142,7 @@ const RESPONSE_FORMAT = {
 };
 
 function createLLMClient() {
-  const apiKey = process.env.LLM_API_KEY || process.env.OPENROUTER_API_KEY;
+  const apiKey = process.env.LLM_API_KEY || process.env.OPENAI_API_KEY || process.env.OPENROUTER_API_KEY;
   const model = process.env.LLM_MODEL || DEFAULT_MODEL;
   const apiUrl = process.env.LLM_API_URL || DEFAULT_URL;
 

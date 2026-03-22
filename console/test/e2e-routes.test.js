@@ -83,6 +83,13 @@ test("run routes create, list, and fetch e2e runs", async () => {
       runId: "run-1",
       run: createdRun,
     });
+    expect(harness.launchRun).toHaveBeenCalledWith(
+      expect.objectContaining({
+        lane: "provision-only",
+        keepRepo: true,
+        requestedBy: "dev-operator",
+      })
+    );
 
     const listRes = await fetch(makeUrl(server, "/api/e2e/runs"));
     expect(await listRes.json()).toEqual({ runs: [createdRun] });

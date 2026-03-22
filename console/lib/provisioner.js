@@ -11,8 +11,11 @@ const PIPELINE_BOT_LOGIN =
   process.env.PUBLIC_BETA_PIPELINE_BOT_LOGIN ||
   process.env.PIPELINE_BOT_LOGIN ||
   "prd-to-prod-pipeline";
-const BETA_COPILOT_TOKEN =
-  process.env.PUBLIC_BETA_COPILOT_GITHUB_TOKEN || process.env.COPILOT_GITHUB_TOKEN;
+const BETA_OPENAI_API_KEY =
+  process.env.PUBLIC_BETA_OPENAI_API_KEY ||
+  process.env.OPENAI_API_KEY ||
+  process.env.PUBLIC_BETA_OPENROUTER_API_KEY ||
+  process.env.OPENROUTER_API_KEY;
 const PIPELINE_APP_ID = process.env.PIPELINE_APP_ID || "";
 const PIPELINE_APP_PRIVATE_KEY = process.env.PIPELINE_APP_PRIVATE_KEY || "";
 const GH_AW_GITHUB_TOKEN = process.env.GH_AW_GITHUB_TOKEN || "";
@@ -368,9 +371,9 @@ function createProvisioner({ db, buildSessionStore, githubClient }) {
     return decrypt(refs[0].ref_value);
   }
 
-  function resolveCopilotToken(sessionId, session) {
-    if (session.is_demo) return BETA_COPILOT_TOKEN;
-    return getByokCredential(sessionId, "COPILOT_GITHUB_TOKEN") || null;
+  function resolveAgentApiKey(sessionId, session) {
+    if (session.is_demo) return BETA_OPENAI_API_KEY;
+    return getByokCredential(sessionId, "OPENAI_API_KEY") || null;
   }
 
   function resolveVercelCredentials(sessionId, session) {
@@ -451,18 +454,18 @@ function createProvisioner({ db, buildSessionStore, githubClient }) {
         });
       }
 
-      // Resolve Copilot token: BYOK for real sessions, platform fallback for demo
-      const copilotToken = resolveCopilotToken(sessionId, session);
-      if (!copilotToken) {
+      // Resolve agent API key: BYOK for real sessions, platform fallback for demo
+      const agentApiKey = resolveAgentApiKey(sessionId, session);
+      if (!agentApiKey) {
         throw new Error(
           session.is_demo
-            ? "COPILOT_GITHUB_TOKEN is not configured on the platform"
-            : "Copilot token not provided. Submit credentials before provisioning."
+            ? "OPENAI_API_KEY is not configured on the platform"
+            : "AI API key not provided. Submit credentials before provisioning."
         );
       }
       await githubClient.createOrUpdateActionsSecret(token, owner, repo, {
-        name: "COPILOT_GITHUB_TOKEN",
-        value: copilotToken,
+        name: "OPENAI_API_KEY",
+        value: agentApiKey,
       });
 
       // Write optional Vercel BYOK credentials if provided

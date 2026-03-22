@@ -692,7 +692,7 @@ function ByokForm({
   sessionId: string;
   onSubmitted: (deployConfigured: boolean) => void;
 }) {
-  const [copilotToken, setCopilotToken] = useState("");
+  const [agentApiKey, setAgentApiKey] = useState("");
   const [vercelToken, setVercelToken] = useState("");
   const [vercelOrgId, setVercelOrgId] = useState("");
   const [vercelProjectId, setVercelProjectId] = useState("");
@@ -708,7 +708,7 @@ function ByokForm({
       vercelProjectId.trim().length > 0;
     try {
       await buildApi.submitCredentials(sessionId, {
-        COPILOT_GITHUB_TOKEN: copilotToken.trim(),
+        OPENAI_API_KEY: agentApiKey.trim(),
         ...(vercelToken.trim() ? { VERCEL_TOKEN: vercelToken.trim() } : {}),
         ...(vercelOrgId.trim() ? { VERCEL_ORG_ID: vercelOrgId.trim() } : {}),
         ...(vercelProjectId.trim() ? { VERCEL_PROJECT_ID: vercelProjectId.trim() } : {}),
@@ -725,16 +725,16 @@ function ByokForm({
     <div className={styles.gateForm}>
       <p className={styles.gateLabel}>Configure your pipeline</p>
       <p className={styles.copy}>
-        Paste a fine-grained GitHub personal access token with Copilot scope. Classic PATs (ghp_) are not supported — create one at github.com/settings/personal-access-tokens/new.
+        Paste your OpenRouter API key. The pipeline uses it as an OpenAI-compatible `OPENAI_API_KEY` for gh-aw.
         Vercel credentials are optional; without them, the run still finishes in repo handoff mode.
       </p>
       <div className={styles.gateFormFields}>
         <input
           className={styles.gateInput}
           type="password"
-          placeholder="github_pat_..."
-          value={copilotToken}
-          onChange={(e) => setCopilotToken(e.target.value)}
+          placeholder="sk-or-v1-..."
+          value={agentApiKey}
+          onChange={(e) => setAgentApiKey(e.target.value)}
           disabled={submitting}
         />
       </div>
@@ -767,7 +767,7 @@ function ByokForm({
       <div className={styles.actions}>
         <button
           className={styles.button}
-          disabled={submitting || copilotToken.trim().length < 10 || copilotToken.trim().startsWith("ghp_")}
+          disabled={submitting || agentApiKey.trim().length < 10}
           onClick={handleSubmit}
           type="button"
         >
@@ -1087,7 +1087,7 @@ function deriveRunEvidence(events: BuildEvent[], session: BuildSession) {
       complete: events.some((event) => event.kind === "credentials_submitted"),
       detail: events.some((event) => event.kind === "credentials_submitted")
         ? "Agent credentials are stored for this run."
-        : "Copilot token required. Vercel credentials optional.",
+        : "OpenRouter key required. Vercel credentials optional.",
     },
     {
       label: "Repo created",

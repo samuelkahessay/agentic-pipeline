@@ -71,8 +71,8 @@ test("bootstrap treats conflicting auto-merge configuration as a warning", async
   db.prepare(
     `INSERT INTO build_session_refs
        (build_session_id, ref_type, ref_key, ref_value, metadata, created_at, updated_at)
-     VALUES ('build-1', 'credential', 'COPILOT_GITHUB_TOKEN', ?, '{}', ?, ?)`
-  ).run(encrypt("github_pat_1234567890abcdef"), now, now);
+     VALUES ('build-1', 'credential', 'OPENAI_API_KEY', ?, '{}', ?, ?)`
+  ).run(encrypt("sk-or-v1-key"), now, now);
 
   const githubClient = {
     createRepoFromTemplate: jest.fn().mockResolvedValue({
@@ -149,8 +149,8 @@ test("bootstrap treats repo memory state.json conflicts as a warning", async () 
   db.prepare(
     `INSERT INTO build_session_refs
        (build_session_id, ref_type, ref_key, ref_value, metadata, created_at, updated_at)
-     VALUES ('build-1', 'credential', 'COPILOT_GITHUB_TOKEN', ?, '{}', ?, ?)`
-  ).run(encrypt("github_pat_1234567890abcdef"), now, now);
+     VALUES ('build-1', 'credential', 'OPENAI_API_KEY', ?, '{}', ?, ?)`
+  ).run(encrypt("sk-or-v1-key"), now, now);
 
   const githubClient = {
     createRepoFromTemplate: jest.fn().mockResolvedValue({

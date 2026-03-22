@@ -20,8 +20,10 @@ echo "=== Final Validation Matrix ==="
 run_check "console-structure" "bash scripts/tests/test-console-structure.sh"
 run_check "console-preflight" "bash scripts/tests/test-console-preflight.sh"
 run_check "console-server" "bash scripts/tests/test-console-server.sh"
+run_check "node-runtime-contract" "bash scripts/tests/test-node-runtime-contract.sh"
 run_check "pre-e2e-gate" "bash scripts/tests/test-pre-e2e-gate.sh"
 run_check "e2e-runtime-env" "bash scripts/tests/test-e2e-runtime-env.sh"
+run_check "disable-test-repo-workflows" "bash scripts/tests/test-disable-test-repo-workflows.sh"
 if [ "${SKIP_E2E_PROVISION_SMOKE_TEST:-0}" = "1" ]; then
   echo "SKIP: e2e-provision-smoke"
 else

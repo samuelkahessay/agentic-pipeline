@@ -4,7 +4,7 @@ const { createAccessCodeStore } = require("../lib/access-codes");
 const { createBuildSessionStore } = require("../lib/build-session-store");
 
 const BYOK_CREDENTIALS = [
-  { key: "COPILOT_GITHUB_TOKEN", required: true },
+  { key: "OPENAI_API_KEY", required: true },
   { key: "VERCEL_TOKEN", required: false },
   { key: "VERCEL_ORG_ID", required: false },
   { key: "VERCEL_PROJECT_ID", required: false },
@@ -79,14 +79,12 @@ function registerProvisionRoutes(app, { db, serviceResolver }) {
       return res.status(400).json({ error: "Credentials object required" });
     }
 
-    if (!credentials.COPILOT_GITHUB_TOKEN || typeof credentials.COPILOT_GITHUB_TOKEN !== "string") {
-      return res.status(400).json({ error: "COPILOT_GITHUB_TOKEN is required" });
+    if (!credentials.OPENAI_API_KEY && typeof credentials.OPENROUTER_API_KEY === "string") {
+      credentials.OPENAI_API_KEY = credentials.OPENROUTER_API_KEY;
     }
 
-    if (credentials.COPILOT_GITHUB_TOKEN.startsWith("ghp_")) {
-      return res.status(400).json({
-        error: "Classic PATs (ghp_...) are not supported. Please create a fine-grained PAT (github_pat_...) at https://github.com/settings/personal-access-tokens/new",
-      });
+    if (!credentials.OPENAI_API_KEY || typeof credentials.OPENAI_API_KEY !== "string") {
+      return res.status(400).json({ error: "OPENAI_API_KEY is required" });
     }
 
     for (const { key } of BYOK_CREDENTIALS) {
@@ -106,8 +104,8 @@ function registerProvisionRoutes(app, { db, serviceResolver }) {
       data: {
         deployConfigured: hasDeployCredentials(db, session.id),
         detail: hasDeployCredentials(db, session.id)
-          ? "Copilot and Vercel credentials saved. This run can provision and validate deployment."
-          : "Copilot credentials saved. This run can build and hand off the repo without deployment validation.",
+          ? "AI API and Vercel credentials saved. This run can provision and validate deployment."
+          : "AI API credentials saved. This run can build and hand off the repo without deployment validation.",
       },
     });
 
@@ -246,18 +244,18 @@ function registerProvisionRoutes(app, { db, serviceResolver }) {
       });
     }
 
-    // Real sessions require BYOK Copilot token before launch
+    // Real sessions require a BYOK AI API key before launch
     if (!session.is_demo) {
-      const copilotRef = db
+      const agentApiKeyRef = db
         .prepare(
           `SELECT 1 FROM build_session_refs
-           WHERE build_session_id = ? AND ref_type = 'credential' AND ref_key = 'COPILOT_GITHUB_TOKEN'`
+           WHERE build_session_id = ? AND ref_type = 'credential' AND ref_key = 'OPENAI_API_KEY'`
         )
         .get(session.id);
-      if (!copilotRef) {
+      if (!agentApiKeyRef) {
         return res.status(400).json({
           error: "credentials_required",
-          message: "Submit your Copilot token before starting the build.",
+          message: "Submit your AI API key before starting the build.",
           action: "byok",
         });
       }
