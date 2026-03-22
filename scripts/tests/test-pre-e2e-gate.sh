@@ -30,7 +30,11 @@ esac
 
 case "$1" in
   rev-parse)
-    echo "main"
+    if [ "${2:-}" = "--abbrev-ref" ] && [ "${3:-}" = "HEAD" ]; then
+      echo "${TEST_GIT_BRANCH:-main}"
+      exit 0
+    fi
+    echo "abc123"
     exit 0
     ;;
   status)
@@ -167,7 +171,11 @@ export PIPELINE_APP_PRIVATE_KEY="private-key"
 
 run_and_capture() {
   : > "$LOG_FILE"
-  REPO_ROOT="$TMPDIR" PATH="$TMPDIR/bin:$PATH" /bin/bash "$SCRIPT" "$@" 2>&1 || true
+  REPO_ROOT="$TMPDIR" \
+  PATH="$TMPDIR/bin:$PATH" \
+  TEST_GIT_BRANCH="${TEST_GIT_BRANCH:-}" \
+  PRE_E2E_ALLOW_DETACHED_HEAD="${PRE_E2E_ALLOW_DETACHED_HEAD:-}" \
+  /bin/bash "$SCRIPT" "$@" 2>&1 || true
 }
 
 OUTPUT_SKIP=$(run_and_capture --skip-live)
@@ -217,6 +225,17 @@ fi
 
 if ! printf '%s\n' "$OUTPUT_REMOTE" | grep -qF "PASS ("; then
   echo "FAIL: expected PASS summary from remote-harness gate" >&2
+  exit 1
+fi
+
+export GH_AW_GITHUB_TOKEN="ghp_local_token"
+export PIPELINE_APP_ID="12345"
+export PIPELINE_APP_PRIVATE_KEY="private-key"
+
+OUTPUT_DETACHED=$(TEST_GIT_BRANCH=HEAD PRE_E2E_ALLOW_DETACHED_HEAD=1 run_and_capture --skip-live)
+
+if ! printf '%s\n' "$OUTPUT_DETACHED" | grep -qF "PASS ("; then
+  echo "FAIL: expected detached HEAD pinned to main to pass when explicitly allowed" >&2
   exit 1
 fi
 

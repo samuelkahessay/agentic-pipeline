@@ -74,10 +74,22 @@ run_check_eval() {
 check_main_branch() {
   local branch
   branch=$(git -C "$REPO_ROOT" rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
-  if [ "$branch" != "main" ]; then
-    echo "Current branch is '$branch', expected 'main'." >&2
-    return 1
+
+  if [ "$branch" = "main" ]; then
+    return 0
   fi
+
+  if [ "${PRE_E2E_ALLOW_DETACHED_HEAD:-0}" = "1" ] && [ "$branch" = "HEAD" ]; then
+    local head_ref main_ref
+    head_ref=$(git -C "$REPO_ROOT" rev-parse HEAD 2>/dev/null || echo "")
+    main_ref=$(git -C "$REPO_ROOT" rev-parse main 2>/dev/null || echo "")
+    if [ -n "$head_ref" ] && [ "$head_ref" = "$main_ref" ]; then
+      return 0
+    fi
+  fi
+
+  echo "Current branch is '$branch', expected 'main'." >&2
+  return 1
 }
 
 check_clean_tree() {

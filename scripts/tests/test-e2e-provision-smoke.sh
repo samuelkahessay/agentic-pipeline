@@ -78,7 +78,15 @@ if ! grep -qF "harness run --lane provision-only --path $COOKIE_JAR --keep-repo"
 fi
 
 WORKTREE_GIT="$TMPDIR/git"
+DEPENDENCY_SOURCE_ROOT="$TMPDIR/dependency-source"
 : > "$CALLS_FILE"
+
+mkdir -p \
+  "$DEPENDENCY_SOURCE_ROOT/console/node_modules/better-sqlite3" \
+  "$DEPENDENCY_SOURCE_ROOT/studio/node_modules/next"
+touch \
+  "$DEPENDENCY_SOURCE_ROOT/console/node_modules/better-sqlite3/package.json" \
+  "$DEPENDENCY_SOURCE_ROOT/studio/node_modules/next/package.json"
 
 cat > "$WORKTREE_GIT" <<'EOF'
 #!/usr/bin/env bash
@@ -101,15 +109,15 @@ case "$1" in
 #!/usr/bin/env bash
 set -euo pipefail
 child_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
-console_link=0
-studio_link=0
-if [[ -L "$child_root/console/node_modules" ]]; then
-  console_link=1
+console_copy=0
+studio_copy=0
+if [[ -d "$child_root/console/node_modules" && ! -L "$child_root/console/node_modules" ]]; then
+  console_copy=1
 fi
-if [[ -L "$child_root/studio/node_modules" ]]; then
-  studio_link=1
+if [[ -d "$child_root/studio/node_modules" && ! -L "$child_root/studio/node_modules" ]]; then
+  studio_copy=1
 fi
-echo "child worktree run state-root=$E2E_STATE_ROOT env-file=$E2E_RUNTIME_ENV_FILE cookie=$E2E_COOKIE_JAR_PATH child=$E2E_PROVISION_SMOKE_CHILD console-link=$console_link studio-link=$studio_link" >> "$CALLS_FILE"
+echo "child worktree run state-root=$E2E_STATE_ROOT env-file=$E2E_RUNTIME_ENV_FILE cookie=$E2E_COOKIE_JAR_PATH child=$E2E_PROVISION_SMOKE_CHILD console-copy=$console_copy studio-copy=$studio_copy" >> "$CALLS_FILE"
 EOS
         chmod +x "$worktree_dir/scripts/e2e/provision-smoke.sh"
         ;;
@@ -135,6 +143,7 @@ PATH="$TMPDIR:$PATH" \
 CALLS_FILE="$CALLS_FILE" \
 E2E_RUNTIME_ENV_FILE="$ENV_FILE" \
 E2E_COOKIE_JAR_PATH="$COOKIE_JAR" \
+E2E_PROVISION_SMOKE_DEPENDENCY_SOURCE_ROOT="$DEPENDENCY_SOURCE_ROOT" \
 bash "$SCRIPT" >/dev/null
 
 if ! grep -qF "git worktree add" "$CALLS_FILE"; then
@@ -152,13 +161,13 @@ if ! grep -qF "child=1" "$CALLS_FILE"; then
   exit 1
 fi
 
-if ! grep -qF "console-link=1" "$CALLS_FILE"; then
-  echo "FAIL: expected provision-smoke to link console/node_modules into the clean worktree" >&2
+if ! grep -qF "console-copy=1" "$CALLS_FILE"; then
+  echo "FAIL: expected provision-smoke to copy console/node_modules into the clean worktree" >&2
   exit 1
 fi
 
-if ! grep -qF "studio-link=1" "$CALLS_FILE"; then
-  echo "FAIL: expected provision-smoke to link studio/node_modules into the clean worktree" >&2
+if ! grep -qF "studio-copy=1" "$CALLS_FILE"; then
+  echo "FAIL: expected provision-smoke to copy studio/node_modules into the clean worktree" >&2
   exit 1
 fi
 

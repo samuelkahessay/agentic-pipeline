@@ -3,6 +3,7 @@ set -euo pipefail
 
 ROOT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 STATE_ROOT="${E2E_STATE_ROOT:-$ROOT_DIR}"
+DEPENDENCY_SOURCE_ROOT="${E2E_PROVISION_SMOKE_DEPENDENCY_SOURCE_ROOT:-$ROOT_DIR}"
 RUNTIME_ENV_SCRIPT="${E2E_RUNTIME_ENV_SCRIPT:-$ROOT_DIR/scripts/e2e/runtime-env.sh}"
 HARNESS_SCRIPT="${E2E_HARNESS_SCRIPT:-}"
 HARNESS_JS="$ROOT_DIR/scripts/e2e/harness.js"
@@ -68,7 +69,7 @@ maybe_reexec_in_clean_worktree() {
 
   trap cleanup_worktree EXIT
   git -C "$ROOT_DIR" worktree add --detach "$worktree_dir" "$WORKTREE_REF" >/dev/null
-  link_worktree_dependencies "$worktree_dir"
+  copy_worktree_dependencies "$worktree_dir"
 
   echo "Working tree is dirty. Re-running provision smoke from clean worktree $worktree_dir"
 
@@ -78,6 +79,7 @@ maybe_reexec_in_clean_worktree() {
     "E2E_STATE_ROOT=$STATE_ROOT"
     "E2E_RUNTIME_ENV_FILE=$ENV_FILE"
     "E2E_COOKIE_JAR_PATH=$COOKIE_JAR_PATH"
+    "PRE_E2E_ALLOW_DETACHED_HEAD=1"
   )
 
   if [[ -n "${E2E_RUNTIME_ENV_SCRIPT:-}" ]]; then
@@ -92,18 +94,41 @@ maybe_reexec_in_clean_worktree() {
     child_env+=("E2E_PROVISION_SMOKE_REF=$E2E_PROVISION_SMOKE_REF")
   fi
 
+  if [[ -n "${E2E_PROVISION_SMOKE_DEPENDENCY_SOURCE_ROOT:-}" ]]; then
+    child_env+=("E2E_PROVISION_SMOKE_DEPENDENCY_SOURCE_ROOT=$E2E_PROVISION_SMOKE_DEPENDENCY_SOURCE_ROOT")
+  fi
+
   env "${child_env[@]}" bash "$worktree_dir/scripts/e2e/provision-smoke.sh" "$@"
   exit $?
 }
 
-link_worktree_dependencies() {
+copy_dependency_dir() {
+  local source_dir="$1"
+  local dest_dir="$2"
+
+  if [[ ! -d "$source_dir" || -e "$dest_dir" ]]; then
+    return 0
+  fi
+
+  if cp -cR "$source_dir" "$dest_dir" 2>/dev/null; then
+    return 0
+  fi
+
+  mkdir -p "$dest_dir"
+  if command -v rsync >/dev/null 2>&1; then
+    rsync -a "$source_dir"/ "$dest_dir"/ >/dev/null
+    return 0
+  fi
+
+  cp -R "$source_dir"/. "$dest_dir"/
+}
+
+copy_worktree_dependencies() {
   local worktree_dir="$1"
   local app_dir
 
   for app_dir in console studio; do
-    if [[ -d "$ROOT_DIR/$app_dir/node_modules" && ! -e "$worktree_dir/$app_dir/node_modules" ]]; then
-      ln -s "$ROOT_DIR/$app_dir/node_modules" "$worktree_dir/$app_dir/node_modules"
-    fi
+    copy_dependency_dir "$DEPENDENCY_SOURCE_ROOT/$app_dir/node_modules" "$worktree_dir/$app_dir/node_modules"
   done
 }
 
