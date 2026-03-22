@@ -157,10 +157,25 @@ function createGitHubClient() {
       }
     }
 
+    try {
+      return await githubFetch(
+        `${GITHUB_API}/repos/${owner}/${repo}/actions/variables`,
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          body: { name, value },
+        }
+      );
+    } catch (error) {
+      if (error.status !== 409) {
+        throw error;
+      }
+    }
+
     return githubFetch(
-      `${GITHUB_API}/repos/${owner}/${repo}/actions/variables`,
+      `${GITHUB_API}/repos/${owner}/${repo}/actions/variables/${name}`,
       {
-        method: "POST",
+        method: "PATCH",
         headers: { Authorization: `Bearer ${token}` },
         body: { name, value },
       }
