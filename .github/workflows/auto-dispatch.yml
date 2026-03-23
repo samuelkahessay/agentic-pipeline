@@ -118,8 +118,8 @@ jobs:
           ACTIVE_RUNS=$(gh run list --repo "$REPO" \
             --workflow "$WORKFLOW_FILE" \
             --limit 20 \
-            --json databaseId,status,url,createdAt \
-            | jq '[.[] | select(.status == "in_progress" or .status == "queued")] | sort_by(.createdAt)')
+            --json databaseId,status,event,url,createdAt \
+            | jq '[.[] | select((.status == "in_progress" or .status == "queued") and .event == "workflow_dispatch")] | sort_by(.createdAt)')
           ACTIVE_COUNT=$(printf '%s' "$ACTIVE_RUNS" | jq 'length')
           BLOCKING_RUN_ID=$(printf '%s' "$ACTIVE_RUNS" | jq -r '.[0].databaseId // ""')
           BLOCKING_RUN_URL=$(printf '%s' "$ACTIVE_RUNS" | jq -r '.[0].url // ""')
