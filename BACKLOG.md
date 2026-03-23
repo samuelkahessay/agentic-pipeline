@@ -10,6 +10,7 @@
 - 2026-03-21 [feature] Credential persistence for returning users (don't re-enter Copilot token)
 - 2026-03-21 [infra] File upstream gh-aw issues (#040, #041, #042, #043)
 - 2026-03-21 [feature] Private repos as a user configuration option (currently public for free Actions minutes)
+- 2026-03-22 [upstream] gh-aw CLI should expose more info on run status for workflows — `gh run view` only shows status/conclusion, no step-level detail or agent output. File as gh-aw upstream issue.
 
 ## Issued
 

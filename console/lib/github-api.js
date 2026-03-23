@@ -294,7 +294,7 @@ function createGitHubClient() {
 
   async function ensureBranchProtection(token, owner, repo, {
     branch = "main",
-    requiredStatusChecks = ["review"],
+    requiredStatusChecks = [],
   } = {}) {
     return githubFetch(
       `${GITHUB_API}/repos/${owner}/${repo}/branches/${branch}/protection`,
@@ -302,16 +302,11 @@ function createGitHubClient() {
         method: "PUT",
         headers: { Authorization: `Bearer ${token}` },
         body: {
-          required_status_checks: {
-            strict: false,
-            contexts: requiredStatusChecks,
-          },
+          required_status_checks: requiredStatusChecks.length
+            ? { strict: false, contexts: requiredStatusChecks }
+            : null,
           enforce_admins: false,
-          required_pull_request_reviews: {
-            dismiss_stale_reviews: false,
-            require_code_owner_reviews: false,
-            required_approving_review_count: 1,
-          },
+          required_pull_request_reviews: null,
           restrictions: null,
           required_linear_history: false,
           allow_force_pushes: false,

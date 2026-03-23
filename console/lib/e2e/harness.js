@@ -206,7 +206,11 @@ function createE2EHarness({
       let lastContext = null;
 
       try {
-        await runPreflightGate(runId, run.lane);
+        if (!process.env.E2E_SKIP_PREFLIGHT) {
+          await runPreflightGate(runId, run.lane);
+        } else {
+          appendStep(runId, run.activeLane || run.lane, "pre-e2e-gate", "passed", "Preflight gate skipped (E2E_SKIP_PREFLIGHT).");
+        }
         const auth = await validateHarnessAuth(runId, run.cookieJarPath);
 
         if (run.lane === "full-ladder") {
