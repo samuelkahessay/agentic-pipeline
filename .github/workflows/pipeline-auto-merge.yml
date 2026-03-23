@@ -1,0 +1,44 @@
+#
+# Pipeline Auto-Merge — Enables auto-merge on [Pipeline] PRs immediately on open.
+#
+# No agent involvement. No review required. When a [Pipeline]-prefixed PR is
+# opened, this workflow enables squash auto-merge using GH_AW_GITHUB_TOKEN
+# so the resulting merge commit can trigger downstream workflows.
+#
+# Branch protection has no required status checks or reviews, so auto-merge
+# completes immediately.
+#
+
+name: "Pipeline Auto-Merge"
+
+on:
+  pull_request:
+    types: [opened]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+jobs:
+  auto-merge:
+    if: |
+      vars.PIPELINE_ACTIVE != 'false' &&
+      startsWith(github.event.pull_request.title, '[Pipeline] ')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Enable auto-merge
+        env:
+          MERGE_TOKEN: ${{ secrets.GH_AW_GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          if [ -z "$MERGE_TOKEN" ]; then
+            echo "::error::GH_AW_GITHUB_TOKEN is required for pipeline auto-merge."
+            exit 1
+          fi
+          GH_TOKEN="$MERGE_TOKEN" gh pr merge "$PR_NUMBER" --repo "$REPO" --auto --squash
+          echo "Auto-merge enabled for PR #${PR_NUMBER}."

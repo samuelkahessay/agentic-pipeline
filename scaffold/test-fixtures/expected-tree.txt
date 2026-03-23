@@ -24,6 +24,7 @@
 .github/workflows/duplicate-code-detector.md
 .github/workflows/frontend-agent.lock.yml
 .github/workflows/frontend-agent.md
+.github/workflows/pipeline-auto-merge.yml
 .github/workflows/pipeline-status.lock.yml
 .github/workflows/pipeline-status.md
 .github/workflows/pipeline-watchdog.yml
