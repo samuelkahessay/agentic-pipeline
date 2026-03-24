@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useCallback, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react";
 import * as Tone from "tone";
 
 type Track = "percussive" | "melodic";
@@ -11,6 +11,8 @@ interface AnimationSoundOptions {
   amplitude?: "tight" | "medium" | "full";
   /** Sound track to use */
   track?: Track;
+  /** Animation root that emits bubbled animation events */
+  animationRootRef?: RefObject<HTMLElement | null>;
 }
 
 // ─── Track 1: Percussive (original) ──────────────────────────────
@@ -312,64 +314,75 @@ function disposeNodes(nodes: SynthNodes) {
 // ─── Hook ────────────────────────────────────────────────────────
 
 export function useAnimationSound(options: AnimationSoundOptions = {}) {
-  const { duration = 3.6, amplitude = "medium", track = "melodic" } = options;
+  const {
+    duration = 3.6,
+    amplitude = "medium",
+    track = "melodic",
+    animationRootRef,
+  } = options;
 
   const [enabled, setEnabled] = useState(false);
-  const nodesRef = useRef<{ nodes: SynthNodes; loopId: number | null } | null>(null);
+  const nodesRef = useRef<SynthNodes | null>(null);
 
   const vol = amplitude === "tight" ? -12 : amplitude === "full" ? -4 : -8;
 
-  // Tear down existing nodes (track or amplitude changed)
   const teardown = useCallback(() => {
-    const current = nodesRef.current;
-    if (!current) return;
-    if (current.loopId != null) clearInterval(current.loopId);
-    disposeNodes(current.nodes);
+    if (!nodesRef.current) return;
+    disposeNodes(nodesRef.current);
     nodesRef.current = null;
   }, []);
 
-  // Start / stop the looping schedule
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!enabled) return;
+    const animationRoot = animationRootRef?.current;
+    if (!animationRoot) return;
 
-    let cancelled = false;
+    teardown();
+    const nodes = buildNodes(track, vol);
+    nodesRef.current = nodes;
 
-    const start = async () => {
-      await Tone.start();
-      if (cancelled) return;
-
-      // Rebuild nodes fresh for current track + volume
-      teardown();
-      const nodes = buildNodes(track, vol);
-
-      // First cycle immediately
-      const t0 = Tone.now();
-      playCycle(nodes, t0, duration);
-
-      const id = setInterval(() => {
-        if (!cancelled) playCycle(nodes, Tone.now(), duration);
-      }, duration * 1000) as unknown as number;
-
-      nodesRef.current = { nodes, loopId: id };
+    const handleCycle = (event: Event) => {
+      const animationEvent = event as AnimationEvent;
+      if (animationEvent.animationName !== "dropO") return;
+      if (!nodesRef.current) return;
+      playCycle(nodesRef.current, Tone.now(), duration);
     };
 
-    start();
+    animationRoot.addEventListener("animationstart", handleCycle);
+    animationRoot.addEventListener("animationiteration", handleCycle);
 
     return () => {
-      cancelled = true;
+      animationRoot.removeEventListener("animationstart", handleCycle);
+      animationRoot.removeEventListener("animationiteration", handleCycle);
       teardown();
     };
-  }, [enabled, track, vol, duration, teardown]);
+  }, [animationRootRef, duration, enabled, teardown, track, vol]);
 
-  // Cleanup on unmount
   useEffect(() => teardown, [teardown]);
 
-  const toggle = useCallback(async () => {
-    if (!enabled) await Tone.start();
-    setEnabled((prev) => !prev);
+  const enable = useCallback(async () => {
+    if (enabled) return false;
+    await Tone.start();
+    setEnabled(true);
+    return true;
   }, [enabled]);
 
-  return { enabled, toggle };
+  const disable = useCallback(() => {
+    setEnabled(false);
+  }, []);
+
+  const toggle = useCallback(async () => {
+    if (enabled) {
+      setEnabled(false);
+      return false;
+    }
+
+    await Tone.start();
+    setEnabled(true);
+    return true;
+  }, [enabled]);
+
+  return { enabled, enable, disable, toggle };
 }
 
 export const TRACKS: { value: Track; label: string; desc: string }[] = [

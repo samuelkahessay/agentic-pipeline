@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { PrdToProdAnimation } from "@/components/shared/prd-to-prod-animation";
-import { useAnimationSound } from "@/hooks/use-animation-sound";
+import { useAnimationSound, TRACKS } from "@/hooks/use-animation-sound";
 import styles from "./page.module.css";
 
 interface Variant {
@@ -50,10 +50,36 @@ const VARIANTS: Variant[] = [
 
 export default function AnimationPage() {
   const [selected, setSelected] = useState(0);
+  const [trackIdx, setTrackIdx] = useState(1); // default to melodic
+  const [syncSeed, setSyncSeed] = useState(0);
+  const stageRef = useRef<HTMLDivElement>(null);
   const variant = VARIANTS[selected];
   const sound = useAnimationSound({
     amplitude: variant.props.amplitude ?? "medium",
+    track: TRACKS[trackIdx].value,
+    animationRootRef: stageRef,
   });
+
+  const handleVariantSelect = (index: number) => {
+    if (index === selected) return;
+    setSelected(index);
+  };
+
+  const handleTrackSelect = (index: number) => {
+    if (index === trackIdx) return;
+    setTrackIdx(index);
+    if (sound.enabled) setSyncSeed((value) => value + 1);
+  };
+
+  const handleSoundToggle = async () => {
+    if (sound.enabled) {
+      sound.disable();
+      return;
+    }
+
+    const didEnable = await sound.enable();
+    if (didEnable) setSyncSeed((value) => value + 1);
+  };
 
   return (
     <div className={styles.page}>
@@ -67,7 +93,7 @@ export default function AnimationPage() {
             <button
               key={v.name}
               className={`${styles.navItem} ${i === selected ? styles.navItemActive : ""}`}
-              onClick={() => setSelected(i)}
+              onClick={() => handleVariantSelect(i)}
               type="button"
             >
               <span className={styles.navName}>{v.name}</span>
@@ -75,10 +101,25 @@ export default function AnimationPage() {
             </button>
           ))}
         </nav>
+
+        <div className={styles.trackSection}>
+          <span className={styles.trackLabel}>Sound</span>
+          {TRACKS.map((tr, i) => (
+            <button
+              key={tr.value}
+              className={`${styles.navItem} ${i === trackIdx ? styles.navItemActive : ""}`}
+              onClick={() => handleTrackSelect(i)}
+              type="button"
+            >
+              <span className={styles.navName}>{tr.label}</span>
+              <span className={styles.navDesc}>{tr.desc}</span>
+            </button>
+          ))}
+        </div>
       </aside>
       <main className={styles.main}>
-        <div className={styles.stage}>
-          <PrdToProdAnimation size={80} {...variant.props} key={selected} />
+        <div className={styles.stage} ref={stageRef}>
+          <PrdToProdAnimation size={80} {...variant.props} key={`${selected}-${syncSeed}`} />
         </div>
         <div className={styles.info}>
           <span className={styles.infoName}>{variant.name}</span>
@@ -86,7 +127,9 @@ export default function AnimationPage() {
         </div>
         <button
           className={styles.soundToggle}
-          onClick={sound.toggle}
+          onClick={() => {
+            void handleSoundToggle();
+          }}
           type="button"
           aria-label={sound.enabled ? "Mute sound" : "Enable sound"}
         >
