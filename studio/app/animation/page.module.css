@@ -123,3 +123,26 @@
   color: var(--ink-muted);
   margin-top: 2px;
 }
+
+/* ─── Sound toggle ─── */
+
+.soundToggle {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-muted);
+  background: var(--warm-white);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: color 150ms, border-color 150ms;
+}
+
+.soundToggle:hover {
+  color: var(--ink);
+  border-color: var(--ink-muted);
+}

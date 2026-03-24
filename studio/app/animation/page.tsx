@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { PrdToProdAnimation } from "@/components/shared/prd-to-prod-animation";
+import { useAnimationSound } from "@/hooks/use-animation-sound";
 import styles from "./page.module.css";
 
 interface Variant {
@@ -50,6 +51,9 @@ const VARIANTS: Variant[] = [
 export default function AnimationPage() {
   const [selected, setSelected] = useState(0);
   const variant = VARIANTS[selected];
+  const sound = useAnimationSound({
+    amplitude: variant.props.amplitude ?? "medium",
+  });
 
   return (
     <div className={styles.page}>
@@ -80,6 +84,14 @@ export default function AnimationPage() {
           <span className={styles.infoName}>{variant.name}</span>
           <span className={styles.infoDesc}>{variant.desc}</span>
         </div>
+        <button
+          className={styles.soundToggle}
+          onClick={sound.toggle}
+          type="button"
+          aria-label={sound.enabled ? "Mute sound" : "Enable sound"}
+        >
+          {sound.enabled ? "sound on" : "sound off"}
+        </button>
       </main>
     </div>
   );
