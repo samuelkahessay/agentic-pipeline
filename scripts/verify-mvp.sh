@@ -38,6 +38,7 @@ done
 
 CHECKS=(
   "bash scripts/tests/test-auto-dispatch.sh"
+  "bash scripts/tests/test-ci-node-layout.sh"
   "bash scripts/tests/test-check-autonomy-policy.sh"
   "bash scripts/tests/test-ci-failure-resolve.sh"
   "bash scripts/tests/test-ci-failure-context.sh"
@@ -51,12 +52,16 @@ CHECKS=(
   "bash scripts/tests/test-pipeline-watchdog.sh"
   "bash scripts/tests/test-patch-codex-openrouter-http-locks.sh"
   "bash scripts/tests/test-patch-pr-review-agent-lock.sh"
+  "bash scripts/tests/test-pr-review-agent-validation-review.sh"
   "bash scripts/tests/test-pr-review-agent-activation.sh"
   "bash scripts/tests/test-pr-review-submit-policy-gate.sh"
+  "bash scripts/tests/test-prd-decomposer-contract-sections.sh"
   "bash scripts/tests/test-render-ci-repair-command.sh"
+  "bash scripts/tests/test-repo-assist-validation-gate.sh"
   "bash scripts/tests/test-run-lifecycle-lib.sh"
   "bash scripts/tests/test-self-healing-drill-dispatch-substate.sh"
   "bash scripts/tests/test-self-healing-drill-workflow-matching.sh"
+  "bash scripts/tests/test-validate-implementation.sh"
   "dotnet test PRDtoProd.sln"
 )
 

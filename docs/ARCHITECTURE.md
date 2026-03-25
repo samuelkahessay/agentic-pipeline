@@ -125,7 +125,7 @@ These workflows decide what enters the autonomous lane and when.
 
 | Workflow | Role |
 |---|---|
-| `prd-decomposer.lock.yml` | Converts PRDs into dependency-ordered pipeline issues with acceptance criteria |
+| `prd-decomposer.lock.yml` | Converts PRDs into dependency-ordered pipeline issues with acceptance criteria, concrete contract file paths, and required validation commands |
 | `auto-dispatch.yml` | Accepts `pipeline` issues, classifies actionability, debounces, and dispatches `repo-assist` |
 | `auto-dispatch-requeue.yml` | Starts the next deferred issue after the current `repo-assist` run finishes |
 
@@ -138,12 +138,17 @@ These workflows perform the bounded AI work.
 
 | Workflow | Role |
 |---|---|
-| `repo-assist.lock.yml` | Implements issues, maintains PRs, handles review feedback, and repairs bounded CI failures |
-| `pr-review-agent.lock.yml` | Reviews the full diff against acceptance criteria and policy, then posts `[PIPELINE-VERDICT]` |
+| `repo-assist.lock.yml` | Implements issues, maintains PRs, handles review feedback, and repairs bounded CI failures while reading issue-carried contract paths and required validation commands |
+| `pr-review-agent.lock.yml` | Reviews the full diff against acceptance criteria, required validation evidence, and repo contract drift, then posts `[PIPELINE-VERDICT]` |
 | `pr-review-submit.yml` | Parses verdicts, submits formal reviews, enforces the merge gate, and arms auto-merge only inside policy |
 
 Key property: the agent workflow lane is real, but not unrestricted. The merge gate is
 where policy becomes operational.
+
+Decomposed issues now carry two Markdown sections that make fidelity enforceable without a second artifact format:
+
+- `## Existing Contracts to Read` lists the concrete repo files an implementer and reviewer must read before judging correctness.
+- `## Required Validation` starts with `bash scripts/validate-implementation.sh` and then lists any issue-specific contract checks that must pass before a PR can be considered complete.
 
 ### 3. Delivery and Recovery
 

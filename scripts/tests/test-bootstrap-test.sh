@@ -60,6 +60,12 @@ if ! bash "$BOOTSTRAP_SCRIPT" >/dev/null 2>&1; then
 fi
 echo "Test 1 passed: valid scaffold passes bootstrap"
 
+grep -F 'bash "$OUTPUT_DIR/scripts/validate-implementation.sh"' "$BOOTSTRAP_SCRIPT" >/dev/null || {
+  echo "FAIL: bootstrap-test.sh must use the shared implementation validator" >&2
+  exit 1
+}
+echo "Test 1b passed: bootstrap-test uses shared validator"
+
 CRITICAL="$OUTPUT_DIR/.github/workflows/auto-dispatch.yml"
 if [ -f "$CRITICAL" ]; then
   mv "$CRITICAL" "$CRITICAL.bak"

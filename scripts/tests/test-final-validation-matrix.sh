@@ -53,6 +53,11 @@ run_check "self-healing-dispatch-substate" "bash scripts/tests/test-self-healing
 run_check "self-healing-workflow-matching" "bash scripts/tests/test-self-healing-drill-workflow-matching.sh"
 run_check "pipeline-watchdog" "bash scripts/tests/test-pipeline-watchdog.sh"
 run_check "patch-codex-openrouter-http-locks" "bash scripts/tests/test-patch-codex-openrouter-http-locks.sh"
+run_check "ci-node-layout" "bash scripts/tests/test-ci-node-layout.sh"
+run_check "prd-decomposer-contract-sections" "bash scripts/tests/test-prd-decomposer-contract-sections.sh"
+run_check "repo-assist-validation-gate" "bash scripts/tests/test-repo-assist-validation-gate.sh"
+run_check "pr-review-agent-validation-review" "bash scripts/tests/test-pr-review-agent-validation-review.sh"
+run_check "validate-implementation" "bash scripts/tests/test-validate-implementation.sh"
 
 # Greenfield mock smoke
 run_check "extract-prd-mock" "bash scripts/tests/test-extract-prd-mock.sh"

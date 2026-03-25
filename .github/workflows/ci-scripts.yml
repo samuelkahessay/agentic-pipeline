@@ -33,6 +33,11 @@ jobs:
             bash scripts/tests/test-push-to-existing.sh
             bash scripts/tests/test-push-to-existing-golden.sh
             bash scripts/tests/test-retry-state.sh
+            bash scripts/tests/test-ci-node-layout.sh
+            bash scripts/tests/test-prd-decomposer-contract-sections.sh
+            bash scripts/tests/test-repo-assist-validation-gate.sh
+            bash scripts/tests/test-pr-review-agent-validation-review.sh
+            bash scripts/tests/test-validate-implementation.sh
             bash scripts/tests/test-final-validation-matrix.sh
           else
             echo "Skipping source-repo v2 contract checks"

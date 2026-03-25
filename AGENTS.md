@@ -12,7 +12,8 @@ by the prd-decomposer workflow, and implemented by the repo-assist workflow.
 - Use TypeScript strict mode when the PRD specifies TypeScript
 
 ## Build & Test
-Check the active PRD and `.deploy-profile` for build/test commands.
+Use `bash scripts/validate-implementation.sh` as the canonical build and test gate.
+Then run any issue-specific commands listed under the issue's `## Required Validation` section.
 Enhancement runs may extend the current application in place, so do not assume a clean-slate scaffold.
 
 ## Tech Stack

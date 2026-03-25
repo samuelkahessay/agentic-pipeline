@@ -1,9 +1,9 @@
 .deploy-profile
+.github/ISSUE_TEMPLATE/bug-report.yml
 .github/agents/agentic-workflows.agent.md
 .github/aw/actions-lock.json
 .github/copilot-instructions.md
 .github/deploy-profiles/nextjs-vercel.yml
-.github/ISSUE_TEMPLATE/bug-report.yml
 .github/workflows/agentics-maintenance.yml
 .github/workflows/architecture-approve.yml
 .github/workflows/auto-dispatch-requeue.yml
@@ -45,13 +45,13 @@
 .node-version
 .nvmrc
 AGENTS.md
+LICENSE
+README.md
 autonomy-policy.yml
 docs/ARCHITECTURE.md
 docs/decision-ledger/README.md
 docs/prd/sample-prd.md
 docs/why-gh-aw.md
-LICENSE
-README.md
 scripts/archive-run.sh
 scripts/bootstrap.sh
 scripts/capture-run-data.sh
@@ -117,7 +117,9 @@ scripts/tests/test-patch-codex-openrouter-http-locks.sh
 scripts/tests/test-patch-pr-review-agent-lock.sh
 scripts/tests/test-pipeline-watchdog.sh
 scripts/tests/test-pr-review-agent-activation.sh
+scripts/tests/test-pr-review-agent-validation-review.sh
 scripts/tests/test-pr-review-submit-policy-gate.sh
+scripts/tests/test-prd-decomposer-contract-sections.sh
 scripts/tests/test-pre-e2e-gate.sh
 scripts/tests/test-publish-scaffold-template-workflow.sh
 scripts/tests/test-publish-scaffold-template.sh
@@ -127,6 +129,7 @@ scripts/tests/test-push-to-pipeline-dryrun.sh
 scripts/tests/test-render-ci-repair-command.sh
 scripts/tests/test-repo-assist-no-project-status.sh
 scripts/tests/test-repo-assist-targeted-outcome-marker.sh
+scripts/tests/test-repo-assist-validation-gate.sh
 scripts/tests/test-resolve-deployment-url.sh
 scripts/tests/test-resolve-nextjs-app-root.sh
 scripts/tests/test-retry-state.sh
@@ -134,9 +137,11 @@ scripts/tests/test-run-lifecycle-lib.sh
 scripts/tests/test-self-healing-drill-dispatch-substate.sh
 scripts/tests/test-self-healing-drill-workflow-matching.sh
 scripts/tests/test-validate-deployment.sh
+scripts/tests/test-validate-implementation.sh
 scripts/tests/test-validate-prd.sh
 scripts/tests/test-validate-schema.sh
 scripts/tests/test-verify-mvp.sh
+scripts/validate-implementation.sh
 scripts/verify-mvp.sh
 setup-verify.sh
 setup.sh

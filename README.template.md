@@ -27,6 +27,10 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full system design.
 
 Run `./setup-verify.sh` to check your pipeline configuration status.
 
+## Local Validation
+
+Run `bash scripts/validate-implementation.sh` before opening or reviewing implementation PRs. Decomposed issues may add extra checks under `## Required Validation`; treat those as part of the contract for that issue.
+
 ## Human Boundaries
 
 The autonomous pipeline is bounded by `autonomy-policy.yml`. Humans control:

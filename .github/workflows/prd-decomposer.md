@@ -103,9 +103,17 @@ If the instructions above contain a URL or file path, fetch/read that content as
      - `Source PRD` — the issue/discussion/file/URL you actually read
      - `Source Sections` — the exact PRD feature headings or subsections this issue implements
      - `Normative Requirements In Scope` — a bullet list of the exact contractual requirements for this issue; copy exact strings, names, paths, counts, and status codes where relevant
+   - A `## Existing Contracts to Read` section containing concrete repo paths the implementer must read before coding. This section must:
+     - Always include `AGENTS.md`
+     - Always include `.deploy-profile`
+     - Always include `.github/deploy-profiles/<active-profile>.yml`
+     - Add current schema or migration file paths for DB or storage work
+     - Add current session, JWT, auth, or request helper file paths for auth or request handling work
+     - Add both caller/component paths and route/handler paths for UI-to-API boundary work
    - A `## Description` section explaining what to build and why
    - A `## Acceptance Criteria` section as a markdown checklist
    - A `## Dependencies` section (use "Depends on #aw_ID" for issues in this batch)
+   - A `## Required Validation` section whose first bullet is `bash scripts/validate-implementation.sh`, followed by issue-specific validation bullets naming exact tests, boundary scenarios, or required route/schema/auth checks
    - A `## Technical Notes` section with relevant file paths, API signatures, or architectural guidance
 
 7. **Label each issue** by passing a `labels` array with exactly one type: `feature`, `test`, `infra`, `docs`, or `bug`. The `pipeline` label is added automatically — do NOT include it.
@@ -221,8 +229,10 @@ Before creating each issue, verify:
 - [ ] Title is specific (not "Implement feature 1")
 - [ ] PRD Traceability identifies the authoritative source and exact in-scope requirements
 - [ ] In-scope normative requirements from the PRD were preserved exactly
+- [ ] Existing Contracts to Read lists concrete repo paths and includes `AGENTS.md`, `.deploy-profile`, and `.github/deploy-profiles/<active-profile>.yml`
 - [ ] Acceptance criteria are testable (not "works correctly")
 - [ ] Dependencies are accurate
+- [ ] Required Validation starts with `bash scripts/validate-implementation.sh` and adds issue-specific validation bullets
 - [ ] Technical notes reference actual project patterns
 - [ ] Issue is small enough for a single PR
 - [ ] temporary_id is `aw_` + 3-8 alphanumeric chars only (e.g., `aw_task1`)

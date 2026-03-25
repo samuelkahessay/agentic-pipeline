@@ -89,7 +89,7 @@ jobs:
       title: ${{ steps.sanitized.outputs.title }}
     steps:
       - name: Setup Scripts
-        uses: github/gh-aw-actions/setup@v0.63.0
+        uses: github/gh-aw-actions/setup@9128d2542bbf1bdfec94dabeaf3e1d3c0d402577 # v0.63.0
         with:
           destination: ${{ runner.temp }}/gh-aw/actions
       - name: Generate agentic run info
@@ -355,7 +355,7 @@ jobs:
       output_types: ${{ steps.collect_output.outputs.output_types }}
     steps:
       - name: Setup Scripts
-        uses: github/gh-aw-actions/setup@v0.63.0
+        uses: github/gh-aw-actions/setup@9128d2542bbf1bdfec94dabeaf3e1d3c0d402577 # v0.63.0
         with:
           destination: ${{ runner.temp }}/gh-aw/actions
       - name: Set runtime paths
@@ -452,6 +452,11 @@ jobs:
                 "inputSchema": {
                   "additionalProperties": false,
                   "properties": {
+                    "aw_context": {
+                      "default": "",
+                      "description": "(Internal) JSON context injected by the calling agentic workflow. Not intended for direct user input.",
+                      "type": "string"
+                    },
                     "issue_number": {
                       "description": "Issue number to implement directly. Leave empty for backlog mode.",
                       "type": "string"
@@ -1022,7 +1027,7 @@ jobs:
       total_count: ${{ steps.missing_tool.outputs.total_count }}
     steps:
       - name: Setup Scripts
-        uses: github/gh-aw-actions/setup@v0.63.0
+        uses: github/gh-aw-actions/setup@9128d2542bbf1bdfec94dabeaf3e1d3c0d402577 # v0.63.0
         with:
           destination: ${{ runner.temp }}/gh-aw/actions
       - name: Generate GitHub App token
@@ -1165,7 +1170,7 @@ jobs:
       matched_command: ${{ steps.check_command_position.outputs.matched_command }}
     steps:
       - name: Setup Scripts
-        uses: github/gh-aw-actions/setup@v0.63.0
+        uses: github/gh-aw-actions/setup@9128d2542bbf1bdfec94dabeaf3e1d3c0d402577 # v0.63.0
         with:
           destination: ${{ runner.temp }}/gh-aw/actions
       - name: Check team membership for command workflow
@@ -1207,7 +1212,7 @@ jobs:
       validation_failed_default: ${{ steps.push_repo_memory_default.outputs.validation_failed }}
     steps:
       - name: Setup Scripts
-        uses: github/gh-aw-actions/setup@v0.63.0
+        uses: github/gh-aw-actions/setup@9128d2542bbf1bdfec94dabeaf3e1d3c0d402577 # v0.63.0
         with:
           destination: ${{ runner.temp }}/gh-aw/actions
       - name: Checkout repository
@@ -1286,7 +1291,7 @@ jobs:
       process_safe_outputs_temporary_id_map: ${{ steps.process_safe_outputs.outputs.temporary_id_map }}
     steps:
       - name: Setup Scripts
-        uses: github/gh-aw-actions/setup@v0.63.0
+        uses: github/gh-aw-actions/setup@9128d2542bbf1bdfec94dabeaf3e1d3c0d402577 # v0.63.0
         with:
           destination: ${{ runner.temp }}/gh-aw/actions
       - name: Download agent output artifact
@@ -1333,7 +1338,7 @@ jobs:
           GH_AW_ALLOWED_DOMAINS: "172.30.0.1,api.openai.com,api.snapcraft.io,archive.ubuntu.com,azure.archive.ubuntu.com,crl.geotrust.com,crl.globalsign.com,crl.identrust.com,crl.sectigo.com,crl.thawte.com,crl.usertrust.com,crl.verisign.com,crl3.digicert.com,crl4.digicert.com,crls.ssl.com,host.docker.internal,json-schema.org,json.schemastore.org,keyserver.ubuntu.com,ocsp.digicert.com,ocsp.geotrust.com,ocsp.globalsign.com,ocsp.identrust.com,ocsp.sectigo.com,ocsp.ssl.com,ocsp.thawte.com,ocsp.usertrust.com,ocsp.verisign.com,openai.com,packagecloud.io,packages.cloud.google.com,packages.microsoft.com,ppa.launchpad.net,s.symcb.com,s.symcd.com,security.ubuntu.com,ts-crl.ws.symantec.com,ts-ocsp.ws.symantec.com,www.googleapis.com"
           GITHUB_SERVER_URL: ${{ github.server_url }}
           GITHUB_API_URL: ${{ github.api_url }}
-          GH_AW_SAFE_OUTPUTS_HANDLER_CONFIG: "{\"add_comment\":{\"max\":5},\"add_labels\":{\"allowed\":[\"feature\",\"test\",\"infra\",\"docs\",\"bug\",\"pipeline\",\"blocked\",\"ready\"],\"max\":40},\"create_issue\":{\"labels\":[\"pipeline\"],\"max\":20,\"title_prefix\":\"[Pipeline] \"},\"dispatch_workflow\":{\"max\":1,\"workflow_files\":{\"repo-assist\":\".lock.yml\"},\"workflows\":[\"repo-assist\"]},\"missing_data\":{},\"missing_tool\":{},\"noop\":{\"max\":1,\"report-as-issue\":\"true\"}}"
+          GH_AW_SAFE_OUTPUTS_HANDLER_CONFIG: "{\"add_comment\":{\"max\":5},\"add_labels\":{\"allowed\":[\"feature\",\"test\",\"infra\",\"docs\",\"bug\",\"pipeline\",\"blocked\",\"ready\"],\"max\":40},\"create_issue\":{\"labels\":[\"pipeline\"],\"max\":20,\"title_prefix\":\"[Pipeline] \"},\"dispatch_workflow\":{\"aw_context_workflows\":[\"repo-assist\"],\"max\":1,\"workflow_files\":{\"repo-assist\":\".lock.yml\"},\"workflows\":[\"repo-assist\"]},\"missing_data\":{},\"missing_tool\":{},\"noop\":{\"max\":1,\"report-as-issue\":\"true\"}}"
         with:
           github-token: ${{ steps.safe-outputs-app-token.outputs.token }}
           script: |

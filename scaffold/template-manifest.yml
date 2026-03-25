@@ -42,6 +42,7 @@ include:
   - scripts/demo-preflight.sh
   - scripts/resolve-nextjs-app-root.sh
   - scripts/require-node.sh
+  - scripts/validate-implementation.sh
   - scripts/tests/
 
   # ── Docs (stable, exported) ──

@@ -32,6 +32,7 @@ run_and_capture() {
 
 DEFAULT_CALLS=$(run_and_capture)
 printf '%s\n' "$DEFAULT_CALLS" | grep -F "bash scripts/tests/test-auto-dispatch.sh" >/dev/null
+printf '%s\n' "$DEFAULT_CALLS" | grep -F "bash scripts/tests/test-ci-node-layout.sh" >/dev/null
 printf '%s\n' "$DEFAULT_CALLS" | grep -F "bash scripts/tests/test-check-autonomy-policy.sh" >/dev/null
 printf '%s\n' "$DEFAULT_CALLS" | grep -F "bash scripts/tests/test-ci-failure-resolve.sh" >/dev/null
 printf '%s\n' "$DEFAULT_CALLS" | grep -F "bash scripts/tests/test-log-decision.sh" >/dev/null
@@ -42,8 +43,12 @@ printf '%s\n' "$DEFAULT_CALLS" | grep -F "bash scripts/tests/test-duplicate-code
 printf '%s\n' "$DEFAULT_CALLS" | grep -F "bash scripts/tests/test-extract-linked-issue-numbers.sh" >/dev/null
 printf '%s\n' "$DEFAULT_CALLS" | grep -F "bash scripts/tests/test-patch-codex-openrouter-http-locks.sh" >/dev/null
 printf '%s\n' "$DEFAULT_CALLS" | grep -F "bash scripts/tests/test-patch-pr-review-agent-lock.sh" >/dev/null
+printf '%s\n' "$DEFAULT_CALLS" | grep -F "bash scripts/tests/test-pr-review-agent-validation-review.sh" >/dev/null
 printf '%s\n' "$DEFAULT_CALLS" | grep -F "bash scripts/tests/test-pr-review-agent-activation.sh" >/dev/null
 printf '%s\n' "$DEFAULT_CALLS" | grep -F "bash scripts/tests/test-pr-review-submit-policy-gate.sh" >/dev/null
+printf '%s\n' "$DEFAULT_CALLS" | grep -F "bash scripts/tests/test-prd-decomposer-contract-sections.sh" >/dev/null
+printf '%s\n' "$DEFAULT_CALLS" | grep -F "bash scripts/tests/test-repo-assist-validation-gate.sh" >/dev/null
+printf '%s\n' "$DEFAULT_CALLS" | grep -F "bash scripts/tests/test-validate-implementation.sh" >/dev/null
 printf '%s\n' "$DEFAULT_CALLS" | grep -F "bash scripts/self-healing-drill.sh audit ff2f18746416dfb8ae8bfe1e414e031983a5fb73" >/dev/null
 
 SKIP_CALLS=$(run_and_capture --skip-audit)

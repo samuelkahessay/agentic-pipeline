@@ -39,13 +39,5 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Resolve app root
-        id: app-root
-        run: echo "path=$(bash scripts/resolve-nextjs-app-root.sh)" >> "$GITHUB_OUTPUT"
-      - name: Install, build, and test app
-        working-directory: ${{ steps.app-root.outputs.path }}
-        run: npm ci && npm run build && npx jest --verbose
-      - name: Install and test console
-        if: ${{ hashFiles('console/package.json') != '' }}
-        working-directory: console
-        run: npm ci && npx jest --verbose
+      - name: Validate implementation
+        run: bash scripts/validate-implementation.sh
