@@ -79,16 +79,20 @@ CREATE TABLE IF NOT EXISTS waitlist (
 - `github_username` is optional, stored lowercase without `@`
 - `notes` is freeform for manual annotation (e.g., "sent beta invite 2026-04-01")
 
+### Rate limiting
+
+Add a `waitlistSignup` limiter in `console/lib/public-route-guards.js` following the existing pattern (e.g., 10 requests per hour per IP). Register it on `POST /pub/waitlist`.
+
 ### Route registration
 
-Register the new route file in `console/server.js` alongside existing pub/api routes.
+Register the new route file in `console/server.js` alongside existing pub/api routes. The `GET /api/waitlist` operator route is automatically protected by the `/api` auth middleware in `server.js`.
 
 ## Out of scope
 
 - Confirmation emails
 - Queue position display
 - Auto-issuance of access codes
-- Rate limiting (Fly proxy provides baseline protection)
+- Rate limiting beyond the per-route limiter in public-route-guards.js
 - Email verification
 - CAPTCHA
 
