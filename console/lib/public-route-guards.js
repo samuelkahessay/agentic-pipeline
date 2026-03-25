@@ -15,6 +15,7 @@ function createPublicRouteGuards(overrides = {}) {
   const sessionCreate = overrides.sessionCreate || {};
   const sessionMessage = overrides.sessionMessage || {};
   const authStart = overrides.authStart || {};
+  const waitlistSignup = overrides.waitlistSignup || {};
 
   const sessionCreateLimiter = buildLimiter({
     windowMs: sessionCreate.windowMs || 60 * 60 * 1000,
@@ -34,6 +35,12 @@ function createPublicRouteGuards(overrides = {}) {
     message: { error: "Too many auth attempts. Try again later." },
   });
 
+  const waitlistSignupLimiter = buildLimiter({
+    windowMs: waitlistSignup.windowMs || 60 * 60 * 1000,
+    max: waitlistSignup.max || 10,
+    message: { error: "Too many signups. Try again later." },
+  });
+
   return function registerPublicRouteGuards(app) {
     app.post("/pub/build-session", sessionCreateLimiter, passthrough);
     app.post(
@@ -42,6 +49,7 @@ function createPublicRouteGuards(overrides = {}) {
       passthrough
     );
     app.get("/pub/auth/github", authStartLimiter, passthrough);
+    app.post("/pub/waitlist", waitlistSignupLimiter, passthrough);
   };
 }
 

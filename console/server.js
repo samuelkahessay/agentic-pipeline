@@ -23,6 +23,7 @@ const { registerBuildStreamRoutes } = require("./routes/pub-build-stream");
 const { createBuildSessionStore } = require("./lib/build-session-store");
 const { createServiceResolver } = require("./lib/service-resolver");
 const { registerProvisionRoutes } = require("./routes/pub-provision");
+const { registerWaitlistRoutes } = require("./routes/pub-waitlist");
 const { registerInternalBuildRoutes } = require("./routes/internal-build");
 const { registerInternalAccessCodeRoutes } = require("./routes/internal-access-codes");
 const { createE2EHarness } = require("./lib/e2e/harness");
@@ -134,6 +135,7 @@ if (DEMO_MODE) {
 registerBuildSessionRoutes(app, { db, buildSessionStore, serviceResolver });
 registerBuildStreamRoutes(app, { db, buildSessionStore });
 registerProvisionRoutes(app, { db, serviceResolver });
+registerWaitlistRoutes(app, { db });
 
 // --- Internal routes (behind /internal auth middleware) ---
 
