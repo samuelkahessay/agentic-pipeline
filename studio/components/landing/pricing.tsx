@@ -1,4 +1,5 @@
 import styles from "./pricing.module.css";
+import { WaitlistForm } from "./waitlist-form";
 
 export function Pricing() {
   return (
@@ -30,10 +31,7 @@ export function Pricing() {
           </ul>
 
           <a href="/demo" className={styles.ctaPrimary}>Watch guided demo</a>
-          <p className={styles.contactNote}>
-            Need an access code for the assisted run? Email{" "}
-            <a href="mailto:kahessay@icloud.com?subject=PRD%20Submission" className={styles.contactLink}>kahessay@icloud.com</a>.
-          </p>
+          <WaitlistForm />
         </div>
 
         <div className={styles.card}>

@@ -1,4 +1,5 @@
 import styles from "./bottom-cta.module.css";
+import { WaitlistForm } from "./waitlist-form";
 
 export function BottomCta() {
   return (
@@ -12,10 +13,7 @@ export function BottomCta() {
         <a href="/demo" className={styles.ctaPrimary}>Watch demo</a>
         <a href="/build" className={styles.ctaSecondary}>Run your own PRD</a>
       </div>
-      <p className={styles.contact}>
-        Need an assisted-run access code?{" "}
-        <a href="mailto:kahessay@icloud.com?subject=PRD%20Submission">kahessay@icloud.com</a>
-      </p>
+      <WaitlistForm />
     </footer>
   );
 }
