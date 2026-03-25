@@ -1,5 +1,6 @@
 import Image from "next/image";
 import styles from "./hero.module.css";
+import { WaitlistForm } from "./waitlist-form";
 
 export function Hero() {
   return (
@@ -19,6 +20,7 @@ export function Hero() {
           <a href="/demo" className={styles.ctaPrimary}>Watch demo</a>
           <a href="/build" className={styles.ctaSecondary}>Run your own PRD</a>
         </div>
+        <WaitlistForm />
         <p className={styles.scope}>
           Web apps only. Repo handoff always. Deploy proof when configured.
         </p>
