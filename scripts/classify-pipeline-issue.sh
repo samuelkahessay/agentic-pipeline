@@ -13,6 +13,7 @@ has_label() {
 
 has_type_label() {
   has_label "feature" || \
+    has_label "enhancement" || \
     has_label "test" || \
     has_label "infra" || \
     has_label "docs" || \
