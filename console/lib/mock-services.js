@@ -343,7 +343,7 @@ function createMockSession(db, userId) {
 }
 
 function registerMockAuthRoutes(app, { db }) {
-  const { encrypt } = require("./crypto");
+  const { encrypt, ensureEncryptionKey } = require("./crypto");
   const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3001";
 
   // Skip real OAuth — create a demo user and session directly
@@ -358,10 +358,7 @@ function registerMockAuthRoutes(app, { db }) {
     // Delete existing grants for this user first
     db.prepare("DELETE FROM oauth_grants WHERE user_id = ?").run(userId);
 
-    // Set ENCRYPTION_KEY if not already set (demo mode)
-    if (!process.env.ENCRYPTION_KEY) {
-      process.env.ENCRYPTION_KEY = crypto.randomBytes(32).toString("hex");
-    }
+    ensureEncryptionKey();
 
     db.prepare(
       `INSERT INTO oauth_grants (id, user_id, github_access_token, created_at, expires_at)

@@ -2,9 +2,21 @@ const crypto = require("crypto");
 
 const ALGO = "aes-256-gcm";
 
+function isValidEncryptionKey(hex) {
+  return typeof hex === "string" && /^[a-f0-9]{64}$/i.test(hex);
+}
+
+function ensureEncryptionKey() {
+  if (!isValidEncryptionKey(process.env.ENCRYPTION_KEY)) {
+    process.env.ENCRYPTION_KEY = crypto.randomBytes(32).toString("hex");
+  }
+
+  return process.env.ENCRYPTION_KEY;
+}
+
 function getKey() {
   const hex = process.env.ENCRYPTION_KEY;
-  if (!hex || hex.length !== 64) {
+  if (!isValidEncryptionKey(hex)) {
     throw new Error(
       "ENCRYPTION_KEY must be a 64-char hex string (32 bytes). " +
         'Generate with: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"'
@@ -40,4 +52,4 @@ function decrypt(ciphertext) {
   return decrypted;
 }
 
-module.exports = { encrypt, decrypt };
+module.exports = { encrypt, decrypt, ensureEncryptionKey, isValidEncryptionKey };

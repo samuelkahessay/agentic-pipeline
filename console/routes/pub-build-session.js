@@ -37,15 +37,13 @@ function registerBuildSessionRoutes(app, { db, buildSessionStore, serviceResolve
 
     if (isDemo) {
       const { createMockUser, createMockSession } = require("../lib/mock-services");
-      const { encrypt } = require("../lib/crypto");
+      const { encrypt, ensureEncryptionKey } = require("../lib/crypto");
 
       const userId = createMockUser(db);
       const authSessionId = createMockSession(db, userId);
 
       // Create a mock OAuth grant so provisioner can consume it
-      if (!process.env.ENCRYPTION_KEY) {
-        process.env.ENCRYPTION_KEY = crypto.randomBytes(32).toString("hex");
-      }
+      ensureEncryptionKey();
 
       const now = new Date().toISOString();
       const grantExpires = new Date(Date.now() + 10 * 60 * 1000).toISOString();
