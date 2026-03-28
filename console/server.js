@@ -32,7 +32,9 @@ const { registerE2EStreamRoutes } = require("./routes/api-e2e-stream");
 const { registerE2EAuthRoutes } = require("./routes/api-e2e-auth");
 
 const app = express();
-app.set("trust proxy", 1);
+// Public requests reach the console through Vercel and Fly proxies.
+// Trust both hops so req.ip resolves to the original client address.
+app.set("trust proxy", Number(process.env.TRUST_PROXY_HOPS || 2));
 const port = Number(process.env.CONSOLE_PORT || 3000);
 const host = process.env.HOST || "127.0.0.1";
 app.locals.projectRoot = path.resolve(__dirname, "..");

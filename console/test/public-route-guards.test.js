@@ -81,3 +81,90 @@ test("build-session create limiter does not throttle message route", async () =>
     expect(sessionRead.status).toBe(200);
   });
 });
+
+test("demo session creation uses a separate, higher limiter than real session creation", async () => {
+  const registerGuards = createPublicRouteGuards({
+    sessionCreate: { max: 1, windowMs: 60_000 },
+    demoSessionCreate: { max: 2, windowMs: 60_000 },
+  });
+
+  await withServer((app) => {
+    registerGuards(app);
+    app.post("/pub/build-session", (_req, res) => res.json({ ok: true }));
+  }, async (server) => {
+    const demoOne = await fetch(makeUrl(server, "/pub/build-session"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ demo: true }),
+    });
+    const demoTwo = await fetch(makeUrl(server, "/pub/build-session"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ demo: true }),
+    });
+    const demoThree = await fetch(makeUrl(server, "/pub/build-session"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ demo: true }),
+    });
+    const realOne = await fetch(makeUrl(server, "/pub/build-session"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ demo: false }),
+    });
+    const realTwo = await fetch(makeUrl(server, "/pub/build-session"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ demo: false }),
+    });
+
+    expect(demoOne.status).toBe(200);
+    expect(demoTwo.status).toBe(200);
+    expect(demoThree.status).toBe(429);
+    expect(realOne.status).toBe(200);
+    expect(realTwo.status).toBe(429);
+  });
+});
+
+test("session create limiter separates clients when two proxy hops are trusted", async () => {
+  const registerGuards = createPublicRouteGuards({
+    sessionCreate: { max: 1, windowMs: 60_000 },
+  });
+
+  await withServer((app) => {
+    app.set("trust proxy", 2);
+    registerGuards(app);
+    app.post("/pub/build-session", (_req, res) => res.json({ ok: true }));
+  }, async (server) => {
+    const firstClient = "198.51.100.10, 203.0.113.10";
+    const secondClient = "198.51.100.11, 203.0.113.10";
+    const createOne = await fetch(makeUrl(server, "/pub/build-session"), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Forwarded-For": firstClient,
+      },
+      body: JSON.stringify({ demo: false }),
+    });
+    const createTwo = await fetch(makeUrl(server, "/pub/build-session"), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Forwarded-For": secondClient,
+      },
+      body: JSON.stringify({ demo: false }),
+    });
+    const createThree = await fetch(makeUrl(server, "/pub/build-session"), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Forwarded-For": firstClient,
+      },
+      body: JSON.stringify({ demo: false }),
+    });
+
+    expect(createOne.status).toBe(200);
+    expect(createTwo.status).toBe(200);
+    expect(createThree.status).toBe(429);
+  });
+});

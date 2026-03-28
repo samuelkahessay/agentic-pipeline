@@ -13,6 +13,7 @@ function buildLimiter(config) {
 function createPublicRouteGuards(overrides = {}) {
   const passthrough = (_req, _res, next) => next();
   const sessionCreate = overrides.sessionCreate || {};
+  const demoSessionCreate = overrides.demoSessionCreate || {};
   const sessionMessage = overrides.sessionMessage || {};
   const authStart = overrides.authStart || {};
   const waitlistSignup = overrides.waitlistSignup || {};
@@ -21,6 +22,12 @@ function createPublicRouteGuards(overrides = {}) {
     windowMs: sessionCreate.windowMs || 60 * 60 * 1000,
     max: sessionCreate.max || 5,
     message: { error: "Too many sessions created. Try again later." },
+  });
+
+  const demoSessionCreateLimiter = buildLimiter({
+    windowMs: demoSessionCreate.windowMs || sessionCreate.windowMs || 60 * 60 * 1000,
+    max: demoSessionCreate.max || 30,
+    message: { error: "Too many demo sessions created. Try again later." },
   });
 
   const sessionMessageLimiter = buildLimiter({
@@ -42,7 +49,16 @@ function createPublicRouteGuards(overrides = {}) {
   });
 
   return function registerPublicRouteGuards(app) {
-    app.post("/pub/build-session", sessionCreateLimiter, passthrough);
+    app.post(
+      "/pub/build-session",
+      (req, res, next) =>
+        (req.body?.demo === true ? demoSessionCreateLimiter : sessionCreateLimiter)(
+          req,
+          res,
+          next
+        ),
+      passthrough
+    );
     app.post(
       "/pub/build-session/:buildSessionId/message",
       sessionMessageLimiter,
