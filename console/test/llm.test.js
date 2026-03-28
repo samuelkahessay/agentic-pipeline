@@ -2,6 +2,7 @@ const { createLLMClient } = require("../lib/llm");
 
 describe("createLLMClient", () => {
   const originalFetch = global.fetch;
+  const originalLlmApiKey = process.env.LLM_API_KEY;
   const originalOpenAiApiKey = process.env.OPENAI_API_KEY;
   const originalApiKey = process.env.OPENROUTER_API_KEY;
   const originalModel = process.env.LLM_MODEL;
@@ -9,6 +10,11 @@ describe("createLLMClient", () => {
 
   afterEach(() => {
     global.fetch = originalFetch;
+    if (originalLlmApiKey === undefined) {
+      delete process.env.LLM_API_KEY;
+    } else {
+      process.env.LLM_API_KEY = originalLlmApiKey;
+    }
     if (originalOpenAiApiKey === undefined) {
       delete process.env.OPENAI_API_KEY;
     } else {
@@ -68,6 +74,38 @@ describe("createLLMClient", () => {
       },
     });
     expect(request.provider).toBeUndefined();
+  });
+
+  test("prefers OpenRouter when that key is configured and no explicit LLM url is set", async () => {
+    process.env.OPENAI_API_KEY = "stale-openai-key";
+    process.env.OPENROUTER_API_KEY = "test-openrouter-key";
+    delete process.env.LLM_API_KEY;
+    delete process.env.LLM_MODEL;
+    delete process.env.LLM_API_URL;
+
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        choices: [
+          {
+            message: {
+              content:
+                '{"status":"needs_input","message":"Need one more detail.","question":"Who is this for?","prd":null}',
+            },
+          },
+        ],
+      }),
+    });
+
+    const client = createLLMClient();
+    await client.chat([{ role: "user", content: "Build me a CRM" }]);
+    const [requestUrl, requestInit] = global.fetch.mock.calls[0];
+    const request = JSON.parse(requestInit.body);
+
+    expect(requestUrl).toBe("https://openrouter.ai/api/v1/chat/completions");
+    expect(requestInit.headers.Authorization).toBe("Bearer test-openrouter-key");
+    expect(request.model).toBe("gpt-4.1-mini");
+    expect(request.provider).toEqual({ require_parameters: true });
   });
 
   test("adds the OpenRouter provider hint when explicitly targeting OpenRouter", async () => {
