@@ -1,4 +1,5 @@
-const DEFAULT_URL = "https://api.openai.com/v1/chat/completions";
+const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
+const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const DEFAULT_MODEL = "gpt-4.1-mini";
 const MAX_TOKENS = 2048;
 
@@ -97,9 +98,7 @@ const RESPONSE_FORMAT = {
 };
 
 function createLLMClient() {
-  const apiKey = process.env.LLM_API_KEY || process.env.OPENAI_API_KEY || process.env.OPENROUTER_API_KEY;
-  const model = process.env.LLM_MODEL || DEFAULT_MODEL;
-  const apiUrl = process.env.LLM_API_URL || DEFAULT_URL;
+  const { apiKey, apiUrl, model } = resolveProviderConfig(process.env);
 
   function buildRequestBody(messages, stream) {
     const body = {
@@ -197,6 +196,22 @@ function createLLMClient() {
   }
 
   return { streamChat, chat, parseResponse };
+}
+
+function resolveProviderConfig(env) {
+  const explicitApiUrl = env.LLM_API_URL || "";
+  const useOpenRouter =
+    explicitApiUrl.includes("openrouter.ai") ||
+    (!explicitApiUrl && !env.LLM_API_KEY && Boolean(env.OPENROUTER_API_KEY));
+
+  const apiUrl = explicitApiUrl || (useOpenRouter ? OPENROUTER_URL : OPENAI_URL);
+  const apiKey = env.LLM_API_KEY ||
+    (useOpenRouter
+      ? env.OPENROUTER_API_KEY || env.OPENAI_API_KEY
+      : env.OPENAI_API_KEY || env.OPENROUTER_API_KEY);
+  const model = env.LLM_MODEL || DEFAULT_MODEL;
+
+  return { apiKey, apiUrl, model };
 }
 
 function consumeSSEBuffer(buffer, onPayload) {
