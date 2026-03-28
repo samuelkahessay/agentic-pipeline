@@ -36,8 +36,51 @@ esac
 exit 0
 STUB
 chmod +x "$TMPDIR/bin/gh"
+
+install_yq_stub() {
+  if command -v yq >/dev/null 2>&1; then
+    ln -sf "$(command -v yq)" "$TMPDIR/bin/yq"
+    return
+  fi
+
+  cat > "$TMPDIR/bin/yq" <<'STUB'
+#!/usr/bin/env ruby
+require "json"
+require "psych"
+
+args = ARGV.dup
+raw = false
+
+loop do
+  case args.first
+  when "-r"
+    raw = true
+    args.shift
+  else
+    break
+  end
+end
+
+query = args.shift
+path = args.shift
+abort("unsupported yq invocation") unless query && path
+
+data = Psych.safe_load(File.read(path), aliases: true) || {}
+
+case query
+when ".forbidden_paths[]"
+  Array(data["forbidden_paths"]).each { |value| puts(value) }
+when ".exception_paths[]"
+  Array(data["exception_paths"]).each { |value| puts(value) }
+else
+  abort("unsupported yq query: #{query}")
+end
+STUB
+  chmod +x "$TMPDIR/bin/yq"
+}
+
 ln -sf "$(command -v jq)" "$TMPDIR/bin/jq"
-ln -sf "$(command -v yq)" "$TMPDIR/bin/yq"
+install_yq_stub
 export PATH="$TMPDIR/bin:$PATH"
 
 # RED guard
