@@ -38,16 +38,20 @@ STUB
 chmod +x "$TMPDIR/bin/gh"
 
 install_yq_stub() {
-  cat > "$TMPDIR/bin/yq" <<'STUB'
+cat > "$TMPDIR/bin/yq" <<'STUB'
 #!/usr/bin/env ruby
 require "json"
 require "psych"
 
 args = ARGV.dup
+json_output = false
 
 loop do
   case args.first
   when "-r"
+    args.shift
+  when "-o=json"
+    json_output = true
     args.shift
   else
     break
@@ -65,6 +69,15 @@ when ".forbidden_paths[]"
   Array(data["forbidden_paths"]).each { |value| puts(value) }
 when ".exception_paths[]"
   Array(data["exception_paths"]).each { |value| puts(value) }
+when ".include[]"
+  Array(data["include"]).each { |value| puts(value) }
+when '.directory_remap // {} | to_entries[] | "\(.key)\t\(.value)"'
+  (data["directory_remap"] || {}).each { |key, value| puts("#{key}\t#{value}") }
+when '.rename // {} | to_entries[] | "\(.key)\t\(.value)"'
+  (data["rename"] || {}).each { |key, value| puts("#{key}\t#{value}") }
+when ".render // {}"
+  abort("expected -o=json") unless json_output
+  print JSON.generate(data["render"] || {})
 else
   abort("unsupported yq query: #{query}")
 end
