@@ -19,13 +19,6 @@ const AUDIENCE_FRAMES = [
   },
 ] as const;
 
-const SIGNALS = [
-  { value: "3", label: "end-to-end self-healing drills completed" },
-  { value: "12 min", label: "last autonomous CI recovery" },
-  { value: "19", label: "GitHub platform issues surfaced" },
-  { value: "17", label: "fixes shipped back upstream" },
-] as const;
-
 const HARNESS_LAYERS = [
   {
     label: "Autonomy Policy",
@@ -184,9 +177,9 @@ export default function VisionPage() {
             <div className={styles.heroGrid}>
               <div className={styles.heroCopy}>
                 <h1 className={styles.title}>
-                  Code Generation Is Solved.
+                  Code generation is solved.
                   <br />
-                  Delivery Isn&apos;t.
+                  Delivery isn&apos;t.
                 </h1>
 
                 <p className={styles.lede}>
@@ -241,14 +234,6 @@ export default function VisionPage() {
               ))}
             </div>
 
-            <div className={styles.signalGrid} role="list" aria-label="Proof signals">
-              {SIGNALS.map((signal) => (
-                <div key={signal.label} className={styles.signalCard} role="listitem">
-                  <p className={styles.signalValue}>{signal.value}</p>
-                  <p className={styles.signalLabel}>{signal.label}</p>
-                </div>
-              ))}
-            </div>
           </section>
 
           <hr className={styles.divider} />
