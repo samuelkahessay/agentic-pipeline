@@ -613,7 +613,7 @@ function renderActions({
         ) : null}
         <a
           className={styles.linkButton}
-          href={`mailto:${readSupportEmail()}?subject=${encodeURIComponent(`prd-to-prod stalled run ${session.id}`)}`}
+          href={`mailto:${readSupportEmail()}?subject=${encodeURIComponent(`prd to prod stalled run ${session.id}`)}`}
         >
           Request help
         </a>
@@ -922,7 +922,7 @@ function formatEventDetail(event: BuildEvent): string {
 
 function formatRole(role: unknown): string {
   if (role === "user") return "You";
-  if (role === "assistant") return "prd-to-prod";
+  if (role === "assistant") return "prd to prod";
   if (role === "system") return "System";
   return "Event";
 }

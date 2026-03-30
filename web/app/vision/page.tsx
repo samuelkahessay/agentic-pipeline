@@ -148,7 +148,7 @@ const POSITIONING_COMPANIES = [
     detail: "Issue routing and orchestration, but not yet a full governed boundary.",
   },
   {
-    name: "prd-to-prod",
+    name: "prd to prod",
     x: 88,
     y: 85,
     detail: "Brief to deploy plus self-heal with an explicit policy artifact.",
@@ -157,7 +157,7 @@ const POSITIONING_COMPANIES = [
 ] as const;
 
 export const metadata: Metadata = {
-  title: "Vision - prd-to-prod",
+  title: "Vision - prd to prod",
   description:
     "The case for governed autonomous delivery infrastructure for founders and investors.",
 };
@@ -420,7 +420,7 @@ export default function VisionPage() {
             </h2>
 
             <p>
-              <code>prd-to-prod</code> is not yet the finished commercial
+              <code>prd to prod</code> is not yet the finished commercial
               product. It is the working argument that governed autonomous
               delivery deserves to exist as a category.
             </p>

@@ -3,7 +3,7 @@ import { StickyNav } from "@/components/landing/sticky-nav";
 import styles from "./page.module.css";
 
 export const metadata: Metadata = {
-  title: "Aurrin Ventures x prd-to-prod",
+  title: "Aurrin Ventures x prd to prod",
   description:
     "How Aurrin Ventures is using autonomous delivery infrastructure to build a full-stack event and validation platform.",
   robots: { index: false, follow: false },
@@ -23,7 +23,7 @@ export default function AurrinVenturesCaseStudy() {
           <h1 className={styles.title}>
             Aurrin Ventures
             <br />
-            &times; prd-to-prod
+            &times; prd to prod
           </h1>
 
           <p className={styles.lede}>

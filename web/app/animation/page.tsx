@@ -85,7 +85,7 @@ export default function AnimationPage() {
     <div className={styles.page}>
       <aside className={styles.sidebar}>
         <div className={styles.sidebarHeader}>
-          <span className={styles.logo}>prd-to-prod</span>
+          <span className={styles.logo}>prd to prod</span>
           <span className={styles.sidebarTitle}>Animation</span>
         </div>
         <nav className={styles.nav}>

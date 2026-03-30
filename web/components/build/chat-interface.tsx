@@ -99,7 +99,7 @@ export function ChatInterface({
             }`}
           >
             <div className={styles.roleLabel}>
-              {msg.role === "user" ? "You" : msg.role === "system" ? "System" : "prd-to-prod"}
+              {msg.role === "user" ? "You" : msg.role === "system" ? "System" : "prd to prod"}
             </div>
             <div>{formatMessageContent(msg)}</div>
           </div>
@@ -107,7 +107,7 @@ export function ChatInterface({
 
         {streamingContent && (
           <div className={styles.streaming}>
-            <div className={styles.roleLabel}>prd-to-prod</div>
+            <div className={styles.roleLabel}>prd to prod</div>
             <div>
               {formatStreamingContent(streamingContent)}
               <span className={styles.cursor} />

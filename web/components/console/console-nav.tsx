@@ -22,7 +22,7 @@ export function ConsoleNav({ queueCount, pipelineHealthy }: ConsoleNavProps) {
   return (
     <nav className={styles.nav}>
       <span className={styles.logo}>
-        <strong>prd-to-prod</strong> / console
+        <strong>prd to prod</strong> / console
       </span>
       <div className={styles.tabs}>
         {tabs.map((tab) => {

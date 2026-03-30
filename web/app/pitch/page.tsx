@@ -3,7 +3,7 @@ import { StickyNav } from "@/components/landing/sticky-nav";
 import styles from "./page.module.css";
 
 export const metadata: Metadata = {
-  title: "Pitch — prd-to-prod",
+  title: "Pitch — prd to prod",
   description:
     "Autonomous delivery infrastructure for AI agents. One-pager.",
   robots: { index: false, follow: false },
@@ -18,7 +18,7 @@ export default function PitchPage() {
 
       <main className={styles.page}>
         <article className={styles.article}>
-          <span className={styles.label}>prd-to-prod</span>
+          <span className={styles.label}>prd to prod</span>
 
           <h1 className={styles.title}>
             The delivery infrastructure
@@ -70,7 +70,7 @@ export default function PitchPage() {
           <h2>Solution</h2>
 
           <p>
-            <code>prd-to-prod</code> is an autonomous delivery pipeline built
+            <code>prd to prod</code> is an autonomous delivery pipeline built
             on GitHub&rsquo;s{" "}
             <a
               href="https://github.github.com/gh-aw/"
